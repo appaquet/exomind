@@ -19,6 +19,7 @@ export default class HtmlEditorControls extends React.Component<IProps> {
     return <div className="html-editor-controls">
       <ul>
         {this.renderInlineStyleControls()}
+        {this.renderLinkControl()}
         {this.renderBlockControls()}
         <li onMouseDown={(e) => this.handleOutdent('outdent', e)}><i className="icon outdent" /></li>
         <li onMouseDown={(e) => this.handleIndent('indent', e)}><i className="icon indent" /></li>
@@ -66,6 +67,24 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         <li key={cssStyle} className={liClasses} onMouseDown={this.handleToggleInlineStyle.bind(this, editorStyle)}><i className={iconClasses} /></li>
       );
     });
+  }
+
+  private renderLinkControl(): React.ReactFragment {
+      const iconClasses = classNames({
+        icon: true,
+        link: true,
+      });
+
+      let active = false;
+      if (this.props.cursor && !!this.props.cursor.link) {
+        active = true;
+      }
+
+      const liClasses = classNames({ active });
+
+    return (
+      <li className={liClasses} onMouseDown={(e) => this.handleLink(e)}><i className={iconClasses} /></li>
+    );
   }
 
   private renderBlockControls(): React.ReactFragment {
@@ -134,6 +153,13 @@ export default class HtmlEditorControls extends React.Component<IProps> {
     e.preventDefault(); // prevent losing focus on editor
     if (this.props.editor) {
       this.props.editor.toggleBlockType(format);
+    }
+  }
+
+  private handleLink(e: MouseEvent): void {
+    e.preventDefault(); // prevent losing focus on editor
+    if (this.props.editor) {
+      this.props.editor.toggleLink();
     }
   }
 

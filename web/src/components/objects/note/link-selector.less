@@ -1,0 +1,43 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.note-link-selector {
+  position: absolute;
+  width: 500px;
+  background: var(--entity-component-header-bg);
+  z-index: @z-index-modal;
+  padding: 10px;
+
+  .shadow-z-3();
+
+  .text {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .entity {
+    color: var(--hierarchy-pills-fg);
+    background-color: var(--hierarchy-pills-bg);
+    border-radius: 12px;
+    padding: 5px;
+    cursor: text;
+  }
+
+  .entity-selector {
+    margin-top: 15px;
+    height: 300px;
+  }
+
+  .value > input {
+    width: 99%;
+  }
+
+  .buttons {
+    text-align: right;
+    margin-top: 10px;
+
+    button {
+      margin: 5px 0 0 5px;
+    }
+  }
+}

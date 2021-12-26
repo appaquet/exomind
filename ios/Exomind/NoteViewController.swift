@@ -75,7 +75,7 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
                 if url.starts(with: "entity://") {
                     let entityId = url.replacingOccurrences(of: "entity://", with: "")
                     let obj = NavigationObject.entityId(id: EntityId(entityId))
-                    (self?.navigationController as? NavigationController)?.pushObject(obj)
+                    (this.navigationController as? NavigationController)?.pushObject(obj)
                 } else if url.starts(with: "http") {
                     if let parsedUrl = URL(string: url) {
                         let sfVc = SFSafariHelper.getViewControllerForURL(parsedUrl)

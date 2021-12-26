@@ -1,20 +1,52 @@
 @import (reference) "../../../style/variables.less";
+@import (reference) "../../../style/font-awesome.less";
+@import (reference) "../../../style/mixins.less";
 
 .html-editor {
   @min-height: 500px; // make sure we have enough space to click after editor
   @font-size: 16px;
   @code-font-size: 14px;
   width: 100%;
+  position: relative; // for popper
 
-  & > div {
-    min-height: @min-height;
-    & > div {
-      min-height: @min-height;
+  .link-popper {
+    background: var(--entity-component-bg-hover);
+    margin: 5px;
+
+    ul {
+      .make-list();
+      padding: 2px;
+
+      li {
+        .make-list-item();
+        display: inline-block;
+
+        a {
+          color: var(--entity-component-item-fg);
+          padding: 6px;
+          width: 25px;
+          height: 25px;
+          text-decoration: none;
+
+          span.edit {
+            .icon-font-awesome("pencil");
+          }
+          span.open {
+            .icon-font-awesome("external-link");
+          }
+          span.remove {
+            .icon-font-awesome("times");
+          }
+
+          font-size: 16px;
+        }
+      }
     }
   }
 
   .bangle-editor {
     border: none;
+    min-height: @min-height;
 
     &:focus {
       // remove dotted border when focused
@@ -24,26 +56,40 @@
       }
     }
 
+    a {
+      cursor: pointer;
+      &,
+      &:active,
+      &:hover {
+        color: #4299e1;
+      }
+    }
+    a[href^="entity:"] {
+      color: black;
+      background-color: #cbcfda;
+      text-decoration: none;
+      padding: 3px;
+      border-radius: 3px;
+
+      .icon-font-awesome("link", "  ");
+    }
+
     p {
       font-family: Segoe UI, Arial, Helvetica, sans-serif;
       font-size: @font-size;
     }
 
-    a {
-      cursor: pointer;
-    }
-
     h1 {
-      font-size: 3rem;
+      font-size: 2.2rem;
     }
     h2 {
-      font-size: 2.5rem;
-    }
-    h3 {
       font-size: 2rem;
     }
+    h3 {
+      font-size: 1.8rem;
+    }
     h4 {
-      font-size: 1.75rem;
+      font-size: 1.6rem;
     }
 
     h1,
