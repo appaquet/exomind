@@ -5,21 +5,19 @@ import { EntityTraits } from './utils/entities';
 import Path from './utils/path';
 
 export interface INavigationHost {
-  initialPath: Path,
-
-  pushHistory(path: Path, replace: boolean): void;
-
+  history: IHistory;
   openPopup(path: Path): void;
-
   openExternal(url: string): void;
 }
 
 export default class Navigation {
   static host: INavigationHost;
+  static history: IHistory;
 
   static initialize(host: INavigationHost): void {
     Navigation.host = host;
-    Navigation.currentPath = host.initialPath;
+    Navigation.history = host.history;
+    Navigation.currentPath = host.history.initialPath;
   }
 
   static get currentPath(): Path {
@@ -28,15 +26,17 @@ export default class Navigation {
 
   static set currentPath(path: Path) {
     runInAction(() => {
-      Stores.session.currentPath = path;
+      if (!path.equals(Stores.session.currentPath)) {
+        console.info('Navigation: setting current path to: ' + path);
+        Stores.session.currentPath = path;
+      }
     });
   }
 
   static navigate(path: string | Path, replace = false): void {
     try {
       const obj = new Path(path);
-
-      Navigation.host.pushHistory(obj, replace);
+      Navigation.history.push(obj, replace);
       Navigation.currentPath = obj;
     } catch (e) {
       console.error('failed to load link', e);
@@ -44,15 +44,11 @@ export default class Navigation {
   }
 
   static navigateBack(): void {
-    if (window.history) {
-      window.history.back();
-    }
+    Navigation.history.back();
   }
 
   static navigateForward(): void {
-    if (window.history) {
-      window.history.forward();
-    }
+    Navigation.history.forward();
   }
 
   static navigatePopup(path: string | Path): void {
@@ -161,4 +157,96 @@ export function setupLinkClickNavigation(fallback: (e: MouseEvent, el: HTMLEleme
       }
     }
   });
+}
+
+export interface IHistory {
+  initialPath: Path;
+  push(path: Path, replace: boolean): void;
+  back(): void;
+  forward(): void;
+}
+
+export class InMemoryHistory implements IHistory {
+  private backHistory: Path[] = [];
+  private forwardHistory: Path[] = [];
+  initialPath: Path = new Path('');
+
+  constructor() {
+    this.backHistory.push(this.initialPath);
+  }
+
+  push(path: Path, replace: boolean): void {
+    if (!this.curPath()) {
+      return;
+    }
+
+    if (replace) {
+      this.backHistory.pop();
+    }
+    this.backHistory.push(path);
+    this.forwardHistory = [];
+
+    Navigation.currentPath = path;
+  }
+
+  back(): void {
+    const curPath = this.curPath();
+    if (curPath) {
+      this.forwardHistory.push(curPath);
+    }
+
+    this.backHistory.pop(); // remove current path
+
+    const backPath = this.curPath();
+    if (backPath) {
+      Navigation.currentPath = backPath;
+    }
+  }
+
+  forward(): void {
+    const forwardPath = this.forwardHistory.pop();
+    if (forwardPath) {
+      this.backHistory.push(forwardPath);
+      Navigation.currentPath = forwardPath;
+    }
+  }
+
+  private curPath(): Path | null {
+    if (this.backHistory.length > 0) {
+      return this.backHistory[this.backHistory.length - 1];
+    } else {
+      return null;
+    }
+  }
+}
+
+export class BrowserHistory implements IHistory {
+  initialPath: Path = BrowserHistory.getBrowserPath();
+
+  constructor() {
+    window.onpopstate = () => {
+      const path = BrowserHistory.getBrowserPath();
+      Navigation.currentPath = path;
+    };
+  }
+
+  push(path: Path, replace: boolean): void {
+    if (replace) {
+      window.history.replaceState({}, null, '/' + path.toString());
+    } else {
+      window.history.pushState({}, null, '/' + path.toString());
+    }
+  }
+
+  back(): void {
+    window.history.back();
+  }
+
+  forward(): void {
+    window.history.forward();
+  }
+
+  private static getBrowserPath(): Path {
+    return new Path(window.location.pathname.replace('/', ''));
+  }
 }

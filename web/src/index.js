@@ -5,42 +5,21 @@ import App from './app';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { initNode } from './exocore';
-import Navigation, { setupLinkClickNavigation } from "./navigation";
+import Navigation, { BrowserHistory, setupLinkClickNavigation } from "./navigation";
 import Constants from "./constants";
-import Path from "./utils/path";
-
-function getBrowserCurrentPath() {
-    return new Path(window.location.pathname.replace(Constants.basePath, ''));
-}
 
 Navigation.initialize({
-    initialPath: getBrowserCurrentPath(),
+    history: new BrowserHistory(),
 
     openPopup: (path) => {
         let url = Constants.webUrl + Constants.basePath + path.toString();
         window.open(url, '_blank', 'menubar=no,location=no,status=no,titlebar=no,toolbar=no');
     },
 
-    pushHistory: (path, replace) => {
-        if (!window.history) {
-            return;
-        }
-
-        if (replace) {
-            window.history.replaceState({}, null, Constants.basePath + path.toString());
-        } else {
-            window.history.pushState({}, null, Constants.basePath + path.toString());
-        }
-    },
-
     openExternal: (url) => {
         window.open(url, '_blank');
     }
 });
-
-window.onpopstate = () => {
-    Navigation.currentPath = getBrowserCurrentPath();
-};
 
 Promise.all([
     new Promise((resolve) => {
