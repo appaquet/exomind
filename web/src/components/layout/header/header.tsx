@@ -13,7 +13,7 @@ interface IProps {
 
 interface IState {
   pathKeywords?: string;
-  fieldKeywords: string;
+  searchKeywords: string;
   debouncedKeywords: string;
 }
 
@@ -22,6 +22,7 @@ export class Header extends React.Component<IProps, IState> {
   declare context: IStores;
 
   private debouncer: Debouncer;
+  private searchInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
   constructor(props: IProps) {
     super(props);
@@ -31,7 +32,7 @@ export class Header extends React.Component<IProps, IState> {
     const keywords = this.keywordsFromPath(props);
     this.state = {
       pathKeywords: keywords,
-      fieldKeywords: keywords,
+      searchKeywords: keywords,
       debouncedKeywords: keywords,
     };
   }
@@ -56,9 +57,17 @@ export class Header extends React.Component<IProps, IState> {
     // keywords from path have an unexpected value, so we reset the local state
     this.setState({
       pathKeywords: pathKeywords,
-      fieldKeywords: pathKeywords,
+      searchKeywords: pathKeywords,
       debouncedKeywords: pathKeywords,
     });
+  }
+
+  componentDidMount(): void {
+    document.addEventListener('keydown', this.handleKeyDown, false);
+  }
+
+  componentWillUnmount(): void {
+    document.removeEventListener('keydown', this.handleKeyDown, false);
   }
 
   render(): React.ReactNode {
@@ -76,7 +85,11 @@ export class Header extends React.Component<IProps, IState> {
       <div className="search-col form-group">
         <div className="input-group">
           <span className="glyphicon glyphicon-search input-group-addon icon" />
-          <input type="text" className="form-control" value={this.state.fieldKeywords} onChange={(event) => this.handleSearchChange(event)} />
+          <input type="text"
+            className="form-control"
+            value={this.state.searchKeywords}
+            ref={this.searchInputRef}
+            onChange={(event) => this.handleSearchChange(event)} />
         </div>
       </div>
     );
@@ -86,7 +99,7 @@ export class Header extends React.Component<IProps, IState> {
     const keywords = event.target.value;
 
     this.setState({
-      fieldKeywords: keywords,
+      searchKeywords: keywords,
     });
 
     this.debouncer.debounce(() => {
@@ -110,6 +123,21 @@ export class Header extends React.Component<IProps, IState> {
     }
 
     return keyword
+  }
+
+  private handleKeyDown = (e: KeyboardEvent): void => {
+    if (e.key === 'Escape' && this.searchInputRef.current === document.activeElement) {
+      // when searching, escape key closes search
+      this.searchInputRef.current?.blur();
+      this.setState({ searchKeywords: '' });
+      Navigation.navigateBack();
+
+    } else if (e.key == 'p' && e.metaKey) {
+      // global cmd-p shortcut to focus on search input
+      this.searchInputRef.current?.focus();
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }
 }
 

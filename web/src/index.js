@@ -9,7 +9,6 @@ import Navigation, { setupLinkClickNavigation } from "./navigation";
 import Constants from "./constants";
 import Path from "./utils/path";
 
-
 function getBrowserCurrentPath() {
     return new Path(window.location.pathname.replace(Constants.basePath, ''));
 }
