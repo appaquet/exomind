@@ -133,7 +133,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
             e.preventDefault();
             e.stopPropagation();
 
-        } else if (e.key == 'Enter' || e.key == ' ') {
+        } else if ((e.key == 'Enter' || e.key == ' ') && this.state.hoveredIndex != undefined) {
             const entity = this.props.entities[this.state.hoveredIndex ?? 0];
             const selectedIds = new Set(this.props.selectedIds ?? []);
 

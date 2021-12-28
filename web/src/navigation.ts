@@ -27,7 +27,6 @@ export default class Navigation {
   static set currentPath(path: Path) {
     runInAction(() => {
       if (!path.equals(Stores.session.currentPath)) {
-        console.info('Navigation: setting current path to: ' + path);
         Stores.session.currentPath = path;
       }
     });

@@ -3,7 +3,7 @@ import { BangleEditor } from '@bangle.dev/react';
 import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
 import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, } from '@bangle.dev/base-components';
 import { toHTMLString } from '@bangle.dev/utils';
-import { EditorState, EditorView, NodeSelection, setBlockType } from "@bangle.dev/pm";
+import { EditorState, EditorView, NodeSelection, Selection, setBlockType } from "@bangle.dev/pm";
 import { queryIsItalicActive, toggleItalic } from "@bangle.dev/base-components/dist/italic";
 import { queryIsBoldActive, toggleBold } from "@bangle.dev/base-components/dist/bold";
 import { keymap } from '@bangle.dev/pm';
@@ -261,10 +261,12 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     async toggleLink(url: string | null = null, title: string | null = null): Promise<void> {
+        const cursor = this.getCursor();
+
         if (url) {
             const state = this.editor.view.state;
             const dispatch = this.editor.view.dispatch;
-            if (title) {
+            if (title && cursor.selection.empty) {
                 const linkMark = state.schema.marks.link.create({
                     href: url,
                 });
@@ -277,7 +279,6 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             return;
         }
 
-        const cursor = this.getCursor();
         if (this.props.linkSelector) {
             const selectedLink = await this.props.linkSelector(cursor);
             if (selectedLink) {
@@ -448,6 +449,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             link,
             rect,
             domNode: rect.domNode,
+            selection: rect.selection,
         }
     }
 
@@ -479,7 +481,6 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     private getCursorRect(): CursorRect {
         const view = this.editor.view;
         const { selection } = view.state;
-        const { head, from } = selection;
 
         // since head is dependent on the users choice of direction,
         // it is not always equal to `from`.
@@ -488,7 +489,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         // But for NodeSelection we always want `from` since, if we go with `head`
         // coordsAtPos(head) might get the position `to` in head, resulting in
         // incorrectly getting position of the node after the selected Node.
-        const pos = selection instanceof NodeSelection ? from : head;
+        const pos = selection instanceof NodeSelection ? selection.from : selection.head;
 
         const start = view.coordsAtPos(pos);
         const { top, bottom, left, right } = start;
@@ -504,7 +505,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
         const domNode = view.domAtPos(pos, 1).node as HTMLElement;
         return {
-            left, width, right, top, bottom, height, domNode,
+            left, width, right, top, bottom, height, selection, domNode,
         }
     }
 
@@ -538,6 +539,7 @@ export interface EditorCursor {
     inlineStyle: Set<InlineStyle>;
     link: string | null;
     rect: CursorRect;
+    selection: Selection;
     domNode: HTMLElement;
 }
 
@@ -548,5 +550,6 @@ export interface CursorRect {
     top: number;
     bottom: number;
     height: number;
+    selection: Selection;
     domNode: HTMLElement;
 }

@@ -2,7 +2,6 @@
 @import (reference) "../../../style/variables.less";
 
 .time-selector {
-  @time-selector-header-height: 20px;
   @time-selector-list-margin: 5px;
   @time-selector-box-size: 86px;
 
@@ -12,11 +11,8 @@
   z-index: @z-index-modal;
   .shadow-z-3();
 
-  padding-top: @time-selector-header-height;
   .time-selector-header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: @time-selector-header-height;
+    height: 23px;
     font-weight: bold;
     padding: 2px @time-selector-list-margin;
     background: var(--entity-component-header-bg);
@@ -35,7 +31,7 @@
 
   &.choices {
     width: 290px;
-    height: 318px;
+    height: 300px;
 
     ul {
       overflow: hidden;
