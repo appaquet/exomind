@@ -1054,13 +1054,13 @@
     "@babel/helper-validator-identifier" "^7.15.7"
     to-fast-properties "^2.0.0"
 
-"@bangle.dev/base-components@^0.28.3":
-  version "0.28.3"
-  resolved "https://registry.npmjs.org/@bangle.dev/base-components/-/base-components-0.28.3.tgz"
-  integrity sha512-KYLMzd8GTEwSdZJM5YjiiwRm6v1Y74gJmWsKzQibLRjM1L8U3IgsMv6h/S6qXJOIl8ONwhFXrDj9SKcyZjhEMA==
+"@bangle.dev/base-components@^0.28.4":
+  version "0.28.4"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/base-components/-/base-components-0.28.4.tgz#100af7d6f7f87cec040b31b6199ab1f468a11a8d"
+  integrity sha512-A1eMKFyWoOeXQJgNBGQY9VS3scMFIkRAKho2LVlVeqJCDPhA9Dkn81l6g3X6vgY2Bfx8Uffsd/A8ucD28o+d2A==
   dependencies:
-    "@bangle.dev/pm-commands" "0.28.3"
-    "@bangle.dev/utils" "0.28.3"
+    "@bangle.dev/pm-commands" "0.28.4"
+    "@bangle.dev/utils" "0.28.4"
 
 "@bangle.dev/core@^0.28.3":
   version "0.28.3"
@@ -1076,6 +1076,13 @@
   integrity sha512-DH19AtF25Y/Ke+6ItqKGpa2+PrSbth+Lnz//aBxP/sprpNYt1v26YVpU0Pwv2+zrZkVvPGGMVDNemYA/8KbnpA==
   dependencies:
     "@bangle.dev/utils" "0.28.3"
+
+"@bangle.dev/pm-commands@0.28.4":
+  version "0.28.4"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/pm-commands/-/pm-commands-0.28.4.tgz#569801dfde77288bf6af48157708175b8314bf02"
+  integrity sha512-f2HeZBTqZjCvAfZjWGy8TVJxzIcGjSk/Snfs55MVn7xZrUdvenhLGpKrtejGpGFsbdcSN8z1RXFRPYkGjszaWw==
+  dependencies:
+    "@bangle.dev/utils" "0.28.4"
 
 "@bangle.dev/pm@^0.28.3":
   version "0.28.3"
@@ -1119,6 +1126,15 @@
   version "0.28.3"
   resolved "https://registry.npmjs.org/@bangle.dev/utils/-/utils-0.28.3.tgz"
   integrity sha512-hZeGfuB5bXodK9NPTQXHIPUdXdgvYQzbbwoo3fNDrLNQtuJkVCIfwAGTc2XskEkgO35lJYjEto2DHvzGi9blfA==
+  dependencies:
+    prosemirror-model "^1.1.0"
+    prosemirror-state "^1.0.1"
+    prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@0.28.4":
+  version "0.28.4"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.4.tgz#87dfcf50d823477eff232363e5aeb868c194502f"
+  integrity sha512-XrthH8XYSZEKYCaGnZ0Rl3fXB8ipfGQuC84hRxubpgyvuNfOj9kyqq2sitc2LANVm9fY3p/YoGPqKrYt/vXe7w==
   dependencies:
     prosemirror-model "^1.1.0"
     prosemirror-state "^1.0.1"
