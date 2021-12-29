@@ -1106,12 +1106,12 @@
     prosemirror-transform "^1.1.0"
     prosemirror-view "^1.10.0"
 
-"@bangle.dev/react@^0.28.3":
-  version "0.28.3"
-  resolved "https://registry.npmjs.org/@bangle.dev/react/-/react-0.28.3.tgz"
-  integrity sha512-W1KyW1l66aoi/4wnWdG9rV48gK8Od+D0yJZypTw/Wan5LYOI53BK7UXiD9ns7OnNclNsLxDD2BWPPk+hdIvHrg==
+"@bangle.dev/react@^0.28.4":
+  version "0.28.4"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.28.4.tgz#4a40d068b7273f6b0164b3134d91aba429e33dad"
+  integrity sha512-dFlCTC7CUubEMI2GRZ0ipFAa0Wx1vCNVO2UApzn1Ba+AScGc6i4ghg5aW+DAMzFcA3Cn+d9XE/zAonQXUP3IBw==
   dependencies:
-    "@bangle.dev/utils" "0.28.3"
+    "@bangle.dev/utils" "0.28.4"
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
@@ -1119,6 +1119,15 @@
   version "0.28.3"
   resolved "https://registry.npmjs.org/@bangle.dev/utils/-/utils-0.28.3.tgz"
   integrity sha512-hZeGfuB5bXodK9NPTQXHIPUdXdgvYQzbbwoo3fNDrLNQtuJkVCIfwAGTc2XskEkgO35lJYjEto2DHvzGi9blfA==
+  dependencies:
+    prosemirror-model "^1.1.0"
+    prosemirror-state "^1.0.1"
+    prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@0.28.4":
+  version "0.28.4"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.4.tgz#87dfcf50d823477eff232363e5aeb868c194502f"
+  integrity sha512-XrthH8XYSZEKYCaGnZ0Rl3fXB8ipfGQuC84hRxubpgyvuNfOj9kyqq2sitc2LANVm9fY3p/YoGPqKrYt/vXe7w==
   dependencies:
     prosemirror-model "^1.1.0"
     prosemirror-state "^1.0.1"
@@ -8150,7 +8159,7 @@ prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@15.8.0:
+prop-types@15.8.0, prop-types@^15.5.10, prop-types@^15.7.2:
   version "15.8.0"
   resolved "https://registry.yarnpkg.com/prop-types/-/prop-types-15.8.0.tgz#d237e624c45a9846e469f5f31117f970017ff588"
   integrity sha512-fDGekdaHh65eI3lMi5OnErU6a8Ighg2KjcjQxO7m8VHyWjcPyj5kiOgV1LQDOOOgVy3+5FgjXvdSSX7B8/5/4g==
@@ -8158,15 +8167,6 @@ prop-types@15.8.0:
     loose-envify "^1.4.0"
     object-assign "^4.1.1"
     react-is "^16.13.1"
-
-prop-types@^15.5.10, prop-types@^15.7.2:
-  version "15.7.2"
-  resolved "https://registry.npmjs.org/prop-types/-/prop-types-15.7.2.tgz"
-  integrity sha512-8QQikdH7//R2vurIJSutZ1smHYTcLpRWEOlHnzcWHmBYrOGUysKwSsrC89BCiFj3CbrfJ/nXFdJepOVrY1GCHQ==
-  dependencies:
-    loose-envify "^1.4.0"
-    object-assign "^4.1.1"
-    react-is "^16.8.1"
 
 prosemirror-commands@^1.1.10:
   version "1.1.12"
@@ -8467,7 +8467,7 @@ react-flatpickr@^3.10.6:
     flatpickr "^4.6.2"
     prop-types "^15.5.10"
 
-react-is@^16.13.1, react-is@^16.8.1:
+react-is@^16.13.1:
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
