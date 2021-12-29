@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import React from 'react';
 import Navigation from '../../../navigation';
-import { ContainerState, ModifiableText } from '../../objects/container-controller';
+import { ContainerState, ModifiableText } from '../../objects/container-state';
 import { EntityComponent } from '../../objects/entity-component';
 import { Selection } from '../../objects/entity-list/selection';
 import { Header, HeaderAction } from '../../objects/header';

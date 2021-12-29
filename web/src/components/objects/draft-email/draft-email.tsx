@@ -7,7 +7,7 @@ import EmailUtil from '../../../utils/emails';
 import { exocore, exomind } from '../../../protos';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import HtmlEditor from '../../interaction/html-editor/html-editor';
-import { ContainerState } from '../container-controller';
+import { ContainerState } from '../container-state';
 import { Selection } from '../entity-list/selection';
 import './draft-email.less';
 import { runInAction } from 'mobx';

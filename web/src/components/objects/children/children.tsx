@@ -13,7 +13,7 @@ import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
 import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
-import { ContainerState } from "../container-controller";
+import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
 import './children.less';
 

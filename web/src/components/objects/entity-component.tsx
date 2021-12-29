@@ -4,7 +4,7 @@ import { exomind } from '../../protos';
 import { EntityTrait, EntityTraits } from "../../utils/entities";
 import { CollectionSelector } from '../modals/collection-selector/collection-selector';
 import TimeSelector from '../modals/time-selector/time-selector';
-import { ContainerState, ModifiableText } from "./container-controller";
+import { ContainerState, ModifiableText } from "./container-state";
 import './entity-component.less';
 import { Selection } from "./entity-list/selection";
 import { HeaderAction } from "./header";

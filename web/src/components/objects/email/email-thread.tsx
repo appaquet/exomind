@@ -8,7 +8,7 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
-import { ContainerState } from '../container-controller';
+import { ContainerState } from '../container-state';
 import { runInAction } from 'mobx';
 
 

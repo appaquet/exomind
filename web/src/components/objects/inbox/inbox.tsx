@@ -1,7 +1,7 @@
 import { runInAction } from 'mobx';
 import * as React from 'react';
 import { Children } from "../children/children";
-import { ContainerState } from "../container-controller";
+import { ContainerState } from "../container-state";
 import { Selection } from "../entity-list/selection";
 
 interface IProps {

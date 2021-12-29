@@ -4,7 +4,7 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
 import EditableText from "../../interaction/editable-text/editable-text";
-import { ContainerState } from "../container-controller";
+import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
 import { Exocore, MutationBuilder } from "exocore";
 

@@ -2,8 +2,6 @@ import { action, makeObservable, observable } from 'mobx';
 import { TraitIcon } from '../../utils/entities';
 import { HeaderAction } from './header';
 
-type KeyDownHandler = (e: KeyboardEvent) => void;
-
 export class ContainerState {
     @observable title: string | ModifiableText;
     @observable icon: TraitIcon;
@@ -11,8 +9,6 @@ export class ContainerState {
     @observable closed: boolean;
     @observable showDetails: boolean;
     @observable active: boolean;
-
-    onKeyDown?: KeyDownHandler; // TODO:
 
     constructor() {
         makeObservable(this);

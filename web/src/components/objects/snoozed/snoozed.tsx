@@ -4,7 +4,7 @@ import { exomind } from '../../../protos';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
-import { ContainerState } from '../container-controller';
+import { ContainerState } from '../container-state';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';

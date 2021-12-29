@@ -1,9 +1,10 @@
 import classNames from "classnames";
+import { observer } from "mobx-react";
 import React from 'react';
 import { EntityTrait, EntityTraits } from "../../../utils/entities";
 import DragAndDrop, { DragData } from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
-import { ContainerState } from "../container-controller";
+import { ContainerState } from "../container-state";
 import { Entity } from './entity';
 import { EntityActions } from "./entity-action";
 import './entity-list.less';
@@ -41,6 +42,7 @@ export interface IDroppedItem {
     data: DragData;
 }
 
+@observer
 export class EntityList extends React.Component<IProps> {
     constructor(props: IProps) {
         super(props);
@@ -70,27 +72,30 @@ export class EntityList extends React.Component<IProps> {
     }
 
     private renderCollection(): React.ReactNode {
-        if (this.props.entities.length > 0) {
+        if (this.props.entities.length == 0) {
+            return this.renderEmptyList();
+        }
 
-            const count = this.props.entities.length;
-            const items = this.props.entities.map((entity, idx) => {
-                const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
+        const count = this.props.entities.length;
+        const items = this.props.entities.map((entity, idx) => {
+            const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
 
-                const handleDropIn = (data: DragData) => {
-                    let prevEntity;
-                    if (idx > 0) {
-                        prevEntity = this.props.entities[idx - 1];
-                    }
+            const handleDropIn = (data: DragData) => {
+                let prevEntity;
+                if (idx > 0) {
+                    prevEntity = this.props.entities[idx - 1];
+                }
 
-                    let nextEntity;
-                    if (idx < count) {
-                        nextEntity = this.props.entities[idx + 1];
-                    }
+                let nextEntity;
+                if (idx < count) {
+                    nextEntity = this.props.entities[idx + 1];
+                }
 
-                    this.handleDropIn(this.props.entities[idx], prevEntity, nextEntity, data);
-                };
+                this.handleDropIn(this.props.entities[idx], prevEntity, nextEntity, data);
+            };
 
-                const item = <Entity
+            return (
+                <Entity
                     key={entity.id}
                     entity={entity}
                     parentEntity={this.props.parentEntity}
@@ -105,17 +110,13 @@ export class EntityList extends React.Component<IProps> {
                     onDropIn={handleDropIn}
 
                     renderEntityDate={this.props.renderEntityDate}
-                />;
-
-                return item;
-            });
-
-            return (
-                <ul className="list">{items}</ul>
+                />
             );
-        } else {
-            return this.renderEmptyList();
-        }
+        });
+
+        return (
+            <ul className="list">{items}</ul>
+        );
     }
 
     private renderEmptyList(): React.ReactNode {

@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react';
 import React from 'react';
-import { ContainerState } from '../../objects/container-controller';
+import { ContainerState } from '../../objects/container-state';
 import { EntityComponent } from '../../objects/entity-component';
 import './fullscreen.less';
 
