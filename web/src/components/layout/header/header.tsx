@@ -6,6 +6,7 @@ import Path from '../../../utils/path';
 import { ColumnConfigs } from '../../pages/columns/columns-config';
 import './header.less';
 import { StoresContext, IStores } from '../../../stores/stores';
+import { Shortcuts } from '../../../shortcuts';
 
 interface IProps {
   path: Path;
@@ -63,11 +64,17 @@ export class Header extends React.Component<IProps, IState> {
   }
 
   componentDidMount(): void {
+    Shortcuts.addListener({
+      key: 'Mod-p',
+      callback: this.handleFocusInput,
+      noContext: ['text-editor'],
+    });
     document.addEventListener('keydown', this.handleKeyDown, false);
   }
 
   componentWillUnmount(): void {
     document.removeEventListener('keydown', this.handleKeyDown, false);
+    Shortcuts.removeListener('Mod-p');
   }
 
   render(): React.ReactNode {
@@ -125,19 +132,18 @@ export class Header extends React.Component<IProps, IState> {
     return keyword
   }
 
-  // TODO: move to keyboard manager
+  private handleFocusInput = () => {
+    if (this.searchInputRef.current) {
+      this.searchInputRef.current.focus();
+    }
+  }
+
   private handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === 'Escape' && this.searchInputRef.current === document.activeElement) {
       // when searching, escape key closes search
       this.searchInputRef.current?.blur();
       this.setState({ searchKeywords: '' });
       Navigation.navigateBack();
-
-    } else if (e.key == 'p' && e.metaKey) {
-      // global cmd-p shortcut to focus on search input
-      this.searchInputRef.current?.focus();
-      e.preventDefault(); // prevent print
-      e.stopPropagation();
     }
   }
 }

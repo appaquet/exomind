@@ -20,6 +20,7 @@ import Debouncer from "../../../utils/debouncer";
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
 import { createPopper } from '@popperjs/core';
 import { CancellableEvent } from "../../../utils/events";
+import { Shortcuts } from "../../../shortcuts";
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
@@ -137,6 +138,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                         this.toggleLink();
                         return true;
                     },
+                    'Escape': () => {
+                        this.blur();
+                        return true;
+                    },
                 })
             ],
             initialValue: content,
@@ -146,12 +151,14 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                         if (this.props.onFocus) {
                             this.props.onFocus();
                         }
+                        Shortcuts.activateContext('text-editor');
                         return false;
                     },
                     blur: () => {
                         if (this.props.onBlur) {
                             this.props.onBlur();
                         }
+                        Shortcuts.deactivateContext('text-editor');
                         return false;
                     },
                     mousedown: (view, event) => {
@@ -326,6 +333,17 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
     focus(): void {
         this.editor?.view?.focus();
+    }
+
+    blur(): void {
+        if (!this.editor) {
+            return;
+        }
+
+        if (this.editor.view.hasFocus()) {
+            const el = document.activeElement as HTMLElement;
+            el.blur();
+        }
     }
 
     private handleReady = (editor: CoreBangleEditor) => {
