@@ -134,6 +134,7 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private handleEditClick = (event: MouseEvent) => {
+    // necessary since we may be in the list of entity and don't want the event to go further
     event.stopPropagation();
   }
 

@@ -37,7 +37,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         });
 
         return (
-            <div className={classes} onMouseOver={this.handlePreventDefault.bind(this)}>
+            <div className={classes}>
                 <div className="time-selector-header">Snooze until...</div>
                 {body}
             </div>
@@ -46,7 +46,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
 
     private renderList(): React.ReactNode {
         return (
-            <ul ref={this.listElemRef} onClick={this.handlePreventDefault.bind(this)} onWheel={this.handleListWheel.bind(this)}>
+            <ul ref={this.listElemRef}>
                 {this.renderLaterChoices()}
             </ul>
         );
@@ -83,11 +83,6 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         );
     }
 
-    private handlePreventDefault(e: MouseEvent): void {
-        // prevent browser from bubbling the click and mouseover under the list
-        e.stopPropagation();
-    }
-
     private handlePickerChange(dates: Date[]): void {
         this.setState({ date: dates[0] });
     }
@@ -108,21 +103,6 @@ export default class TimeSelector extends React.Component<IProps, IState> {
             if (this.props.onSelectionDone) {
                 this.props.onSelectionDone(date);
             }
-        }
-    }
-
-    /**
-     * We catch wheel events to prevent scrolling parent when we're getting at the end or at the beginning of the list overflow
-     */
-    private handleListWheel(e: WheelEvent): void {
-        const listElem = this.listElemRef.current;
-        if (listElem.scrollTop === 0 && e.deltaY < 0) {
-            // if we are at the top, prevent scrolling up
-            e.preventDefault();
-
-        } else if ((listElem.scrollTop + listElem.clientHeight) >= listElem.scrollHeight && e.deltaY > 0) {
-            // if we are at the bottom, prevent scrolling down
-            e.preventDefault();
         }
     }
 }

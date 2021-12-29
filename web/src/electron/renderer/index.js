@@ -22,15 +22,14 @@ Navigation.initialize({
     }
 });
 
+// TODO: move to global shortcut manager
 document.addEventListener('keydown', (e) => {
     if (e.key == 'ArrowLeft' && e.metaKey) {
         Navigation.navigateBack();
         e.stopPropagation();
-        e.preventDefault();
     } else if (e.key == 'ArrowRight' && e.metaKey) {
         Navigation.navigateForward();
         e.stopPropagation();
-        e.preventDefault();
     }
 }, false);
 

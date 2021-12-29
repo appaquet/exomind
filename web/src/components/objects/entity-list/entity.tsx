@@ -419,7 +419,6 @@ class EntityParents extends React.Component<EntityParentsProps> {
             if (this.props.onSelectionChange) {
                 const item = SelectedItem.fromEntityId(col.entityId);
                 this.props.onSelectionChange(new Selection(item));
-                e.preventDefault();
                 e.stopPropagation();
             }
         };

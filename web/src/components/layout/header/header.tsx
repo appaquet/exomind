@@ -125,6 +125,7 @@ export class Header extends React.Component<IProps, IState> {
     return keyword
   }
 
+  // TODO: move to keyboard manager
   private handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === 'Escape' && this.searchInputRef.current === document.activeElement) {
       // when searching, escape key closes search
@@ -135,7 +136,7 @@ export class Header extends React.Component<IProps, IState> {
     } else if (e.key == 'p' && e.metaKey) {
       // global cmd-p shortcut to focus on search input
       this.searchInputRef.current?.focus();
-      e.preventDefault();
+      e.preventDefault(); // prevent print
       e.stopPropagation();
     }
   }

@@ -15,8 +15,8 @@ interface IProps {
     entities: EntityTraits[],
     selectedIds?: string[],
     loading?: boolean,
-    onSelect: (entity: EntityTraits, event: CancellableEvent) => void,
-    onUnselect?: (entity: EntityTraits, event: CancellableEvent) => void,
+    onSelect: (entity: EntityTraits, event?: CancellableEvent) => void,
+    onUnselect?: (entity: EntityTraits, event?: CancellableEvent) => void,
     onNeedMore?: () => void,
 }
 
@@ -110,7 +110,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
                 idx = 0;
             }
 
-            document.getElementById(`entity-${idx}`)?.scrollIntoView();
+            document.getElementById(`entity-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
             this.setState({
                 hoveredIndex: idx,
             });
@@ -126,7 +126,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
                 this.props.onNeedMore?.();
             }
 
-            document.getElementById(`entity-${idx}`)?.scrollIntoView();
+            document.getElementById(`entity-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
             this.setState({
                 hoveredIndex: idx,
             });

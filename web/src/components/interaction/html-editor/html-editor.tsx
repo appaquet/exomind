@@ -182,9 +182,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             {this.state.cursor?.link && this.editor?.view.hasFocus() &&
                 <div className="link-popper" ref={this.popperRef}>
                     <ul>
-                        <li><a href="#" onMouseDown={this.handlePopperLinkEdit}><span className="edit" /></a></li>
-                        <li><a href="#" onMouseDown={this.handlePopperLinkOpen}><span className="open" /></a></li>
-                        <li><a href="#" onMouseDown={this.handlePopperLinkRemove}><span className="remove" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkEdit} onClick={this.handlePopperPreventClick}><span className="edit" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkOpen} onClick={this.handlePopperPreventClick}><span className="open" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkRemove} onClick={this.handlePopperPreventClick}><span className="remove" /></a></li>
                     </ul>
                 </div>
             }
@@ -472,6 +472,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
     private handlePopperLinkRemove = (e: UIEvent) => {
         this.clearLink();
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
+    }
+
+    private handlePopperPreventClick = (e: MouseEvent) => {
+        // prevent onClick since we bind on mouse down
         e.stopPropagation();
         e.preventDefault();
         return false;

@@ -2,12 +2,16 @@ import { action, makeObservable, observable } from 'mobx';
 import { TraitIcon } from '../../utils/entities';
 import { HeaderAction } from './header';
 
+type KeyDownHandler = (e: KeyboardEvent) => void;
+
 export class ContainerController {
     @observable title: string | ModifiableText;
     @observable icon: TraitIcon;
     @observable actions: HeaderAction[] = [];
     @observable closed: boolean;
     @observable showDetails: boolean;
+
+    onKeyDown?: KeyDownHandler;
 
     constructor() {
         makeObservable(this);

@@ -80,7 +80,6 @@ export default class IosHtmlEditor extends React.Component {
   };
 
   handleLinkClick = (url, e) => {
-    e.preventDefault();
     e.stopPropagation();
 
     sendIos(
