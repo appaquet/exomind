@@ -26,7 +26,7 @@ Navigation.initialize({
   },
 });
 
-Shortcuts.addListener([
+Shortcuts.register([
   {
     key: "Mod-ArrowLeft",
     callback: () => {

@@ -4,7 +4,7 @@ import { exomind } from '../../../protos';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
@@ -17,7 +17,7 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -55,10 +55,10 @@ export default class Snoozed extends React.Component<IProps, IState> {
             this.setState({ entities });
         })
 
-        if (props.containerController) {
+        if (props.containerState) {
             runInAction(() => {
-                props.containerController.title = 'Snoozed';
-                props.containerController.icon = { fa: 'clock-o' };
+                props.containerState.title = 'Snoozed';
+                props.containerState.icon = { fa: 'clock-o' };
             });
         }
 

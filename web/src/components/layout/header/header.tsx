@@ -6,7 +6,7 @@ import Path from '../../../utils/path';
 import { ColumnConfigs } from '../../pages/columns/columns-config';
 import './header.less';
 import { StoresContext, IStores } from '../../../stores/stores';
-import { Shortcuts } from '../../../shortcuts';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 
 interface IProps {
   path: Path;
@@ -24,6 +24,7 @@ export class Header extends React.Component<IProps, IState> {
 
   private debouncer: Debouncer;
   private searchInputRef: React.RefObject<HTMLInputElement> = React.createRef();
+  private shortcutToken?: ListenerToken;
 
   constructor(props: IProps) {
     super(props);
@@ -64,7 +65,7 @@ export class Header extends React.Component<IProps, IState> {
   }
 
   componentDidMount(): void {
-    Shortcuts.addListener({
+    this.shortcutToken = Shortcuts.register({
       key: 'Mod-p',
       callback: this.handleFocusInput,
       noContext: ['text-editor'],
@@ -74,7 +75,9 @@ export class Header extends React.Component<IProps, IState> {
 
   componentWillUnmount(): void {
     document.removeEventListener('keydown', this.handleKeyDown, false);
-    Shortcuts.removeListener('Mod-p');
+    if (this.shortcutToken) {
+      Shortcuts.unregister(this.shortcutToken);
+    }
   }
 
   render(): React.ReactNode {

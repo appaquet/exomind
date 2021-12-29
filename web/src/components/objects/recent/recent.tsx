@@ -4,7 +4,7 @@ import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
@@ -16,7 +16,7 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -52,10 +52,10 @@ export default class Recent extends React.Component<IProps, IState> {
             this.setState({ entities });
         })
 
-        if (props.containerController) {
+        if (props.containerState) {
             runInAction(() => {
-                props.containerController.title = 'Recent';
-                props.containerController.icon = { fa: 'history' };
+                props.containerState.title = 'Recent';
+                props.containerState.icon = { fa: 'history' };
             });
         }
 

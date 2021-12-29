@@ -4,7 +4,7 @@ import { exomind } from '../../protos';
 import { EntityTrait, EntityTraits } from "../../utils/entities";
 import { CollectionSelector } from '../modals/collection-selector/collection-selector';
 import TimeSelector from '../modals/time-selector/time-selector';
-import { ContainerController, ModifiableText } from "./container-controller";
+import { ContainerState, ModifiableText } from "./container-controller";
 import './entity-component.less';
 import { Selection } from "./entity-list/selection";
 import { HeaderAction } from "./header";
@@ -27,7 +27,7 @@ interface Props {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface State {
@@ -50,9 +50,9 @@ export class EntityComponent extends React.Component<Props, State> {
             .watchedQuery(query)
             .onChange(this.handleNewResults);
 
-        if (props.containerController) {
-            props.containerController.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
-            props.containerController.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
+        if (props.containerState) {
+            props.containerState.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
+            props.containerState.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
         }
 
         this.state = {};
@@ -71,7 +71,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         collection={col}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        containerController={this.props.containerController}
+                        containerState={this.props.containerState}
                     />;
                 },
                 note: (note) => {
@@ -103,7 +103,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         entity={this.state.entityTraits}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        containerController={this.props.containerController}
+                        containerState={this.props.containerState}
                     />;
                 },
                 email: (email) => {
@@ -120,7 +120,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         draftTrait={draft}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        containerController={this.props.containerController}
+                        containerState={this.props.containerState}
                     />;
                 },
                 default: () => {
@@ -151,13 +151,13 @@ export class EntityComponent extends React.Component<Props, State> {
             }
 
             runInAction(() => {
-                this.props.containerController.icon = trait.icon;
+                this.props.containerState.icon = trait.icon;
                 if (trait.canEditName) {
-                    this.props.containerController.title = new ModifiableText(trait.displayName, (newTitle: string) => {
+                    this.props.containerState.title = new ModifiableText(trait.displayName, (newTitle: string) => {
                         trait.rename(newTitle);
                     }, trait.editableName);
                 } else {
-                    this.props.containerController.title = trait.displayName;
+                    this.props.containerState.title = trait.displayName;
                 }
             });
 

@@ -8,7 +8,7 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-controller';
 import { runInAction } from 'mobx';
 
 
@@ -18,7 +18,7 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -347,9 +347,9 @@ export default class EmailThread extends React.Component<IProps, IState> {
             .build();
         Exocore.store.mutate(mutation);
 
-        if (this.props.containerController) {
+        if (this.props.containerState) {
             runInAction(() => {
-                this.props.containerController.closed = true;
+                this.props.containerState.closed = true;
             });
         }
     }

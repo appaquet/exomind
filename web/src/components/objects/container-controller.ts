@@ -4,14 +4,15 @@ import { HeaderAction } from './header';
 
 type KeyDownHandler = (e: KeyboardEvent) => void;
 
-export class ContainerController {
+export class ContainerState {
     @observable title: string | ModifiableText;
     @observable icon: TraitIcon;
     @observable actions: HeaderAction[] = [];
     @observable closed: boolean;
     @observable showDetails: boolean;
+    @observable active: boolean;
 
-    onKeyDown?: KeyDownHandler;
+    onKeyDown?: KeyDownHandler; // TODO:
 
     constructor() {
         makeObservable(this);

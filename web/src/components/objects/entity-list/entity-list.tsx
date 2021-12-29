@@ -3,7 +3,7 @@ import React from 'react';
 import { EntityTrait, EntityTraits } from "../../../utils/entities";
 import DragAndDrop, { DragData } from "../../interaction/drag-and-drop/drag-and-drop";
 import Scrollable from "../../interaction/scrollable/scrollable";
-import { ContainerController } from "../container-controller";
+import { ContainerState } from "../container-controller";
 import { Entity } from './entity';
 import { EntityActions } from "./entity-action";
 import './entity-list.less';
@@ -25,7 +25,7 @@ export interface IProps {
     draggable?: boolean;
     onDropIn?: (e: IDroppedItem) => void;
 
-    containerController?: ContainerController,
+    containerState?: ContainerState,
 
     renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
 }

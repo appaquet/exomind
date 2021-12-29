@@ -2,43 +2,67 @@
 import Navigation from "./navigation";
 import { Stores } from "./stores/stores";
 
-type Context = 'text-editor' | 'input';
+export type Context = 'text-editor' | 'input';
+export type ListenerToken = number;
 
-interface Listener {
+interface Mapping {
     key: string;
     callback: (event: KeyboardEvent) => void;
     noContext?: Context[];
+    token?: ListenerToken;
 }
 
 export class Shortcuts {
-    private static listeners: { [key: string]: Listener } = {};
-    private static contexts: Set<Context> = new Set();
+    private static mappings: { [key: string]: Mapping[] } = {};
+    private static listeners: { [token: ListenerToken]: Mapping[] } = {};
+    private static nextListener = 0;
+
+    private static activeContexts: Set<Context> = new Set();
 
     private static lastKey?: KeyboardEvent;
     private static lastKeyTime?: Date;
 
-    static addListener(listener: Listener | Listener[]): void {
-        if (Array.isArray(listener)) {
-            for (const l of listener) {
-                this.addListener(l);
-            }
-        } else {
-            this.listeners[listener.key] = listener;
+    static register(mapping: Mapping | Mapping[]): ListenerToken {
+        if (!Array.isArray(mapping)) {
+            mapping = [mapping];
         }
+
+        const token = this.nextListener++;
+        for (const m of mapping) {
+            m.token = token;
+            if (!this.mappings[m.key]) {
+                this.mappings[m.key] = [];
+            }
+            this.mappings[m.key].push(m);
+        }
+        this.listeners[token] = mapping;
+
+        return token;
     }
 
-    static removeListener(key: string): void {
-        delete this.listeners[key];
+    static unregister(token: ListenerToken): void {
+        const listenerMapping = this.listeners[token];
+        delete this.listeners[token];
+
+        console.log('unregister', token);
+        for (const mapping of listenerMapping) {
+            const keyMappings = this.mappings[mapping.key];
+            const index = keyMappings.indexOf(mapping);
+            if (index >= 0) {
+            console.log('unregister mapping', token, index);
+                keyMappings.splice(index, 1);
+            }
+        }
     }
 
     static activateContext(ctx: Context): void {
         console.log('activateContext', ctx);
-        this.contexts.add(ctx);
+        this.activeContexts.add(ctx);
     }
 
     static deactivateContext(ctx: Context): void {
         console.log('deactivateContext', ctx);
-        this.contexts.delete(ctx);
+        this.activeContexts.delete(ctx);
     }
 
     static _handleKeyDown(event: KeyboardEvent): void {
@@ -61,7 +85,7 @@ export class Shortcuts {
         }
 
         if (firstEvent.ctrlKey) {
-            if (this._triggerKey(`Ctl-${firstEvent.key}${postfix}`, firstEvent)) {
+            if (this._triggerKey(`Ctrl-${firstEvent.key}${postfix}`, firstEvent)) {
                 return;
             }
 
@@ -80,31 +104,34 @@ export class Shortcuts {
 
     static _triggerKey(key: string, event: KeyboardEvent): boolean {
         console.log('checking', key);
-        const listener = this.listeners[key];
-        if (!listener) {
+        const keyMappings = this.mappings[key];
+        if (!keyMappings) {
             return false;
         }
 
-        if (this.anyActiveContexts(listener.noContext)) {
-            return false;
+        for (const keyMapping of keyMappings) {
+            if (this.anyActiveContexts(keyMapping.noContext)) {
+                continue
+            }
+
+            console.log('triggering', event.key);
+            keyMapping.callback(event);
+
+            event.stopPropagation();
+            event.preventDefault();
+            return true;
         }
 
-        console.log('triggering', event.key);
-        listener.callback(event);
-
-        event.stopPropagation();
-        event.preventDefault();
-
-        return true;
+        return false;
     }
 
     private static anyActiveContexts(other: Context[] | null): boolean {
-        if (!other || this.contexts.size == 0) {
+        if (!other || this.activeContexts.size == 0) {
             return false;
         }
 
         for (const ctx of other) {
-            if (this.contexts.has(ctx)) {
+            if (this.activeContexts.has(ctx)) {
                 return true;
             }
         }
@@ -117,7 +144,7 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
     Shortcuts._handleKeyDown(e);
 });
 
-Shortcuts.addListener([
+Shortcuts.register([
     {
         key: 'Mod-e t',
         callback: () => {

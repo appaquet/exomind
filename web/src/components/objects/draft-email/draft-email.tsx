@@ -7,7 +7,7 @@ import EmailUtil from '../../../utils/emails';
 import { exocore, exomind } from '../../../protos';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import HtmlEditor from '../../interaction/html-editor/html-editor';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-controller';
 import { Selection } from '../entity-list/selection';
 import './draft-email.less';
 import { runInAction } from 'mobx';
@@ -19,7 +19,7 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 type AccountsMap = { [entity_trait_id: string]: { entity: EntityTraits, account: EntityTrait<exomind.base.v1.IAccount> } };
@@ -292,9 +292,9 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private close(): void {
-        if (this.props.containerController) {
+        if (this.props.containerState) {
             runInAction(() => {
-                this.props.containerController.closed = true;
+                this.props.containerState.closed = true;
             });
         }
     }

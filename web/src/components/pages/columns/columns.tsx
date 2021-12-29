@@ -4,6 +4,7 @@ import React from 'react';
 import { SelectedItem, Selection } from '../../objects/entity-list/selection';
 import Column from './column';
 import { ColumnConfig, ColumnConfigs } from './columns-config';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import './columns.less';
 
 interface IProps {
@@ -11,8 +12,40 @@ interface IProps {
     onConfigChange: (config: ColumnConfigs) => void;
 }
 
+interface IState {
+    activeColumn: number;
+}
+
 @observer
-export default class Columns extends React.Component<IProps> {
+export default class Columns extends React.Component<IProps, IState> {
+    private shortcutToken?: ListenerToken;
+
+    constructor(props: IProps) {
+        super(props);
+        this.state = {
+            activeColumn: 0,
+        };
+    }
+
+    componentDidMount(): void {
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'Ctrl-b ArrowRight',
+                callback: this.selectNextColumn,
+            },
+            {
+                key: 'Ctrl-b ArrowLeft',
+                callback: this.selectPrevColumn,
+            }
+        ]);
+    }
+
+    componentWillUnmount(): void {
+        if (this.shortcutToken) {
+            Shortcuts.unregister(this.shortcutToken);
+        }
+    }
+
     render(): React.ReactNode {
         const renderedColumns = this.renderColumns();
         const nbColumns = renderedColumns.length;
@@ -52,20 +85,55 @@ export default class Columns extends React.Component<IProps> {
             // we allow closing any columns, as long as it is not the last one
             const canClose = colId > 0 || nextColumnConfig;
 
+            const active = this.state.activeColumn == colId;
+
             return [(
-                <div className={classes} key={colKey}>
+                <div
+                    className={classes}
+                    key={colKey}
+                    onMouseEnter={() => this.onColumnHovered(colId)}
+                    onMouseOver={() => this.onColumnHovered(colId)}>
+
                     <Column
+                        key={colKey}
                         columnId={colId}
                         columnConfig={columnConfig}
-                        key={colKey}
-
+                        active={active}
+                        onClose={canClose ? () => this.handleColumnClose(colId) : null}
                         selection={selection}
                         onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
-                        onClose={canClose ? () => this.handleColumnClose(colId) : null}
                     />
                 </div>
             )];
         });
+    }
+
+    private selectNextColumn = () => {
+        let activeColumn = this.state.activeColumn;
+        if (activeColumn >= this.getConfig().parts.length - 1) {
+            activeColumn = 0;
+        } else {
+            activeColumn++;
+        }
+
+        this.setState({ activeColumn });
+    }
+
+    private selectPrevColumn = () => {
+        let activeColumn = this.state.activeColumn;
+        if (activeColumn == 0) {
+            activeColumn = this.getConfig().parts.length - 1;
+        } else {
+            activeColumn--;
+        }
+
+        this.setState({ activeColumn });
+    }
+
+    private onColumnHovered(columnId: number): void {
+        this.setState({
+            activeColumn: columnId
+        })
     }
 
     private columnKey(config: ColumnConfig): string {

@@ -12,8 +12,10 @@ import { ColumnBottomActions } from "../../pages/columns/bottom-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
-import './children.less';
 import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
+import { ContainerState } from "../container-controller";
+import { observer } from "mobx-react";
+import './children.less';
 
 const PINNED_WEIGHT = 5000000000000;
 
@@ -28,6 +30,7 @@ interface IProps {
     actionsForEntity?: (et: EntityTraits) => string[];
 
     removeOnPostpone?: boolean;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -38,6 +41,7 @@ interface IState {
     editedEntity?: EntityTraits;
 }
 
+@observer
 export class Children extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
@@ -121,7 +125,7 @@ export class Children extends React.Component<IProps, IState> {
                 'children': true,
             });
 
-            const controls = (this.state.hovered) ?
+            const controls = (this.props.containerState?.active ?? false) ?
                 <ColumnBottomActions
                     parent={this.state.parent}
                     selection={this.props.selection}

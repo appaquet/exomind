@@ -4,7 +4,7 @@ import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
 import { CollectionSelector } from '../../modals/collection-selector/collection-selector';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-controller';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
@@ -18,7 +18,7 @@ interface IProps {
   selection?: Selection;
   onSelectionChange?: (sel: Selection) => void;
 
-  containerController?: ContainerController;
+  containerState?: ContainerState;
 }
 
 interface IState {
@@ -102,10 +102,10 @@ export class Search extends React.Component<IProps, IState> {
   }
 
   private updateContainerTitle(props: IProps): void {
-    if (props.containerController) {
+    if (props.containerState) {
       runInAction(() => {
-        props.containerController.title = `Search '${props.query}'`;
-        props.containerController.icon = { fa: 'search' };
+        props.containerState.title = `Search '${props.query}'`;
+        props.containerState.icon = { fa: 'search' };
       });
     }
   }
