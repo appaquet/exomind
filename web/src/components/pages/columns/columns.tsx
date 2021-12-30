@@ -45,9 +45,7 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     componentWillUnmount(): void {
-        if (this.shortcutToken) {
-            Shortcuts.unregister(this.shortcutToken);
-        }
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {

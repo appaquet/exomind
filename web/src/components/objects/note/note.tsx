@@ -54,9 +54,9 @@ export default class Note extends React.Component<IProps, IState> {
         this.mounted = true;
         this.shortcutToken = Shortcuts.register([
             {
-                key: 'Enter',
-                callback: this.handleShortcutEnter,
-                disabledContexts: ['input', 'modal'],
+                key: ['Enter', 'ArrowUp', 'ArrowDown'],
+                callback: this.handleShortcutFocus,
+                disabledContexts: ['input', 'modal', 'text-editor'],
             },
         ]);
     }
@@ -64,9 +64,7 @@ export default class Note extends React.Component<IProps, IState> {
     componentWillUnmount(): void {
         this.saveContent();
         this.mounted = false;
-        if (this.shortcutToken != null) {
-            Shortcuts.unregister(this.shortcutToken);
-        }
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     componentDidUpdate(): void {
@@ -163,7 +161,7 @@ export default class Note extends React.Component<IProps, IState> {
         });
     }
 
-    private handleShortcutEnter = (): boolean => {
+    private handleShortcutFocus = (): boolean => {
         this.state.editor?.focus();
         return true;
     }

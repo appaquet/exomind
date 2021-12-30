@@ -8,8 +8,8 @@ import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerState } from "../container-state";
 import { Entity } from './entity';
 import { EntityActions } from "./entity-action";
-import './entity-list.less';
 import { SelectedItem, Selection } from "./selection";
+import './entity-list.less';
 
 export interface IProps {
     entities: EntityTraits[];
@@ -80,6 +80,16 @@ export class EntityList extends React.Component<IProps, IState> {
                 disabledContexts: ['input', 'modal'],
             },
             {
+                key: ['Mod-ArrowUp'],
+                callback: this.handleShortcutTop,
+                disabledContexts: ['input', 'modal'],
+            },
+            {
+                key: ['Mod-ArrowDown'],
+                callback: this.handleShortcutBottom,
+                disabledContexts: ['input', 'modal'],
+            },
+            {
                 key: ['Space', 'Enter'],
                 callback: () => this.handleShortcutSelect(false),
                 disabledContexts: ['input', 'modal'],
@@ -98,9 +108,7 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     componentWillUnmount() {
-        if (this.shortcutToken != null) {
-            Shortcuts.unregister(this.shortcutToken);
-        }
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
@@ -227,14 +235,15 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleShortcutPrevious = (): boolean => {
-        let idx = this.state.activeEntityIndex ?? this.props.entities.length - 1;
+        let idx = this.state.activeEntityIndex ?? 0;
         idx--;
 
         if (idx < 0) {
-            idx = this.props.entities.length - 1;
+            idx = 0;
         }
 
         this.hoverEntityIndex(idx);
+
         return true;
     }
 
@@ -242,11 +251,22 @@ export class EntityList extends React.Component<IProps, IState> {
         let idx = this.state.activeEntityIndex ?? -1;
         idx++;
 
-        if (idx >= this.props.entities.length) {
-            idx = 0;
+        if (idx > this.props.entities.length - 1) {
+            idx = this.props.entities.length - 1;
         }
-
+        
         this.hoverEntityIndex(idx);
+
+        return true;
+    }
+
+    private handleShortcutTop = (): boolean => {
+        this.hoverEntityIndex(0);
+        return true;
+    }
+
+    private handleShortcutBottom = (): boolean => {
+        this.hoverEntityIndex(this.props.entities.length - 1);
         return true;
     }
 

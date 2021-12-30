@@ -82,9 +82,7 @@ export class Header extends React.Component<IProps, IState> {
   }
 
   componentWillUnmount(): void {
-    if (this.shortcutToken) {
-      Shortcuts.unregister(this.shortcutToken);
-    }
+    Shortcuts.unregister(this.shortcutToken);
   }
 
   render(): React.ReactNode {

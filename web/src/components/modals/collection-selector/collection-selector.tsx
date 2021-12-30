@@ -110,6 +110,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                     onSelect={this.handleItemCheck}
                     onUnselect={this.handleItemCheck}
                     onNeedMore={this.handleLoadMore}
+                    onHoverUnderflow={this.handleHoverUnderflow}
                 />
             </div>
         );
@@ -206,6 +207,10 @@ export class CollectionSelector extends React.Component<IProps, IState> {
 
     private handleLoadMore = (): void => {
         this.collectionsQuery?.expand();
+    }
+
+    private handleHoverUnderflow = (): void => {
+        this.filterInputRef.current?.focus();
     }
 }
 

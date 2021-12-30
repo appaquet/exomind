@@ -49,9 +49,7 @@ export class ColumnActions extends React.Component<IProps> {
     }
 
     componentWillUnmount() {
-        if (this.shortcutToken != null) {
-            Shortcuts.unregister(this.shortcutToken);
-        }
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {

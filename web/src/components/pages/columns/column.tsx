@@ -83,11 +83,6 @@ export default class Column extends React.Component<IProps, IState> {
             });
         }
 
-        // TODO: Remove me
-        if (this.containerState.active) {
-            title += ' (active)';
-        }
-
         if (this.props.columnConfig.isEntity) {
             headerActions.push(new HeaderAction('external-link', this.expandFullscreen));
 
@@ -108,6 +103,7 @@ export default class Column extends React.Component<IProps, IState> {
                     onTitleRename={titleRenameHandler}
                     icon={this.containerState.icon}
                     actions={headerActions}
+                    active={this.containerState.active}
                 />
 
                 <div className="content">

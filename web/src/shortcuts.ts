@@ -157,6 +157,8 @@ export class Shortcuts {
                 continue;
             }
 
+            console.log('handled', keyMapping.key);
+
             event.stopPropagation();
             event.preventDefault();
             return true;

@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { Exocore, QueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { ExpandableQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntityTraits } from '../../../utils/entities';
@@ -32,6 +33,8 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     private entityQuery?: WatchedQueryWrapper;
     private entityQueryId?: string;
 
+    private shortcutToken?: ListenerToken;
+
     constructor(props: IProps) {
         super(props);
 
@@ -44,11 +47,18 @@ export default class LinkSelector extends React.Component<IProps, IState> {
 
     componentDidMount(): void {
         this.inputRef.current?.focus();
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'Mod-k',
+                callback: this.handleShortcutFocusInput,
+            },
+        ]);
     }
 
     componentWillUnmount(): void {
         this.entityQuery?.free();
         this.searchEntityQuery?.free();
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
@@ -128,6 +138,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             multi={false}
             entities={this.state.entities ?? []}
             onSelect={this.handleEntitySelect}
+            onHoverUnderflow={this.handleEntityHoverUnderflow}
         />;
     }
 
@@ -172,6 +183,15 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         } else if (e.key == 'ArrowUp' || e.key == 'ArrowDown') {
             this.inputRef.current?.blur();
         }
+    }
+
+    private handleEntityHoverUnderflow = (): void => {
+        this.inputRef.current?.focus();
+    }
+
+    private handleShortcutFocusInput = (): boolean => {
+        this.inputRef.current?.focus();
+        return true;
     }
 
     private onCancel = (): void => {

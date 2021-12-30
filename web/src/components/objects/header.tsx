@@ -11,6 +11,7 @@ interface IProps {
   editableTitle?: string; // if title to be edited is different from displayed title (ex: emoji prefix)
   icon?: TraitIcon;
   actions: HeaderAction[];
+  active: boolean;
   onTitleRename: (title: string) => void;
 }
 
@@ -21,12 +22,17 @@ export class Header extends React.Component<IProps> {
       rightActions = <div className="right-actions">{this.renderActions()}</div>;
     }
 
+    const titleClasses = classNames({
+      title: true,
+      active: this.props.active
+    });
+
     return (
       <div className="header">
         <div className="icon">
           {this.props.icon && <EntityIcon icon={this.props.icon} />}
         </div>
-        <div className="title">{this.renderTitle()}</div>
+        <div className={titleClasses}>{this.renderTitle()}</div>
         {rightActions}
       </div>
     );

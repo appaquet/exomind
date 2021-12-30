@@ -10,6 +10,7 @@ import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
 import { ContainerState } from '../container-state';
 import { runInAction } from 'mobx';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 
 
 interface IProps {
@@ -38,6 +39,7 @@ interface EmailState {
 
 export default class EmailThread extends React.Component<IProps, IState> {
     private mounted = false;
+    private shortcutToken?: ListenerToken;
     private draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
 
     constructor(props: IProps) {
@@ -82,13 +84,25 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     componentDidMount(): void {
         this.mounted = true;
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'e',
+                callback: this.handleShortcutDone,
+                disabledContexts: ['input', 'modal'],
+            },
+        ]);
     }
 
     componentWillUnmount(): void {
         this.mounted = false;
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
+        if (this.props.containerState) {
+            Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
+        }
+
         const emails = this.renderEmails();
         const emailControls = (this.state.controlledEmailId) ? this.renderEmailControls() : null;
         return (
@@ -340,7 +354,20 @@ export default class EmailThread extends React.Component<IProps, IState> {
         );
     }
 
-    private handleDoneEmail(child: EntityTrait<exomind.base.v1.CollectionChild>): void {
+    private handleShortcutDone = (): boolean => {
+        const inboxChild = this.props.entity
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
+            .find((trt) => trt.message.collection.entityId == 'inbox');
+
+        if (inboxChild) {
+            this.handleDoneEmail(inboxChild);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private handleDoneEmail(child: EntityTrait<exomind.base.v1.ICollectionChild>): void {
         const mutation = MutationBuilder
             .updateEntity(this.props.entity.id)
             .deleteTrait(child.id)
