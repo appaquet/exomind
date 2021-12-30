@@ -152,6 +152,7 @@ export class Children extends React.Component<IProps, IState> {
                         actionsForEntity={this.actionsForEntity}
 
                         onDropIn={this.handleDropInEntity}
+                        containerState={this.props.containerState}
                     />
 
                     {controls}

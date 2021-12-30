@@ -164,7 +164,6 @@ export class ColumnBottomActions extends React.Component<IProps> {
     }
 
     private handlePostponeClick = () => {
-
         this.context.session.showModal(() => {
             return <TimeSelector onSelectionDone={this.handleTimeSelectorDone} />;
         });

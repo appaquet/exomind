@@ -138,6 +138,9 @@ export class Header extends React.Component<IProps, IState> {
   private handleFocusInput = () => {
     if (this.searchInputRef.current) {
       this.searchInputRef.current.focus();
+      return true;
+    } else {
+      return false;
     }
   }
 

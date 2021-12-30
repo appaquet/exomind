@@ -35,9 +35,7 @@ export default class Collection extends React.Component<IProps> {
         return (
             <Children
                 parent={this.props.entity}
-
                 actionsForEntity={this.actionsForChildrenType}
-
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
                 containerState={this.props.containerState}

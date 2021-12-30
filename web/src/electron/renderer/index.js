@@ -31,6 +31,7 @@ Shortcuts.register([
     key: "Mod-ArrowLeft",
     callback: () => {
       Navigation.navigateBack();
+      return true;
     },
     noContext: ["text-editor"],
   },
@@ -38,6 +39,7 @@ Shortcuts.register([
     key: "Mod-ArrowRight",
     callback: () => {
       Navigation.navigateForward();
+      return true;
     },
     noContext: ["text-editor"],
   },

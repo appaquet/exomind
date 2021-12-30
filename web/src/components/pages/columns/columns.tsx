@@ -31,11 +31,15 @@ export default class Columns extends React.Component<IProps, IState> {
         this.shortcutToken = Shortcuts.register([
             {
                 key: 'Ctrl-b ArrowRight',
-                callback: this.selectNextColumn,
+                callback: this.handleShortcutNext,
             },
             {
                 key: 'Ctrl-b ArrowLeft',
-                callback: this.selectPrevColumn,
+                callback: this.handleShortcutPrev,
+            },
+            {
+                key: 'Ctrl-b x',
+                callback: this.handleShortcutClose,
             }
         ]);
     }
@@ -81,10 +85,6 @@ export default class Columns extends React.Component<IProps, IState> {
                 [colClass]: true
             });
             const colKey = this.columnKey(columnConfig);
-
-            // we allow closing any columns, as long as it is not the last one
-            const canClose = colId > 0 || nextColumnConfig;
-
             const active = this.state.activeColumn == colId;
 
             return [(
@@ -99,7 +99,7 @@ export default class Columns extends React.Component<IProps, IState> {
                         columnId={colId}
                         columnConfig={columnConfig}
                         active={active}
-                        onClose={canClose ? () => this.handleColumnClose(colId) : null}
+                        onClose={() => this.handleColumnClose(colId)}
                         selection={selection}
                         onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
                     />
@@ -108,7 +108,7 @@ export default class Columns extends React.Component<IProps, IState> {
         });
     }
 
-    private selectNextColumn = () => {
+    private handleShortcutNext = () => {
         let activeColumn = this.state.activeColumn;
         if (activeColumn >= this.getConfig().parts.length - 1) {
             activeColumn = 0;
@@ -117,9 +117,11 @@ export default class Columns extends React.Component<IProps, IState> {
         }
 
         this.setState({ activeColumn });
+
+        return true;
     }
 
-    private selectPrevColumn = () => {
+    private handleShortcutPrev = () => {
         let activeColumn = this.state.activeColumn;
         if (activeColumn == 0) {
             activeColumn = this.getConfig().parts.length - 1;
@@ -128,6 +130,13 @@ export default class Columns extends React.Component<IProps, IState> {
         }
 
         this.setState({ activeColumn });
+
+        return true;
+    }
+
+    private handleShortcutClose = () => {
+        this.handleColumnClose(this.state.activeColumn);
+        return true;
     }
 
     private onColumnHovered(columnId: number): void {
@@ -192,7 +201,15 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     private handleColumnClose(colId: number) {
-        const columnsConfig = this.getConfig().pop(colId);
+        const config = this.getConfig();
+
+        // we allow closing any columns, as long as it is not the last one
+        const canClose = colId > 0 || config.parts.length > 1;
+        if (!canClose) {
+            return;
+        }
+
+        const columnsConfig = config.pop(colId);
         this.props.onConfigChange(columnsConfig);
     }
 }

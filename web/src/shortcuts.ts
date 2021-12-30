@@ -6,8 +6,8 @@ export type Context = 'text-editor' | 'input';
 export type ListenerToken = number;
 
 interface Mapping {
-    key: string;
-    callback: (event: KeyboardEvent) => void;
+    key: string | string[];
+    callback: (event: KeyboardEvent) => boolean;
     noContext?: Context[];
     token?: ListenerToken;
 }
@@ -30,10 +30,16 @@ export class Shortcuts {
         const token = this.nextListener++;
         for (const m of mapping) {
             m.token = token;
-            if (!this.mappings[m.key]) {
-                this.mappings[m.key] = [];
+            if (!Array.isArray(m.key)) {
+                m.key = [m.key];
             }
-            this.mappings[m.key].push(m);
+
+            for (const key of m.key) {
+                if (!this.mappings[key]) {
+                    this.mappings[key] = [];
+                }
+                this.mappings[key].push(m);
+            }
         }
         this.listeners[token] = mapping;
 
@@ -46,11 +52,13 @@ export class Shortcuts {
 
         console.log('unregister', token);
         for (const mapping of listenerMapping) {
-            const keyMappings = this.mappings[mapping.key];
-            const index = keyMappings.indexOf(mapping);
-            if (index >= 0) {
-            console.log('unregister mapping', token, index);
-                keyMappings.splice(index, 1);
+            for (const key of mapping.key) {
+                const keyMappings = this.mappings[key];
+                const index = keyMappings.indexOf(mapping);
+                if (index >= 0) {
+                    console.log('unregister mapping', token, index);
+                    keyMappings.splice(index, 1);
+                }
             }
         }
     }
@@ -70,31 +78,15 @@ export class Shortcuts {
             return;
         }
 
-        let firstEvent = event;
-        let postfix = '';
+        console.log('event', event);
+
         if (this.lastKey && this.lastKeyTime && new Date().getTime() - this.lastKeyTime.getTime() < 1000) {
-            postfix = ` ${firstEvent.key}`;
-            firstEvent = this.lastKey;
-        }
-
-        console.log('event', firstEvent);
-        if (firstEvent.metaKey) {
-            if (this._triggerKey(`Mod-${firstEvent.key}${postfix}`, firstEvent)) {
+            if (this.checkKey(this.lastKey, event)) {
                 return;
             }
         }
 
-        if (firstEvent.ctrlKey) {
-            if (this._triggerKey(`Ctrl-${firstEvent.key}${postfix}`, firstEvent)) {
-                return;
-            }
-
-            if (this._triggerKey(`Mod-${firstEvent.key}${postfix}`, firstEvent)) {
-                return;
-            }
-        }
-
-        if (this._triggerKey(`${firstEvent.key}${postfix}`, firstEvent)) {
+        if (this.checkKey(event, null)) {
             return;
         }
 
@@ -102,7 +94,36 @@ export class Shortcuts {
         this.lastKeyTime = new Date();
     }
 
-    static _triggerKey(key: string, event: KeyboardEvent): boolean {
+    private static checkKey(firstEvent: KeyboardEvent, secondEvent: KeyboardEvent | null): boolean {
+        let postfix = '';
+        if (secondEvent) {
+            postfix += ` ${this.remapKey(secondEvent.key)}`;
+        }
+
+        if (firstEvent.metaKey) {
+            if (this._triggerKey(`Mod-${this.remapKey(firstEvent.key)}${postfix}`, secondEvent || firstEvent)) {
+                return true;
+            }
+        }
+
+        if (firstEvent.ctrlKey) {
+            if (this._triggerKey(`Ctrl-${this.remapKey(firstEvent.key)}${postfix}`, secondEvent || firstEvent)) {
+                return true;
+            }
+
+            if (this._triggerKey(`Mod-${this.remapKey(firstEvent.key)}${postfix}`, secondEvent || firstEvent)) {
+                return true;
+            }
+        }
+
+        if (this._triggerKey(`${this.remapKey(firstEvent.key)}${postfix}`, secondEvent || firstEvent)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static _triggerKey(key: string, event: KeyboardEvent): boolean {
         console.log('checking', key);
         const keyMappings = this.mappings[key];
         if (!keyMappings) {
@@ -114,9 +135,12 @@ export class Shortcuts {
                 continue
             }
 
-            console.log('triggering', event.key);
-            keyMapping.callback(event);
+            const handled = keyMapping.callback(event);
+            if (!handled) {
+                continue;
+            }
 
+            console.log(event.key, 'handled!')
             event.stopPropagation();
             event.preventDefault();
             return true;
@@ -138,6 +162,14 @@ export class Shortcuts {
 
         return false;
     }
+
+    private static remapKey(key: string): string {
+        if (key == ' ') {
+            return 'Space';
+        }
+
+        return key;
+    }
 }
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -149,6 +181,7 @@ Shortcuts.register([
         key: 'Mod-e t',
         callback: () => {
             Stores.settings.toggleDarkMode();
+            return true;
         },
         noContext: ['text-editor'],
     },
@@ -156,6 +189,7 @@ Shortcuts.register([
         key: 'Mod-e i',
         callback: () => {
             Navigation.navigate(Navigation.pathForInbox())
+            return true;
         },
         noContext: ['text-editor'],
     },
@@ -163,6 +197,7 @@ Shortcuts.register([
         key: 'Mod-e z',
         callback: () => {
             Navigation.navigate(Navigation.pathForSnoozed())
+            return true;
         },
         noContext: ['text-editor'],
     },
@@ -170,6 +205,7 @@ Shortcuts.register([
         key: 'Mod-e r',
         callback: () => {
             Navigation.navigate(Navigation.pathForRecent())
+            return true;
         },
         noContext: ['text-editor'],
     },
