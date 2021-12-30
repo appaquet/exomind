@@ -8,7 +8,7 @@ import { CollectionSelector } from "../../modals/collection-selector/collection-
 import TimeSelector from "../../modals/time-selector/time-selector";
 import { ActionResult, ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
-import { ColumnBottomActions } from "../../pages/columns/bottom-actions";
+import { ColumnActions } from "./column-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
@@ -126,7 +126,7 @@ export class Children extends React.Component<IProps, IState> {
             });
 
             const controls = (this.props.containerState?.active ?? false) ?
-                <ColumnBottomActions
+                <ColumnActions
                     parent={this.state.parent}
                     selection={this.props.selection}
                     onSelectionChange={this.props.onSelectionChange}

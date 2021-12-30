@@ -209,6 +209,12 @@ export default class Columns extends React.Component<IProps, IState> {
             return;
         }
 
+        if (this.state.activeColumn == colId) {
+            this.setState({
+                activeColumn: 0,
+            });
+        }
+
         const columnsConfig = config.pop(colId);
         this.props.onConfigChange(columnsConfig);
     }
