@@ -16,6 +16,7 @@ import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
 
 export interface IProps {
+    id: string;
     entity: EntityTraits;
     parentEntity?: EntityTraits;
 
@@ -85,7 +86,8 @@ export class Entity extends React.Component<IProps, IState> {
         }
 
         return (
-            <li className={classes}
+            <li id={this.props.id}
+                className={classes}
                 onClick={this.handleItemClick}
                 onMouseOver={this.props.onMouseOver}
                 onMouseLeave={this.props.onMouseLeave}>
@@ -264,7 +266,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{entityTrait.displayName}</span></div>
-                    {entityTrait.message.description && 
+                    {entityTrait.message.description &&
                         <div className="text">{entityTrait.message.description}</div>
                     }
                     {this.renderParents(entityTrait.et)}

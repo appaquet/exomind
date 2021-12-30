@@ -2,24 +2,33 @@
 import Navigation from "./navigation";
 import { Stores } from "./stores/stores";
 
-export type Context = 'text-editor' | 'input';
+export type Context =
+    'text-editor' |
+    'input' | // automatically inferred if focused on an input element
+    'modal';
 export type ListenerToken = number;
 
 interface Mapping {
     key: string | string[];
     callback: (event: KeyboardEvent) => boolean;
-    noContext?: Context[];
+    disabledContexts?: Context[];
     token?: ListenerToken;
+    disabled?: boolean;
+}
+
+interface Listener {
+    mappings: Mapping[];
+    disabled: boolean;
 }
 
 export class Shortcuts {
     private static mappings: { [key: string]: Mapping[] } = {};
-    private static listeners: { [token: ListenerToken]: Mapping[] } = {};
+    private static listeners: { [token: ListenerToken]: Listener } = {};
     private static nextListener = 0;
 
     private static activeContexts: Set<Context> = new Set();
 
-    private static lastKey?: KeyboardEvent;
+    private static lastKeyEvent?: KeyboardEvent;
     private static lastKeyTime?: Date;
 
     static register(mapping: Mapping | Mapping[]): ListenerToken {
@@ -41,22 +50,23 @@ export class Shortcuts {
                 this.mappings[key].push(m);
             }
         }
-        this.listeners[token] = mapping;
+        this.listeners[token] = {
+            mappings: mapping,
+            disabled: false,
+        };
 
         return token;
     }
 
     static unregister(token: ListenerToken): void {
-        const listenerMapping = this.listeners[token];
+        const listener = this.listeners[token];
         delete this.listeners[token];
 
-        console.log('unregister', token);
-        for (const mapping of listenerMapping) {
+        for (const mapping of listener.mappings) {
             for (const key of mapping.key) {
                 const keyMappings = this.mappings[key];
                 const index = keyMappings.indexOf(mapping);
                 if (index >= 0) {
-                    console.log('unregister mapping', token, index);
                     keyMappings.splice(index, 1);
                 }
             }
@@ -64,13 +74,23 @@ export class Shortcuts {
     }
 
     static activateContext(ctx: Context): void {
-        console.log('activateContext', ctx);
         this.activeContexts.add(ctx);
     }
 
     static deactivateContext(ctx: Context): void {
-        console.log('deactivateContext', ctx);
         this.activeContexts.delete(ctx);
+    }
+
+    static setListenerEnabled(token: ListenerToken, enabled: boolean): void {
+        const listener = this.listeners[token];
+        if (!listener || listener.disabled == !enabled) {
+            return;
+        }
+
+        for (const mapping of listener.mappings) {
+            mapping.disabled = !enabled;
+        }
+        listener.disabled = !enabled;
     }
 
     static _handleKeyDown(event: KeyboardEvent): void {
@@ -78,10 +98,8 @@ export class Shortcuts {
             return;
         }
 
-        console.log('event', event);
-
-        if (this.lastKey && this.lastKeyTime && new Date().getTime() - this.lastKeyTime.getTime() < 1000) {
-            if (this.checkKey(this.lastKey, event)) {
+        if (this.lastKeyEvent && this.lastKeyTime && new Date().getTime() - this.lastKeyTime.getTime() < 1000) {
+            if (this.checkKey(this.lastKeyEvent, event)) {
                 return;
             }
         }
@@ -90,7 +108,7 @@ export class Shortcuts {
             return;
         }
 
-        this.lastKey = event;
+        this.lastKeyEvent = event;
         this.lastKeyTime = new Date();
     }
 
@@ -124,14 +142,13 @@ export class Shortcuts {
     }
 
     private static _triggerKey(key: string, event: KeyboardEvent): boolean {
-        console.log('checking', key);
         const keyMappings = this.mappings[key];
         if (!keyMappings) {
             return false;
         }
 
         for (const keyMapping of keyMappings) {
-            if (this.anyActiveContexts(keyMapping.noContext)) {
+            if ((keyMapping.disabled || false) || this.anyActiveContexts(keyMapping.disabledContexts)) {
                 continue
             }
 
@@ -140,7 +157,6 @@ export class Shortcuts {
                 continue;
             }
 
-            console.log(event.key, 'handled!')
             event.stopPropagation();
             event.preventDefault();
             return true;
@@ -150,12 +166,17 @@ export class Shortcuts {
     }
 
     private static anyActiveContexts(other: Context[] | null): boolean {
-        if (!other || this.activeContexts.size == 0) {
+        const activeContexts = new Set(this.activeContexts);
+        if (document.activeElement instanceof HTMLInputElement) {
+            activeContexts.add('input');
+        }
+
+        if (!other || activeContexts.size == 0) {
             return false;
         }
 
         for (const ctx of other) {
-            if (this.activeContexts.has(ctx)) {
+            if (activeContexts.has(ctx)) {
                 return true;
             }
         }
@@ -178,35 +199,31 @@ document.addEventListener('keydown', (e: KeyboardEvent) => {
 
 Shortcuts.register([
     {
-        key: 'Mod-e t',
-        callback: () => {
-            Stores.settings.toggleDarkMode();
-            return true;
-        },
-        noContext: ['text-editor'],
-    },
-    {
-        key: 'Mod-e i',
+        key: 'Mod-g i',
         callback: () => {
             Navigation.navigate(Navigation.pathForInbox())
             return true;
         },
-        noContext: ['text-editor'],
     },
     {
-        key: 'Mod-e z',
+        key: 'Mod-g z',
         callback: () => {
             Navigation.navigate(Navigation.pathForSnoozed())
             return true;
         },
-        noContext: ['text-editor'],
     },
     {
-        key: 'Mod-e r',
+        key: 'Mod-g r',
         callback: () => {
             Navigation.navigate(Navigation.pathForRecent())
             return true;
         },
-        noContext: ['text-editor'],
+    },
+    {
+        key: 'Mod-g t',
+        callback: () => {
+            Stores.settings.toggleDarkMode();
+            return true;
+        },
     },
 ]);

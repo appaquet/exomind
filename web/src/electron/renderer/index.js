@@ -33,7 +33,7 @@ Shortcuts.register([
       Navigation.navigateBack();
       return true;
     },
-    noContext: ["text-editor"],
+    disabledContexts: ["text-editor", "input"],
   },
   {
     key: "Mod-ArrowRight",
@@ -41,7 +41,7 @@ Shortcuts.register([
       Navigation.navigateForward();
       return true;
     },
-    noContext: ["text-editor"],
+    disabledContexts: ["text-editor", "input"],
   },
 ]);
 

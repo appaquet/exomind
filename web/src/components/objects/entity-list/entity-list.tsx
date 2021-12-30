@@ -50,39 +50,49 @@ export interface IDroppedItem {
 
 @observer
 export class EntityList extends React.Component<IProps, IState> {
+    private static nextListId = 0;
+    private listId: number;
+
     private shortcutToken?: ListenerToken;
+    private lastShortcutScroll?: Date;
 
     constructor(props: IProps) {
         super(props);
+        this.listId = EntityList.nextListId++;
         this.state = {};
     }
 
     componentDidMount() {
         this.shortcutToken = Shortcuts.register([
             {
-                key: ['n', 'ArrowDown'],
+                key: 'n',
                 callback: this.handleShortcutNext,
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
+            },
+            {
+                key: 'ArrowDown',
+                callback: this.handleShortcutNext,
+                disabledContexts: ['modal'], // allow focusing out of search bar
             },
             {
                 key: ['p', 'ArrowUp'],
                 callback: this.handleShortcutPrevious,
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
             },
             {
-                key: 'Space',
+                key: ['Space', 'Enter'],
                 callback: () => this.handleShortcutSelect(false),
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
             },
             {
                 key: 'x',
                 callback: () => this.handleShortcutSelect(true),
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
             },
             {
                 key: 'Escape',
                 callback: this.handleShortcutClearSelect,
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
             },
         ]);
     }
@@ -94,6 +104,10 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        if (this.props.containerState) {
+            Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
+        }
+
         const classes = classNames({
             'entity-list': true,
             'header-control': !!this.props.header,
@@ -141,6 +155,7 @@ export class EntityList extends React.Component<IProps, IState> {
 
             return (
                 <Entity
+                    id={this.getEntityElementId(idx)}
                     key={entity.id}
                     entity={entity}
                     parentEntity={this.props.parentEntity}
@@ -186,6 +201,11 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleItemMouseOver(entityId: string, idx: number): void {
+        if (this.lastShortcutScroll && new Date().getTime() - this.lastShortcutScroll.getTime() < 1000) {
+            // prevent mouse over momentarily when we scrolled using keyboard
+            return;
+        }
+
         this.setState({
             activeEntityId: entityId,
             activeEntityIndex: idx,
@@ -193,6 +213,11 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleItemMouseLeave(entityId: string): void {
+        if (this.lastShortcutScroll && new Date().getTime() - this.lastShortcutScroll.getTime() < 1000) {
+            // prevent mouse over momentarily when we scrolled using keyboard
+            return;
+        }
+
         if (this.state.activeEntityId == entityId) {
             this.setState({
                 activeEntityId: undefined,
@@ -202,10 +227,6 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleShortcutPrevious = (): boolean => {
-        if (!(this.props.containerState?.active ?? false)) {
-            return false;
-        }
-
         let idx = this.state.activeEntityIndex ?? this.props.entities.length - 1;
         idx--;
 
@@ -213,16 +234,11 @@ export class EntityList extends React.Component<IProps, IState> {
             idx = this.props.entities.length - 1;
         }
 
-        this.hoverIndex(idx);
-
+        this.hoverEntityIndex(idx);
         return true;
     }
 
     private handleShortcutNext = (): boolean => {
-        if (!(this.props.containerState?.active ?? false)) {
-            return false;
-        }
-
         let idx = this.state.activeEntityIndex ?? -1;
         idx++;
 
@@ -230,16 +246,21 @@ export class EntityList extends React.Component<IProps, IState> {
             idx = 0;
         }
 
-        this.hoverIndex(idx);
-
+        this.hoverEntityIndex(idx);
         return true;
     }
 
-    private hoverIndex(idx: number): void {
-        console.log('hoverIndex', idx);
+    private hoverEntityIndex(idx: number): void {
         const entity = this.props.entities[idx];
         if (!entity) {
             return;
+        }
+
+        const elId = this.getEntityElementId(idx);
+        const el = document.getElementById(elId);
+        if (el) {
+            this.lastShortcutScroll = new Date();
+            el.scrollIntoView({ behavior: 'smooth' });
         }
 
         this.setState({
@@ -249,10 +270,6 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleShortcutSelect = (multi: boolean): boolean => {
-        if (!(this.props.containerState?.active ?? false)) {
-            return false;
-        }
-
         if (!this.state.activeEntityId) {
             return false;
         }
@@ -263,17 +280,11 @@ export class EntityList extends React.Component<IProps, IState> {
         }
 
         this.selectEntity(entity, multi);
-
         return true;
     }
 
     private handleShortcutClearSelect = (): boolean => {
-        if (!(this.props.containerState?.active ?? false)) {
-            return false;
-        }
-
         this.props.onSelectionChange(new Selection());
-
         return true;
     }
 
@@ -315,5 +326,9 @@ export class EntityList extends React.Component<IProps, IState> {
         }
 
         this.props.onSelectionChange(selection);
+    }
+
+    private getEntityElementId(idx: number): string {
+        return `et-${this.listId}-${idx}`;
     }
 }

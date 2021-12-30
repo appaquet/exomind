@@ -65,16 +65,23 @@ export class Header extends React.Component<IProps, IState> {
   }
 
   componentDidMount(): void {
-    this.shortcutToken = Shortcuts.register({
-      key: 'Mod-p',
-      callback: this.handleFocusInput,
-      noContext: ['text-editor'],
-    });
-    document.addEventListener('keydown', this.handleKeyDown, false);
+    this.shortcutToken = Shortcuts.register([
+      {
+        key: 'Mod-p',
+        callback: this.handleFocusInput,
+      },
+      {
+        key: ['ArrowDown'],
+        callback: this.handleBlurInput,
+      },
+      {
+        key: ['Escape'],
+        callback: this.handleResetInput,
+      }
+    ]);
   }
 
   componentWillUnmount(): void {
-    document.removeEventListener('keydown', this.handleKeyDown, false);
     if (this.shortcutToken) {
       Shortcuts.unregister(this.shortcutToken);
     }
@@ -135,7 +142,7 @@ export class Header extends React.Component<IProps, IState> {
     return keyword
   }
 
-  private handleFocusInput = () => {
+  private handleFocusInput = (): boolean => {
     if (this.searchInputRef.current) {
       this.searchInputRef.current.focus();
       return true;
@@ -144,12 +151,23 @@ export class Header extends React.Component<IProps, IState> {
     }
   }
 
-  private handleKeyDown = (e: KeyboardEvent): void => {
-    if (e.key === 'Escape' && this.searchInputRef.current === document.activeElement) {
-      // when searching, escape key closes search
+  private handleBlurInput = (): boolean => {
+    if (document.activeElement === this.searchInputRef.current) {
+      this.searchInputRef.current.blur();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private handleResetInput = (): boolean => {
+    if (this.searchInputRef.current === document.activeElement) {
       this.searchInputRef.current?.blur();
       this.setState({ searchKeywords: '' });
       Navigation.navigateBack();
+      return true;
+    } else {
+      return false;
     }
   }
 }

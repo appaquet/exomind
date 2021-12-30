@@ -33,17 +33,17 @@ export class ColumnActions extends React.Component<IProps> {
                 key: 'e',
                 callback: () => {
                     this.handleDoneClick();
-                    return true;
+                    return this.props.selection.length > 0;
                 },
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
             },
             {
                 key: 'z',
                 callback: () => {
                     this.handleSnoozeClick();
-                    return true;
+                    return this.props.selection.length > 0;
                 },
-                noContext: ['input'],
+                disabledContexts: ['input', 'modal'],
             }
         ]);
     }

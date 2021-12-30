@@ -14,12 +14,15 @@ import LinkSelector from './link-selector';
 import { CancellableEvent } from '../../../utils/events';
 
 import './note.less';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
+import { ContainerState } from '../container-state';
 
 interface IProps {
     entity: EntityTraits;
     noteTrait: EntityTrait<exomind.base.v1.INote>;
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
+    containerState?: ContainerState,
 }
 
 interface IState {
@@ -34,7 +37,8 @@ export default class Note extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
 
-    private mounted = true;
+    private shortcutToken?: ListenerToken;
+    private mounted = false;
 
     constructor(props: IProps) {
         super(props);
@@ -46,9 +50,23 @@ export default class Note extends React.Component<IProps, IState> {
         }
     }
 
+    componentDidMount(): void {
+        this.mounted = true;
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'Enter',
+                callback: this.handleShortcutEnter,
+                disabledContexts: ['input', 'modal'],
+            },
+        ]);
+    }
+
     componentWillUnmount(): void {
         this.saveContent();
         this.mounted = false;
+        if (this.shortcutToken != null) {
+            Shortcuts.unregister(this.shortcutToken);
+        }
     }
 
     componentDidUpdate(): void {
@@ -61,6 +79,14 @@ export default class Note extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        if (this.props.containerState) {
+            Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
+
+            if (!this.props.containerState.active && this.state.focused) {
+                this.state.editor?.blur();
+            }
+        }
+
         return (
             <div className="entity-component note">
                 <div className="entity-details">
@@ -135,6 +161,11 @@ export default class Note extends React.Component<IProps, IState> {
         this.setState({
             editor: editor
         });
+    }
+
+    private handleShortcutEnter = (): boolean => {
+        this.state.editor?.focus();
+        return true;
     }
 
     private handleTitleChange = (newTitle: string): void => {

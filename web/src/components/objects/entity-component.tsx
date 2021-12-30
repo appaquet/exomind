@@ -80,6 +80,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         noteTrait={note}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 task: (task) => {
