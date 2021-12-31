@@ -4,6 +4,7 @@ import React from 'react';
 import { exomind } from '../../../protos';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import EditableText from '../../interaction/editable-text/editable-text';
+import { ContainerState } from '../container-state';
 import { Selection } from '../entity-list/selection';
 import './link.less';
 
@@ -13,6 +14,8 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
+
+    containerState?: ContainerState,
 }
 
 interface IState {

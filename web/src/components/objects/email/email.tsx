@@ -6,6 +6,7 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email.less';
+import { ContainerState } from '../container-state';
 
 interface IProps {
     entity: EntityTraits;
@@ -13,6 +14,8 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
+
+    containerState?: ContainerState,
 }
 
 interface IState {

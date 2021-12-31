@@ -5,6 +5,7 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import EditableText from '../../interaction/editable-text/editable-text';
 import { Selection } from '../entity-list/selection';
 import './task.less';
+import { ContainerState } from '../container-state';
 
 interface IProps {
     entity: EntityTraits;
@@ -12,6 +13,8 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
+
+    containerState?: ContainerState,
 }
 
 interface IState {

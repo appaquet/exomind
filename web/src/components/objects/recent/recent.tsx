@@ -86,6 +86,8 @@ export default class Recent extends React.Component<IProps, IState> {
 
                         draggable={false}
                         droppable={false}
+
+                        containerState={this.props.containerState}
                     />
                 </div>
             );

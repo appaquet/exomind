@@ -70,6 +70,7 @@ export class Search extends React.Component<IProps, IState> {
           onSelectionChange={this.props.onSelectionChange}
 
           actionsForEntity={this.actionsForEntity}
+          containerState={this.props.containerState}
         />;
       </div>
     );

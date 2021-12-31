@@ -93,6 +93,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         taskTrait={task}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 link: (link) => {
@@ -101,6 +102,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         linkTrait={link}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 emailThread: () => {
@@ -117,6 +119,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         emailTrait={email}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 draftEmail: (draft) => {
