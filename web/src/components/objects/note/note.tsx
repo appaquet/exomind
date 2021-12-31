@@ -54,7 +54,7 @@ export default class Note extends React.Component<IProps, IState> {
         this.mounted = true;
         this.shortcutToken = Shortcuts.register([
             {
-                key: ['Enter', 'ArrowUp', 'ArrowDown'],
+                key: ['Enter', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'],
                 callback: this.handleShortcutFocus,
                 disabledContexts: ['input', 'modal', 'text-editor'],
             },

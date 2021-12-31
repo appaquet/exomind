@@ -32,10 +32,22 @@ export default class Columns extends React.Component<IProps, IState> {
             {
                 key: 'Ctrl-b ArrowRight',
                 callback: this.handleShortcutNext,
+                disabledContexts: ['modal'],
+            },
+            {
+                key: 'ArrowRight',
+                callback: this.handleShortcutNext,
+                disabledContexts: ['input', 'text-editor', 'modal'],
             },
             {
                 key: 'Ctrl-b ArrowLeft',
                 callback: this.handleShortcutPrev,
+                disabledContexts: ['modal'],
+            },
+            {
+                key: 'ArrowLeft',
+                callback: this.handleShortcutPrev,
+                disabledContexts: ['input', 'text-editor', 'modal'],
             },
             {
                 key: 'Ctrl-b x',
@@ -108,10 +120,10 @@ export default class Columns extends React.Component<IProps, IState> {
 
     private handleShortcutNext = () => {
         let activeColumn = this.state.activeColumn;
-        if (activeColumn >= this.getConfig().parts.length - 1) {
-            activeColumn = 0;
-        } else {
-            activeColumn++;
+        activeColumn++;
+
+        if (activeColumn >= this.getConfig().parts.length) {
+            activeColumn = this.getConfig().parts.length - 1;
         }
 
         this.setState({ activeColumn });
@@ -121,10 +133,10 @@ export default class Columns extends React.Component<IProps, IState> {
 
     private handleShortcutPrev = () => {
         let activeColumn = this.state.activeColumn;
-        if (activeColumn == 0) {
-            activeColumn = this.getConfig().parts.length - 1;
-        } else {
-            activeColumn--;
+        activeColumn--;
+
+        if (activeColumn < 0) {
+            activeColumn = 0;
         }
 
         this.setState({ activeColumn });
@@ -138,6 +150,10 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     private onColumnHovered(columnId: number): void {
+        if (Shortcuts.usedRecently) {
+            return;
+        }
+
         this.setState({
             activeColumn: columnId
         })

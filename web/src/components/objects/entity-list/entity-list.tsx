@@ -54,7 +54,6 @@ export class EntityList extends React.Component<IProps, IState> {
     private listId: number;
 
     private shortcutToken?: ListenerToken;
-    private lastShortcutScroll?: Date;
 
     constructor(props: IProps) {
         super(props);
@@ -209,8 +208,7 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleItemMouseOver(entityId: string, idx: number): void {
-        if (this.lastShortcutScroll && new Date().getTime() - this.lastShortcutScroll.getTime() < 1000) {
-            // prevent mouse over momentarily when we scrolled using keyboard
+        if (Shortcuts.usedRecently) {
             return;
         }
 
@@ -221,8 +219,7 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleItemMouseLeave(entityId: string): void {
-        if (this.lastShortcutScroll && new Date().getTime() - this.lastShortcutScroll.getTime() < 1000) {
-            // prevent mouse over momentarily when we scrolled using keyboard
+        if (Shortcuts.usedRecently) {
             return;
         }
 
@@ -279,7 +276,6 @@ export class EntityList extends React.Component<IProps, IState> {
         const elId = this.getEntityElementId(idx);
         const el = document.getElementById(elId);
         if (el) {
-            this.lastShortcutScroll = new Date();
             el.scrollIntoView({ behavior: 'smooth' });
         }
 

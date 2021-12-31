@@ -31,6 +31,18 @@ export class Shortcuts {
     private static lastKeyEvent?: KeyboardEvent;
     private static lastKeyTime?: Date;
 
+    static get lastShortcutTime(): Date | null {
+        return this.lastKeyTime;
+    }
+
+    static get usedRecently(): boolean {
+        if (!this.lastShortcutTime) {
+            return false;
+        }
+
+        return new Date().getTime() - this.lastShortcutTime.getTime() < 1000;
+    }
+
     static register(mapping: Mapping | Mapping[]): ListenerToken {
         if (!Array.isArray(mapping)) {
             mapping = [mapping];
@@ -98,13 +110,17 @@ export class Shortcuts {
             return;
         }
 
-        if (this.lastKeyEvent && this.lastKeyTime && new Date().getTime() - this.lastKeyTime.getTime() < 1000) {
+        if (this.lastKeyEvent && this.lastKeyTime && new Date().getTime() - this.lastKeyTime.getTime() < 500) {
             if (this.checkKey(this.lastKeyEvent, event)) {
+                this.lastKeyEvent = event;
+                this.lastKeyTime = new Date();
                 return;
             }
         }
 
         if (this.checkKey(event, null)) {
+            this.lastKeyEvent = event;
+            this.lastKeyTime = new Date();
             return;
         }
 
@@ -156,8 +172,6 @@ export class Shortcuts {
             if (!handled) {
                 continue;
             }
-
-            console.log('handled', keyMapping.key);
 
             event.stopPropagation();
             event.preventDefault();
