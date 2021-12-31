@@ -78,11 +78,11 @@ export default class Recent extends React.Component<IProps, IState> {
                     <EntityList
                         entities={this.state.entities}
 
-                        onRequireLoadMore={this.handleLoadMore.bind(this)}
+                        onRequireLoadMore={this.handleLoadMore}
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        actionsForEntity={this.actionsForEntity.bind(this)}
+                        actionsForEntity={this.actionsForEntity}
 
                         draggable={false}
                         droppable={false}
@@ -95,13 +95,13 @@ export default class Recent extends React.Component<IProps, IState> {
         }
     }
 
-    private handleLoadMore() {
+    private handleLoadMore = () => {
         this.entityQuery.expand();
     }
 
-    private actionsForEntity(et: EntityTraits): EntityActions {
+    private actionsForEntity = (et: EntityTraits): EntityActions => {
         return new EntityActions([
-            new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et)),
+            new ButtonAction('inbox', () => this.handleEntityMoveInbox(et)),
         ]);
     }
 

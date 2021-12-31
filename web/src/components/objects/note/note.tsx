@@ -12,10 +12,9 @@ import Navigation from '../../../navigation';
 import { IStores, StoresContext } from '../../../stores/stores';
 import LinkSelector from './link-selector';
 import { CancellableEvent } from '../../../utils/events';
-
-import './note.less';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { ContainerState } from '../container-state';
+import './note.less';
 
 interface IProps {
     entity: EntityTraits;

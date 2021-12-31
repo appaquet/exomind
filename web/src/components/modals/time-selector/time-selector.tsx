@@ -56,7 +56,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         return DateUtil.getSnoozeChoices()
             .map((choice) => {
                 return (
-                    <li onClick={this.handleTimeClick.bind(this, choice.key)} key={choice.key}>
+                    <li onClick={() => this.handleTimeClick(choice.key)} key={choice.key}>
                         <span>{choice.copy}</span>
                     </li>
                 )
@@ -71,11 +71,11 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                     <Flatpickr
                         data-enable-time
                         value={this.state.date}
-                        onChange={this.handlePickerChange.bind(this)}
+                        onChange={this.handlePickerChange}
                     />
                 </div>
                 <div className="button">
-                    <button onClick={this.handlePickerDone.bind(this)}>
+                    <button onClick={this.handlePickerDone}>
                         <span>Done</span>
                     </button>
                 </div>
@@ -83,7 +83,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         );
     }
 
-    private handlePickerChange(dates: Date[]): void {
+    private handlePickerChange = (dates: Date[]): void => {
         this.setState({ date: dates[0] });
     }
 

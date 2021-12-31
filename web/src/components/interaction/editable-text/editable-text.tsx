@@ -1,6 +1,5 @@
 
 import React, { MouseEvent } from 'react';
-import { Shortcuts } from '../../../shortcuts';
 import './editable-text.less';
 
 interface IProps {
@@ -95,7 +94,6 @@ export default class EditableText extends React.Component<IProps, IState> {
         <input
           type="text"
           ref={this.singleInputRef as React.RefObject<HTMLInputElement>}
-          onFocus={this.handleEditFocus}
           onBlur={this.handleEditBlur}
           onChange={this.handleEditChange}
           onKeyUp={this.handleEditKeyPress}
@@ -111,7 +109,6 @@ export default class EditableText extends React.Component<IProps, IState> {
       <span className="editable-text">
         <textarea
           ref={this.singleInputRef as React.RefObject<HTMLTextAreaElement>}
-          onFocus={this.handleEditFocus}
           onBlur={this.handleEditBlur}
           onChange={this.handleEditChange}
           onKeyUp={this.handleEditKeyPress}
@@ -132,10 +129,6 @@ export default class EditableText extends React.Component<IProps, IState> {
     }
   }
 
-  private handleEditFocus = () => {
-    Shortcuts.activateContext('input');
-  }
-
   private handleEditBlur = () => {
     this.editFinish();
   }
@@ -146,7 +139,6 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private editFinish() {
-    Shortcuts.deactivateContext('input');
     this.setState({
       editing: false
     });

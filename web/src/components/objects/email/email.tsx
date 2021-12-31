@@ -34,8 +34,8 @@ export default class Email extends React.Component<IProps, IState> {
 
         return (
             <div className="entity-component email"
-                onMouseEnter={this.handleMouseEnter.bind(this)}
-                onMouseLeave={this.handleMouseLeave.bind(this)}>
+                onMouseEnter={this.handleMouseEnter}
+                onMouseLeave={this.handleMouseLeave}>
                 <div className="entity-details">
                     <div className="from field">
                         <span className="field-label">From</span>
@@ -57,7 +57,7 @@ export default class Email extends React.Component<IProps, IState> {
         );
     }
 
-    private handleMouseEnter(): void {
+    private handleMouseEnter = (): void => {
         if (!this.state.hovered) {
             this.setState({
                 hovered: true
@@ -65,7 +65,7 @@ export default class Email extends React.Component<IProps, IState> {
         }
     }
 
-    private handleMouseLeave(): void {
+    private handleMouseLeave = (): void => {
         this.setState({
             hovered: false
         });
@@ -101,14 +101,14 @@ export default class Email extends React.Component<IProps, IState> {
     private renderEmailControls(): React.ReactNode {
         return <div className="column-bottom-actions">
             <ul>
-                <li onClick={this.handleReplyAllEmail.bind(this)}><i className="reply-all" /></li>
-                <li onClick={this.handleReplyEmail.bind(this)}><i className="reply" /></li>
-                <li onClick={this.handleForwardEmail.bind(this)}><i className="forward" /></li>
+                <li onClick={this.handleReplyAllEmail}><i className="reply-all" /></li>
+                <li onClick={this.handleReplyEmail}><i className="reply" /></li>
+                <li onClick={this.handleForwardEmail}><i className="forward" /></li>
             </ul>
         </div>
     }
 
-    private handleReplyEmail(): void {
+    private handleReplyEmail = (): void => {
         // TODO: Reply
         // EmailsLogic.createReplyEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
         //     if (obj) {
@@ -117,7 +117,7 @@ export default class Email extends React.Component<IProps, IState> {
         // });
     }
 
-    private handleReplyAllEmail(): void {
+    private handleReplyAllEmail = (): void => {
         // TODO: Reply all
         // EmailsLogic.createReplyAllEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
         //     if (obj) {
@@ -126,7 +126,7 @@ export default class Email extends React.Component<IProps, IState> {
         // });
     }
 
-    private handleForwardEmail(): void {
+    private handleForwardEmail = (): void => {
         // TODO: Forward
         // EmailsLogic.createForwardEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
         //     if (obj) {

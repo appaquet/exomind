@@ -144,7 +144,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
             idx = this.props.entities.length - 1;
         }
 
-        this.selectIndex(idx);
+        this.hoverIndex(idx);
         return true;
     }
 
@@ -164,21 +164,21 @@ export class EntitySelector extends React.Component<IProps, IState> {
             }
         }
 
-        this.selectIndex(idx);
+        this.hoverIndex(idx);
         return true;
     }
 
     private handleShortcutTop = (): boolean => {
-        this.selectIndex(0);
+        this.hoverIndex(0);
         return true;
     }
 
     private handleShortcutBottom = (): boolean => {
-        this.selectIndex(this.props.entities.length - 1);
+        this.hoverIndex(this.props.entities.length - 1);
         return true;
     }
 
-    private selectIndex(idx: number) {
+    private hoverIndex(idx: number) {
         if (idx >= this.props.entities.length - 10) {
             this.props.onNeedMore?.();
         }
@@ -202,6 +202,8 @@ export class EntitySelector extends React.Component<IProps, IState> {
         } else {
             this.props.onUnselect(entity, null);
         }
+
+        this.hoverIndex(0);
 
         return true;
     }

@@ -7,77 +7,79 @@ import { TraitIcon } from '../../utils/entities.js';
 import EntityIcon from './entity-icon';
 
 interface IProps {
-  title: string;
-  editableTitle?: string; // if title to be edited is different from displayed title (ex: emoji prefix)
-  icon?: TraitIcon;
-  actions: HeaderAction[];
-  active: boolean;
-  onTitleRename: (title: string) => void;
+    title: string;
+    editableTitle?: string; // if title to be edited is different from displayed title (ex: emoji prefix)
+    icon?: TraitIcon;
+    actions: HeaderAction[];
+    active: boolean;
+    onTitleRename: (title: string) => void;
 }
 
 export class Header extends React.Component<IProps> {
-  render(): React.ReactNode {
-    let rightActions;
-    if (this.props.actions) {
-      rightActions = <div className="right-actions">{this.renderActions()}</div>;
+    render(): React.ReactNode {
+        let rightActions;
+        if (this.props.actions) {
+            rightActions = <div className="right-actions">{this.renderActions()}</div>;
+        }
+
+        const titleClasses = classNames({
+            title: true,
+            active: this.props.active
+        });
+
+        return (
+            <div className="header">
+                <div className="icon">
+                    {this.props.icon && <EntityIcon icon={this.props.icon} />}
+                </div>
+
+                <div className={titleClasses}>{this.renderTitle()}</div>
+
+                {rightActions}
+            </div>
+        );
     }
 
-    const titleClasses = classNames({
-      title: true,
-      active: this.props.active
-    });
-
-    return (
-      <div className="header">
-        <div className="icon">
-          {this.props.icon && <EntityIcon icon={this.props.icon} />}
-        </div>
-        <div className={titleClasses}>{this.renderTitle()}</div>
-        {rightActions}
-      </div>
-    );
-  }
-
-  private renderTitle() {
-    if (this.props.onTitleRename) {
-      return <EditableText
-        text={this.props.title}
-        editText={this.props.editableTitle}
-        doubleClick={true}
-        onChange={this.handleTitleRename.bind(this)} />;
-    } else {
-      return this.props.title;
+    private renderTitle() {
+        if (this.props.onTitleRename) {
+            return <EditableText
+                text={this.props.title}
+                editText={this.props.editableTitle}
+                doubleClick={true}
+                onChange={this.handleTitleRename} />;
+        } else {
+            return this.props.title;
+        }
     }
-  }
 
-  private handleTitleRename(newTitle: string) {
-    this.props.onTitleRename(newTitle);
-  }
-
-  private renderActions() {
-    const actions = this.props.actions.map(action => {
-      const classes = classNames({
-        'fa': true,
-        ['fa-' + action.icon]: true
-      });
-      return (
-        <li key={action.icon} onClick={this.handleActionClick.bind(this, action)}>
-          <i className={classes} />
-        </li>
-      );
-    });
-
-    return <ul className="actions">{actions}</ul>;
-  }
-
-  private handleActionClick(action: HeaderAction) {
-    if (action.callback) {
-      action.callback();
+    private handleTitleRename = (newTitle: string) => {
+        this.props.onTitleRename(newTitle);
     }
-  }
+
+    private renderActions() {
+        const actions = this.props.actions.map(action => {
+            const classes = classNames({
+                'fa': true,
+                ['fa-' + action.icon]: true
+            });
+            return (
+                <li key={action.icon} onClick={() => this.handleActionClick(action)}>
+                    <i className={classes} />
+                </li>
+            );
+        });
+
+        return <ul className="actions">{actions}</ul>;
+    }
+
+    private handleActionClick(action: HeaderAction) {
+        if (action.callback) {
+            action.callback();
+        }
+    }
 }
 
 export class HeaderAction {
-  constructor(public icon: string, public callback: () => void) {
-  }
+    constructor(public icon: string, public callback: () => void) {
+    }
 }

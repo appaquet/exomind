@@ -61,7 +61,7 @@ export class Search extends React.Component<IProps, IState> {
         <EntityList
           entities={this.state.entities}
 
-          onRequireLoadMore={this.handleLoadMore.bind(this)}
+          onRequireLoadMore={this.handleLoadMore}
 
           droppable={false}
           draggable={false}
@@ -69,7 +69,7 @@ export class Search extends React.Component<IProps, IState> {
           selection={this.props.selection}
           onSelectionChange={this.props.onSelectionChange}
 
-          actionsForEntity={this.actionsForEntity.bind(this)}
+          actionsForEntity={this.actionsForEntity}
         />;
       </div>
     );
@@ -110,14 +110,14 @@ export class Search extends React.Component<IProps, IState> {
     }
   }
 
-  private handleLoadMore(): void {
+  private handleLoadMore = (): void => {
     this.entityQuery?.expand();
   }
 
-  private actionsForEntity(et: EntityTraits): EntityActions {
+  private actionsForEntity = (et: EntityTraits): EntityActions => {
     return new EntityActions([
-      new ButtonAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et)),
-      new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et))
+      new ButtonAction('folder-open-o', () => this.handleEntityMoveCollection(et)),
+      new ButtonAction('inbox', () => this.handleEntityMoveInbox(et))
     ]);
   }
 

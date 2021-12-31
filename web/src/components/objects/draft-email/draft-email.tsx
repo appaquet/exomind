@@ -66,8 +66,8 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                         <span className="field-content">
                             <input type="text"
                                 value={subject}
-                                onChange={this.handleSubjectChange.bind(this)}
-                                onBlur={this.saveObject.bind(this)}
+                                onChange={this.handleSubjectChange}
+                                onBlur={this.saveObject}
                                 placeholder="Type an email subject here" />
                         </span>
                     </div>
@@ -79,8 +79,8 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
                 <div className="column-bottom-actions">
                     <ul>
-                        <li onClick={this.handleSendDraft.bind(this)}><i className="send" /></li>
-                        <li onClick={this.handleDeleteDraft.bind(this)}><i className="delete" /></li>
+                        <li onClick={this.handleSendDraft}><i className="send" /></li>
+                        <li onClick={this.handleDeleteDraft}><i className="delete" /></li>
                     </ul>
                 </div>
             </div>
@@ -109,7 +109,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         this.setState({ accounts: accountsMap });
     }
 
-    private handleSubjectChange(e: ChangeEvent<HTMLInputElement>): void {
+    private handleSubjectChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const draft = this.state.currentDraft;
         draft.subject = e.target.value
         this.setState({ currentDraft: draft });
@@ -133,7 +133,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                 });
 
             inner = (
-                <select value={selectedAccountKey} onChange={this.handleChangeAccount.bind(this)}>
+                <select value={selectedAccountKey} onChange={this.handleChangeAccount}>
                     {options}
                 </select>
             );
@@ -150,7 +150,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         );
     }
 
-    private handleChangeAccount(e: ChangeEvent<HTMLInputElement>): void {
+    private handleChangeAccount = (e: ChangeEvent<HTMLSelectElement>): void => {
         const entityAccount = this.state.accounts[e.target.value];
         if (!entityAccount) {
             return;
@@ -181,8 +181,8 @@ export default class DraftEmail extends React.Component<IProps, IState> {
             <span className="field-content">
                 <input
                     type="text" value={EmailUtil.formatContacts(fieldContacts, true)}
-                    onChange={this.handleContactFieldChange.bind(this, fieldName)}
-                    onBlur={this.handleContactFieldBlur.bind(this, fieldName)}
+                    onChange={(e) => this.handleContactFieldChange(fieldName, e)}
+                    onBlur={(e) => this.handleContactFieldBlur(fieldName, e)}
                     placeholder="Type recipients" />
             </span>
         </div>;
@@ -231,19 +231,19 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         return (
             <HtmlEditor
                 content={editPart.body}
-                onBound={this.handleHtmlEditorBound.bind(this)}
-                onChange={this.handleBodyChange.bind(this, editPart)}
-                onBlur={this.saveObject.bind(this)} />
+                onBound={this.handleHtmlEditorBound}
+                onChange={(content) => this.handleBodyChange(editPart, content)}
+                onBlur={this.saveObject} />
         );
     }
 
-    private handleHtmlEditorBound(editor: HtmlEditor): void {
+    private handleHtmlEditorBound = (editor: HtmlEditor): void => {
         this.setState({
             editor: editor
         });
     }
 
-    private handleBodyChange(editPart: exomind.base.v1.EmailPart, content: string): void {
+    private handleBodyChange(editPart: exomind.base.v1.IEmailPart, content: string): void {
         const newEditPart = new exomind.base.v1.EmailPart(editPart);
         newEditPart.body = content;
 
@@ -259,7 +259,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         }, 1000);
     }
 
-    private saveObject(): void {
+    private saveObject = (): void => {
         if (this.state && !_.isEqual(this.state.currentDraft, this.state.savedDraft)) {
             const mutation = MutationBuilder
                 .updateEntity(this.props.entity.entity.id)
@@ -276,7 +276,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         }
     }
 
-    private handleSendDraft(): void {
+    private handleSendDraft = (): void => {
         // TODO: this.state.currentDraft.sendingDate = new Date();
         alert('not implemented');
 
@@ -284,7 +284,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         this.close();
     }
 
-    private handleDeleteDraft(): void {
+    private handleDeleteDraft = (): void => {
         // TODO: ExomindDSL.on(this.props.entity).mutate.remove([this.props.draftTrait]).execute();
         // alert('not implemented');
 

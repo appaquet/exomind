@@ -14,11 +14,45 @@ import Hamburger from './hamburger/hamburger';
 import { Header } from './header/header';
 import './layout.less';
 import Modal from './modal';
+import { Shortcuts } from '../../shortcuts';
 
 @observer
 export default class Layout extends React.Component {
   static contextType = StoresContext;
   declare context: IStores;
+
+  componentDidMount(): void {
+    Shortcuts.register([
+      {
+        key: 'Mod-g i',
+        callback: () => {
+          Navigation.navigate(Navigation.pathForInbox())
+          return true;
+        },
+      },
+      {
+        key: 'Mod-g z',
+        callback: () => {
+          Navigation.navigate(Navigation.pathForSnoozed())
+          return true;
+        },
+      },
+      {
+        key: 'Mod-g r',
+        callback: () => {
+          Navigation.navigate(Navigation.pathForRecent())
+          return true;
+        },
+      },
+      {
+        key: 'Mod-g t',
+        callback: () => {
+          this.context.settings.toggleDarkMode();
+          return true;
+        },
+      },
+    ]);
+  }
 
   render(): React.ReactNode {
     const classes = classNames({

@@ -1,7 +1,4 @@
 
-import Navigation from "./navigation";
-import { Stores } from "./stores/stores";
-
 export type Context =
     'text-editor' |
     'input' | // automatically inferred if focused on an input element
@@ -183,7 +180,7 @@ export class Shortcuts {
 
     private static anyActiveContexts(other: Context[] | null): boolean {
         const activeContexts = new Set(this.activeContexts);
-        if (document.activeElement instanceof HTMLInputElement) {
+        if (document.activeElement instanceof HTMLInputElement || document.activeElement instanceof HTMLTextAreaElement) {
             activeContexts.add('input');
         }
 
@@ -212,34 +209,3 @@ export class Shortcuts {
 document.addEventListener('keydown', (e: KeyboardEvent) => {
     Shortcuts._handleKeyDown(e);
 });
-
-Shortcuts.register([
-    {
-        key: 'Mod-g i',
-        callback: () => {
-            Navigation.navigate(Navigation.pathForInbox())
-            return true;
-        },
-    },
-    {
-        key: 'Mod-g z',
-        callback: () => {
-            Navigation.navigate(Navigation.pathForSnoozed())
-            return true;
-        },
-    },
-    {
-        key: 'Mod-g r',
-        callback: () => {
-            Navigation.navigate(Navigation.pathForRecent())
-            return true;
-        },
-    },
-    {
-        key: 'Mod-g t',
-        callback: () => {
-            Stores.settings.toggleDarkMode();
-            return true;
-        },
-    },
-]);
