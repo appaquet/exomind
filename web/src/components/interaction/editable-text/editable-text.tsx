@@ -10,6 +10,7 @@ interface IProps {
   doubleClick?: boolean;
   onChange?: (value: string) => void;
   initializeEditing?: boolean;
+  onBind?: (ed: EditableText) => void;
 }
 
 interface IState {
@@ -20,11 +21,12 @@ interface IState {
 interface InputElement {
   value: string;
   focus(): void;
+  blur(): void;
   select(): void;
 }
 
 export default class EditableText extends React.Component<IProps, IState> {
-  private singleInputRef: React.RefObject<Element & InputElement> = React.createRef();
+  private inputRef: React.RefObject<Element & InputElement> = React.createRef();
 
   constructor(props: IProps) {
     super(props);
@@ -52,6 +54,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     if (this.state.editing) {
       this.ensureFocus();
     }
+    this.props.onBind?.(this);
   }
 
   render(): React.ReactNode {
@@ -80,23 +83,15 @@ export default class EditableText extends React.Component<IProps, IState> {
     );
   }
 
-  private handleReadClick = (e: MouseEvent) => {
-    this.setState({
-      editing: true,
-      value: this.props.editText || this.props.text,
-    });
-    e.stopPropagation();
-  }
-
   private renderSingleEdit(): React.ReactFragment {
     return (
       <span className="editable-text">
         <input
           type="text"
-          ref={this.singleInputRef as React.RefObject<HTMLInputElement>}
+          ref={this.inputRef as React.RefObject<HTMLInputElement>}
           onBlur={this.handleEditBlur}
           onChange={this.handleEditChange}
-          onKeyUp={this.handleEditKeyPress}
+          onKeyDown={this.handleEditKeyPress}
           value={this.state.value}
           onClick={this.handleEditClick}
         />
@@ -108,13 +103,37 @@ export default class EditableText extends React.Component<IProps, IState> {
     return (
       <span className="editable-text">
         <textarea
-          ref={this.singleInputRef as React.RefObject<HTMLTextAreaElement>}
+          ref={this.inputRef as React.RefObject<HTMLTextAreaElement>}
           onBlur={this.handleEditBlur}
           onChange={this.handleEditChange}
-          onKeyUp={this.handleEditKeyPress}
+          onKeyDown={this.handleEditKeyPress}
           value={this.state.value} />
       </span>
     );
+  }
+
+  focus(): void {
+    if (!this.state.editing) {
+      this.setState({
+        editing: true
+      });
+    }
+
+    setTimeout(() => {
+      this.ensureFocus();
+    }, 500);
+  }
+
+  blur(): void {
+    this.inputRef.current?.blur();
+  }
+
+  private handleReadClick = (e: MouseEvent) => {
+    this.setState({
+      editing: true,
+      value: this.props.editText || this.props.text,
+    });
+    e.stopPropagation();
   }
 
   private handleEditChange = (event: React.ChangeEvent<InputElement>) => {
@@ -124,6 +143,7 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private handleEditKeyPress = (event: React.KeyboardEvent) => {
+    console.log(event.key);
     if (event.key == 'Escape' || (!this.props.multiline && event.key == 'Enter')) {
       this.editFinish();
     }
@@ -139,6 +159,7 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private editFinish() {
+    console.log('editFinish');
     this.setState({
       editing: false
     });
@@ -148,8 +169,13 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private ensureFocus() {
-    const element = this.singleInputRef.current;
+    const element = this.inputRef.current;
+    if (!element) {
+      return;
+    }
+
     if (element != document.activeElement) {
+      console.log('focusing');
       element.focus();
       element.select();
     }

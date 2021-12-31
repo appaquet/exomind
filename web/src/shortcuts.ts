@@ -40,7 +40,7 @@ export class Shortcuts {
         return new Date().getTime() - this.lastShortcutTime.getTime() < 1000;
     }
 
-    static register(mapping: Mapping | Mapping[]): ListenerToken {
+    static register(mapping: Mapping | Mapping[], enabled = true): ListenerToken {
         if (!Array.isArray(mapping)) {
             mapping = [mapping];
         }
@@ -61,7 +61,7 @@ export class Shortcuts {
         }
         this.listeners[token] = {
             mappings: mapping,
-            disabled: false,
+            disabled: !enabled,
         };
 
         return token;

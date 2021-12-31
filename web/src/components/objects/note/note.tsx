@@ -15,6 +15,7 @@ import { CancellableEvent } from '../../../utils/events';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { ContainerState } from '../container-state';
 import './note.less';
+import { observer } from 'mobx-react';
 
 interface IProps {
     entity: EntityTraits;
@@ -32,11 +33,12 @@ interface IState {
     cursor?: EditorCursor;
 }
 
+@observer
 export default class Note extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
 
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
     private mounted = false;
 
     constructor(props: IProps) {
@@ -47,17 +49,18 @@ export default class Note extends React.Component<IProps, IState> {
             savedNote: props.noteTrait.message,
             currentNote: new exomind.base.v1.Note(props.noteTrait.message),
         }
-    }
 
-    componentDidMount(): void {
-        this.mounted = true;
         this.shortcutToken = Shortcuts.register([
             {
                 key: ['Enter', 'Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'],
                 callback: this.handleShortcutFocus,
                 disabledContexts: ['input', 'modal', 'text-editor'],
             },
-        ]);
+        ], props.containerState?.active ?? false);
+    }
+
+    componentDidMount(): void {
+        this.mounted = true;
     }
 
     componentWillUnmount(): void {
@@ -73,17 +76,16 @@ export default class Note extends React.Component<IProps, IState> {
                 currentNote: note,
             });
         }
+
+        if (this.props.containerState && !this.props.containerState.active && this.state.focused) {
+            setTimeout(() => {
+                this.state.editor?.blur();
+            });
+        }
     }
 
     render(): React.ReactNode {
-        if (this.props.containerState) {
-            Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
-            if (!this.props.containerState.active && this.state.focused) {
-                setTimeout(() => {
-                    this.state.editor?.blur();
-                });
-            }
-        }
+        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
         return (
             <div className="entity-component note">
@@ -126,7 +128,6 @@ export default class Note extends React.Component<IProps, IState> {
         });
     }
 
-    // TODO: migrate to async
     private linkSelector = (cursor: EditorCursor): Promise<SelectedLink | null> => {
         return new Promise((resolve) => {
             const handleDone = (selectedLink: SelectedLink | null) => {

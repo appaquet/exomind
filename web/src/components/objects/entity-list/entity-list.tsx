@@ -53,15 +53,11 @@ export class EntityList extends React.Component<IProps, IState> {
     private static nextListId = 0;
     private listId: number;
 
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
 
     constructor(props: IProps) {
         super(props);
         this.listId = EntityList.nextListId++;
-        this.state = {};
-    }
-
-    componentDidMount() {
         this.shortcutToken = Shortcuts.register([
             {
                 key: 'n',
@@ -104,6 +100,7 @@ export class EntityList extends React.Component<IProps, IState> {
                 disabledContexts: ['input', 'modal'],
             },
         ]);
+        this.state = {};
     }
 
     componentWillUnmount() {
@@ -111,9 +108,7 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
-        if (this.props.containerState) {
-            Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
-        }
+        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
         const classes = classNames({
             'entity-list': true,

@@ -23,7 +23,9 @@ export default class Layout extends React.Component {
   static contextType = StoresContext;
   declare context: IStores;
 
-  componentDidMount(): void {
+  constructor(props: unknown) {
+    super(props);
+
     Shortcuts.register([
       {
         key: 'Mod-g i',

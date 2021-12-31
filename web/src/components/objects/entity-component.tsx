@@ -12,6 +12,7 @@ import { Message } from "./message";
 import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../stores/stores';
 import copy from 'clipboard-copy';
+import { observer } from 'mobx-react';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -37,6 +38,7 @@ interface State {
     trait?: EntityTrait<unknown>;
 }
 
+@observer
 export class EntityComponent extends React.Component<Props, State> {
     static contextType = StoresContext;
     declare context: IStores;

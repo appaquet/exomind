@@ -22,12 +22,14 @@ interface IProps {
 }
 
 export class ColumnActions extends React.Component<IProps> {
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
 
     static contextType = StoresContext;
     declare context: IStores;
 
-    componentDidMount() {
+    constructor(props: IProps) {
+        super(props);
+
         this.shortcutToken = Shortcuts.register([
             {
                 key: 'e',
