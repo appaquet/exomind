@@ -19,7 +19,7 @@ interface IProps {
     onSelect: (entity: EntityTraits, event?: CancellableEvent) => void,
     onUnselect?: (entity: EntityTraits, event?: CancellableEvent) => void,
     onNeedMore?: () => void,
-    onHoverUnderflow?: () => void,
+    onBlur?: () => void,
 }
 
 interface IState {
@@ -84,6 +84,11 @@ export class EntitySelector extends React.Component<IProps, IState> {
             {
                 key: ['Space', 'Enter'],
                 callback: this.handleShortcutSelect,
+                disabledContexts: ['input'],
+            },
+            {
+                key: ['Tab'],
+                callback: this.handleShortcutBlur,
                 disabledContexts: ['input'],
             },
         ]);
@@ -152,8 +157,8 @@ export class EntitySelector extends React.Component<IProps, IState> {
         idx -= 1;
 
         if (idx < 0) {
-            if (this.props.onHoverUnderflow) {
-                this.props.onHoverUnderflow();
+            if (this.props.onBlur) {
+                this.props.onBlur();
                 this.setState({
                     hoveredIndex: undefined,
                 });
@@ -204,6 +209,14 @@ export class EntitySelector extends React.Component<IProps, IState> {
             this.props.onUnselect(entity, null);
         }
 
+        return true;
+    }
+
+    private handleShortcutBlur = (): boolean => {
+        if (this.state.hoveredIndex == undefined || !this.props.onBlur) {
+            return false;
+        }
+        this.props.onBlur();
         return true;
     }
 }

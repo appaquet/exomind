@@ -149,7 +149,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             multi={false}
             entities={this.state.entities ?? []}
             onSelect={this.handleEntitySelect}
-            onHoverUnderflow={this.handleEntityHoverUnderflow}
+            onBlur={this.handleEntitySelectorBlur}
         />;
     }
 
@@ -196,7 +196,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handleEntityHoverUnderflow = (): void => {
+    private handleEntitySelectorBlur = (): void => {
         this.inputRef.current?.focus();
     }
 

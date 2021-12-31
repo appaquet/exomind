@@ -1,4 +1,4 @@
-import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
+import { exocore, QueryBuilder, TraitQueryBuilder } from 'exocore';
 import { memoize } from 'lodash';
 import React, { KeyboardEvent } from 'react';
 import { exomind } from '../../../protos';
@@ -8,26 +8,20 @@ import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
 import { CancellableEvent } from '../../../utils/events';
 
-import './collection-selector.less';
+import './collection-navigator.less';
 
 interface IProps {
-    entity: EntityTraits;
+    onSelect: (entity: EntityTraits) => void;
 }
 
 interface IState {
-    entity?: EntityTraits;
-    entityParentsIds?: string[],
-    entityParents?: exocore.store.IEntityResult[],
     keywords: string;
     debouncedKeywords?: string;
 }
 
-export class CollectionSelector extends React.Component<IProps, IState> {
+export class CollectionNavigator extends React.Component<IProps, IState> {
     private searchDebouncer: Debouncer;
 
-    private entityQuery: WatchedQueryWrapper;
-    private entityParentsQuery: WatchedQueryWrapper;
-    private entityParentsQueryIds?: string[];
     private collectionsQuery?: ExpandableQuery;
     private collectionsQueryKeywords?: string;
     private filterInputRef: React.RefObject<HTMLInputElement> = React.createRef();
@@ -36,27 +30,13 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         super(props);
 
         this.searchDebouncer = new Debouncer(200);
-
-        const entityQuery = QueryBuilder.withIds(props.entity.id).build();
-        this.entityQuery = Exocore.store
-            .watchedQuery(entityQuery)
-            .onChange((res) => {
-                const entity = new EntityTraits(res.entities[0].entity);
-                this.setState({
-                    entity: entity,
-                    entityParentsIds: this.entityParents(entity),
-                })
-            });
-
         this.state = {
             keywords: '',
         };
     }
 
     componentWillUnmount(): void {
-        this.entityQuery.free();
         this.collectionsQuery?.free();
-        this.entityParentsQuery?.free();
     }
 
     componentDidMount(): void {
@@ -67,32 +47,11 @@ export class CollectionSelector extends React.Component<IProps, IState> {
     render(): React.ReactNode {
         this.maybeRefreshQueries();
 
-        const loading = !(this.collectionsQuery?.hasResults ?? false) || !this.state.entity;
-
-        const entities: EntityTraits[] = [];
-        const entityIds = new Set<string>();
-        if (!loading) {
-            for (const entity of this.state.entityParents ?? []) {
-                if (entityIds.has(entity.entity.id)) {
-                    continue;
-                }
-                entities.push(this.wrapEntityTraits(entity.entity));
-                entityIds.add(entity.entity.id);
-            }
-
-            for (const entity of this.collectionsQuery?.results() ?? []) {
-                if (entityIds.has(entity.entity.id)) {
-                    continue;
-                }
-                entities.push(this.wrapEntityTraits(entity.entity));
-                entityIds.add(entity.entity.id);
-            }
-        }
-        const selectedIds: string[] = this.state.entityParentsIds;
+        const loading = !(this.collectionsQuery?.hasResults ?? false);
+        const entities = Array.from(this.collectionsQuery?.results() ?? []).map((res) => this.wrapEntityTraits(res.entity));
 
         return (
             <div className="collection-selector">
-                <div className="collection-selector-header">Add to collections...</div>
                 <div className="filter">
                     <input type="text"
                         ref={this.filterInputRef}
@@ -103,9 +62,8 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                 </div>
 
                 <EntitySelector
-                    multi={true}
+                    multi={false}
                     entities={entities}
-                    selectedIds={selectedIds}
                     loading={loading}
                     onSelect={this.handleItemCheck}
                     onUnselect={this.handleItemCheck}
@@ -125,7 +83,6 @@ export class CollectionSelector extends React.Component<IProps, IState> {
     }
 
     private maybeRefreshQueries(): void {
-        // Get collections
         if (this.collectionsQueryKeywords != this.state.debouncedKeywords || !this.collectionsQuery) {
             this.collectionsQuery?.free();
 
@@ -138,23 +95,6 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                 this.setState({});
             })
             this.collectionsQueryKeywords = this.state.debouncedKeywords;
-        }
-
-        // Get entity current parents
-        if (this.state.entityParentsIds && this.entityParentsQueryIds != this.state.entityParentsIds) {
-            this.entityParentsQuery?.free();
-
-            const query = QueryBuilder
-                .withIds(this.state.entityParentsIds)
-                .count(this.state.entityParentsIds.length)
-                .build();
-            this.entityParentsQuery = Exocore.store.watchedQuery(query);
-            this.entityParentsQuery.onChange((res) => {
-                this.setState({
-                    entityParents: res.entities,
-                });
-            });
-            this.entityParentsQueryIds = this.state.entityParentsIds;
         }
     }
 
@@ -177,31 +117,8 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handleItemCheck = (collectionEntity: EntityTraits, event?: CancellableEvent): void => {
-        const currentChildTrait = this.state.entity
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .find((c) => c.message.collection.entityId == collectionEntity.id);
-
-        if (!currentChildTrait) {
-            const mutation = MutationBuilder
-                .updateEntity(this.state.entity.id)
-                .putTrait(new exomind.base.v1.CollectionChild({
-                    collection: new exocore.store.Reference({
-                        entityId: collectionEntity.id,
-                    }),
-                    weight: new Date().getTime(),
-                }), `child_${collectionEntity.id}`)
-                .build();
-            Exocore.store.mutate(mutation);
-
-        } else {
-            const mutation = MutationBuilder
-                .updateEntity(this.state.entity.id)
-                .deleteTrait(currentChildTrait.id)
-                .build();
-            Exocore.store.mutate(mutation);
-        }
-
+    private handleItemCheck = (entity: EntityTraits, event?: CancellableEvent): void => {
+        this.props.onSelect(entity);
         event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
     }
 

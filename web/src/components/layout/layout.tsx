@@ -15,6 +15,8 @@ import { Header } from './header/header';
 import './layout.less';
 import Modal from './modal';
 import { Shortcuts } from '../../shortcuts';
+import { CollectionNavigator } from '../modals/collection-navigator/collection-navigator';
+import { EntityTraits } from '../../utils/entities';
 
 @observer
 export default class Layout extends React.Component {
@@ -43,6 +45,10 @@ export default class Layout extends React.Component {
           Navigation.navigate(Navigation.pathForRecent())
           return true;
         },
+      },
+      {
+        key: 'Mod-g c',
+        callback: this.handleGotoCollection,
       },
       {
         key: 'Mod-g t',
@@ -129,6 +135,18 @@ export default class Layout extends React.Component {
     } else {
       return <NotFound />;
     }
+  }
+
+  private handleGotoCollection = (): boolean => {
+    this.context.session.showModal(() => {
+      const onSelect = (entity: EntityTraits) => {
+        Navigation.navigate(Navigation.pathForEntity(entity));
+        this.context.session.hideModal();
+      };
+
+      return <CollectionNavigator onSelect={onSelect} />;
+    });
+    return true;
   }
 }
 
