@@ -18,16 +18,15 @@ interface IState {
 
 @observer
 export default class Columns extends React.Component<IProps, IState> {
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
 
     constructor(props: IProps) {
         super(props);
+
         this.state = {
             activeColumn: 0,
         };
-    }
 
-    componentDidMount(): void {
         this.shortcutToken = Shortcuts.register([
             {
                 key: 'Ctrl-b ArrowRight',

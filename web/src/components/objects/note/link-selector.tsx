@@ -33,7 +33,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     private entityQuery?: WatchedQueryWrapper;
     private entityQueryId?: string;
 
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
 
     constructor(props: IProps) {
         super(props);
@@ -43,10 +43,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         this.state = {
             inputValue: props.initialValue ?? ''
         };
-    }
 
-    componentDidMount(): void {
-        this.inputRef.current?.focus();
         this.shortcutToken = Shortcuts.register([
             {
                 key: 'Mod-k',
@@ -57,6 +54,10 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                 callback: this.handleShortcutEnter,
             },
         ]);
+    }
+
+    componentDidMount(): void {
+        this.inputRef.current?.focus();
     }
 
     componentWillUnmount(): void {

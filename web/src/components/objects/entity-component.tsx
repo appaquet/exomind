@@ -160,16 +160,18 @@ export class EntityComponent extends React.Component<Props, State> {
                 trait = et.priorityTrait;
             }
 
-            runInAction(() => {
-                this.props.containerState.icon = trait.icon;
-                if (trait.canEditName) {
-                    this.props.containerState.title = new ModifiableText(trait.displayName, (newTitle: string) => {
-                        trait.rename(newTitle);
-                    }, trait.editableName);
-                } else {
-                    this.props.containerState.title = trait.displayName;
-                }
-            });
+            if (this.props.containerState) {
+                runInAction(() => {
+                    this.props.containerState.icon = trait.icon;
+                    if (trait.canEditName) {
+                        this.props.containerState.title = new ModifiableText(trait.displayName, (newTitle: string) => {
+                            trait.rename(newTitle);
+                        }, trait.editableName);
+                    } else {
+                        this.props.containerState.title = trait.displayName;
+                    }
+                });
+            }
 
             this.setState({
                 results: results,

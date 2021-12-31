@@ -34,16 +34,22 @@ export class ColumnActions extends React.Component<IProps> {
             {
                 key: 'e',
                 callback: () => {
+                    if (this.props.selection.length == 0) {
+                        return false;
+                    }
                     this.handleDoneClick();
-                    return this.props.selection.length > 0;
+                    return true;
                 },
                 disabledContexts: ['input', 'modal'],
             },
             {
                 key: 'z',
                 callback: () => {
+                    if (this.props.selection.length == 0) {
+                        return false;
+                    }
                     this.handleSnoozeClick();
-                    return this.props.selection.length > 0;
+                    return true;
                 },
                 disabledContexts: ['input', 'modal'],
             }

@@ -60,7 +60,7 @@ export default class Task extends React.Component<IProps, IState> {
                             <EditableText
                                 text={this.state.currentTask.title}
                                 onChange={this.handleNameChange}
-                                onBind={this.handleInputBound} />
+                                onBound={this.handleInputBound} />
                         </span>
                     </div>
                 </div>

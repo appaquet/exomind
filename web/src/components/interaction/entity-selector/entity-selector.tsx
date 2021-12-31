@@ -31,30 +31,11 @@ export class EntitySelector extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
 
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
 
     constructor(props: IProps) {
         super(props);
         this.state = {};
-    }
-
-    render(): React.ReactNode {
-        if (this.props.loading) {
-            return <Message text="Loading..." showAfterMs={200} />
-        }
-
-        return (
-            <div className="entity-selector">
-                <Scrollable loadMoreItems={15} onNeedMore={this.handleLoadMore} nbItems={this.props.entities.length}>
-                    <ul>
-                        {this.renderEntities()}
-                    </ul>
-                </Scrollable>
-            </div>
-        );
-    }
-
-    componentDidMount(): void {
         this.shortcutToken = Shortcuts.register([
             {
                 key: 'n',
@@ -96,6 +77,22 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
     componentWillUnmount(): void {
         Shortcuts.unregister(this.shortcutToken);
+    }
+
+    render(): React.ReactNode {
+        if (this.props.loading) {
+            return <Message text="Loading..." showAfterMs={200} />
+        }
+
+        return (
+            <div className="entity-selector">
+                <Scrollable loadMoreItems={15} onNeedMore={this.handleLoadMore} nbItems={this.props.entities.length}>
+                    <ul>
+                        {this.renderEntities()}
+                    </ul>
+                </Scrollable>
+            </div>
+        );
     }
 
     private renderEntities(): React.ReactNode {

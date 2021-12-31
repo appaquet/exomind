@@ -41,7 +41,7 @@ interface EmailState {
 @observer
 export default class EmailThread extends React.Component<IProps, IState> {
     private mounted = false;
-    private shortcutToken?: ListenerToken;
+    private shortcutToken: ListenerToken;
     private draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
 
     constructor(props: IProps) {
@@ -77,6 +77,14 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         this.trackMarkAsRead();
 
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'e',
+                callback: this.handleShortcutDone,
+                disabledContexts: ['input', 'modal'],
+            },
+        ]);
+
         this.state = {
             collapsed: true,
             emailStates: emailStates,
@@ -86,13 +94,6 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     componentDidMount(): void {
         this.mounted = true;
-        this.shortcutToken = Shortcuts.register([
-            {
-                key: 'e',
-                callback: this.handleShortcutDone,
-                disabledContexts: ['input', 'modal'],
-            },
-        ]);
     }
 
     componentWillUnmount(): void {
@@ -101,9 +102,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
-        if (this.props.containerState) {
-            Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
-        }
+        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
         const emails = this.renderEmails();
         const emailControls = (this.state.controlledEmailId && (this.props.containerState?.active ?? true)) ? this.renderEmailControls() : null;

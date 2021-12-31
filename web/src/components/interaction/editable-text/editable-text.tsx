@@ -10,7 +10,7 @@ interface IProps {
   doubleClick?: boolean;
   onChange?: (value: string) => void;
   initializeEditing?: boolean;
-  onBind?: (ed: EditableText) => void;
+  onBound?: (ed: EditableText) => void;
 }
 
 interface IState {
@@ -54,7 +54,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     if (this.state.editing) {
       this.ensureFocus();
     }
-    this.props.onBind?.(this);
+    this.props.onBound?.(this);
   }
 
   render(): React.ReactNode {

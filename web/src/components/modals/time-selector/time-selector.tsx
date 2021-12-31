@@ -3,7 +3,8 @@ import React from 'react';
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/light.css";
 import './time-selector.less';
-import DateUtil, { SnoozeKey } from '../../../utils/dates';
+import DateUtil, { ISnoozeChoice, SnoozeKey } from '../../../utils/dates';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 
 interface IProps {
     onSelectionDone: (date: Date) => void;
@@ -12,10 +13,15 @@ interface IProps {
 interface IState {
     picker: boolean;
     date: Date;
+    selected?: number;
 }
 
+const choicePerRow = 3;
+
 export default class TimeSelector extends React.Component<IProps, IState> {
-    listElemRef: React.RefObject<HTMLUListElement>;
+    private listElemRef: React.RefObject<HTMLUListElement> = React.createRef();
+    private shortcutToken: ListenerToken;
+    private choices: ISnoozeChoice[];
 
     constructor(props: IProps) {
         super(props);
@@ -25,7 +31,34 @@ export default class TimeSelector extends React.Component<IProps, IState> {
             date: new Date(),
         };
 
-        this.listElemRef = React.createRef();
+        this.choices = DateUtil.getSnoozeChoices();
+
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'ArrowUp',
+                callback: () => this.handleShortcutMove(-choicePerRow),
+            },
+            {
+                key: 'ArrowDown',
+                callback: () => this.handleShortcutMove(choicePerRow),
+            },
+            {
+                key: 'ArrowLeft',
+                callback: () => this.handleShortcutMove(-1),
+            },
+            {
+                key: 'ArrowRight',
+                callback: () => this.handleShortcutMove(1),
+            },
+            {
+                key: 'Enter',
+                callback: this.handleShortcutSelect,
+            },
+        ]);
+    }
+
+    componentWillUnmount(): void {
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
@@ -53,10 +86,14 @@ export default class TimeSelector extends React.Component<IProps, IState> {
     }
 
     private renderLaterChoices(): React.ReactNode {
-        return DateUtil.getSnoozeChoices()
-            .map((choice) => {
+        return this.choices
+            .map((choice, i) => {
+                const selected = this.state.selected === i;
+                const classes = classNames({
+                    selected
+                });
                 return (
-                    <li onClick={() => this.handleTimeClick(choice.key)} key={choice.key}>
+                    <li className={classes} onClick={() => this.handleTimeClick(choice.key)} key={choice.key}>
                         <span>{choice.copy}</span>
                     </li>
                 )
@@ -104,6 +141,38 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                 this.props.onSelectionDone(date);
             }
         }
+    }
+
+    private handleShortcutMove(moveCount: number): boolean {
+        const nbChoices = this.choices.length;
+
+        let selected: number;
+        if (this.state.selected !== undefined) {
+            // wrap around
+            selected = this.state.selected + moveCount;
+            if (selected >= nbChoices) {
+                selected -= nbChoices;
+            } else if (selected < 0) {
+                selected += nbChoices;
+            }
+        } else {
+            selected = 0;
+        }
+
+        this.setState({ selected });
+
+        return true;
+    }
+
+    private handleShortcutSelect = (): boolean => {
+        if (this.state.selected === undefined) {
+            return false;
+        }
+
+        const date = DateUtil.snoozeDate(this.choices[this.state.selected].key);
+        this.props.onSelectionDone?.(date);
+
+        return true;
     }
 }
 
