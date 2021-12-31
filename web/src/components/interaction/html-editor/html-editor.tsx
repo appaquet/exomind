@@ -149,14 +149,18 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 handleDOMEvents: {
                     focus: () => {
                         if (this.props.onFocus) {
-                            this.props.onFocus();
+                            setTimeout(() => {
+                                this.props.onFocus();
+                            });
                         }
                         Shortcuts.activateContext('text-editor');
                         return false;
                     },
                     blur: () => {
                         if (this.props.onBlur) {
-                            this.props.onBlur();
+                            setTimeout(() => {
+                                this.props.onBlur();
+                            });
                         }
                         Shortcuts.deactivateContext('text-editor');
                         return false;
@@ -273,7 +277,11 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         if (url) {
             const state = this.editor.view.state;
             const dispatch = this.editor.view.dispatch;
-            if (title && cursor.selection.empty) {
+            if (cursor.selection.empty) {
+                if (!title) {
+                    title = url;
+                }
+
                 const linkMark = state.schema.marks.link.create({
                     href: url,
                 });

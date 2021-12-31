@@ -35,7 +35,6 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
     constructor(props: IProps) {
         super(props);
-
         this.state = {};
     }
 
@@ -197,13 +196,13 @@ export class EntitySelector extends React.Component<IProps, IState> {
         const entity = this.props.entities[this.state.hoveredIndex ?? 0];
         const selectedIds = new Set(this.props.selectedIds ?? []);
 
+        this.hoverIndex(0);
+
         if (!selectedIds.has(entity.id)) {
             this.props.onSelect(entity, null);
         } else {
             this.props.onUnselect(entity, null);
         }
-
-        this.hoverIndex(0);
 
         return true;
     }

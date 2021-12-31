@@ -78,9 +78,10 @@ export default class Note extends React.Component<IProps, IState> {
     render(): React.ReactNode {
         if (this.props.containerState) {
             Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState.active);
-
             if (!this.props.containerState.active && this.state.focused) {
-                this.state.editor?.blur();
+                setTimeout(() => {
+                    this.state.editor?.blur();
+                });
             }
         }
 
@@ -125,6 +126,7 @@ export default class Note extends React.Component<IProps, IState> {
         });
     }
 
+    // TODO: migrate to async
     private linkSelector = (cursor: EditorCursor): Promise<SelectedLink | null> => {
         return new Promise((resolve) => {
             const handleDone = (selectedLink: SelectedLink | null) => {

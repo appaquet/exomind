@@ -52,6 +52,10 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                 key: 'Mod-k',
                 callback: this.handleShortcutFocusInput,
             },
+            {
+                key: 'Enter',
+                callback: this.handleShortcutEnter,
+            },
         ]);
     }
 
@@ -66,8 +70,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             'note-link-selector': true,
         });
 
-        const isEntityLink = this.state.inputValue.startsWith('entity://');
-        const renderEntitySelector = this.state.inputValue.length >= 3 && !this.state.inputValue.startsWith('htt');
+        const isEntityLink = this.isEntityLink;
         return (
             <div className={classes}>
                 <div className="text">Enter a link or type entity name</div>
@@ -83,7 +86,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
 
                 {isEntityLink && this.renderEntity()}
 
-                {!isEntityLink && renderEntitySelector && this.renderEntitySelector()}
+                {!isEntityLink && this.inEntitySelectMode && this.renderEntitySelector()}
 
                 <div className="buttons">
                     <button onClick={this.onCancel}>Cancel</button>
@@ -92,6 +95,14 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                 </div>
             </div>
         );
+    }
+
+    private get isEntityLink(): boolean {
+        return this.state.inputValue.startsWith('entity://');
+    }
+
+    private get inEntitySelectMode(): boolean {
+        return !this.isEntityLink && this.state.inputValue.length >= 3 && !this.state.inputValue.startsWith('htt');
     }
 
     private renderEntity(): React.ReactNode {
@@ -194,6 +205,15 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         return true;
     }
 
+    private handleShortcutEnter = (): boolean => {
+        if (this.inEntitySelectMode) {
+            // enter is handled by the entity selector
+            return false;
+        }
+        this.onDone();
+        return true;
+    }
+
     private onCancel = (): void => {
         this.props.onCancel();
     }
@@ -203,6 +223,9 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     }
 
     private onDone = (): void => {
-        this.props.onDone({ url: this.state.inputValue });
+        this.props.onDone({
+            url: this.state.inputValue,
+            title: this.state.entity?.priorityTrait?.displayName,
+        });
     }
 }

@@ -12,7 +12,6 @@ import { Search } from '../../objects/search/search';
 import './column.less';
 import { ColumnConfig } from './columns-config';
 import { Message } from '../../objects/message';
-import copy from 'clipboard-copy';
 import { observer } from 'mobx-react';
 import { observable, runInAction } from 'mobx';
 
@@ -76,7 +75,6 @@ export default class Column extends React.Component<IProps, IState> {
         }
 
         const headerActions = [];
-
         if (this.containerState.actions) {
             this.containerState.actions.forEach(action => {
                 headerActions.push(action);
@@ -85,10 +83,6 @@ export default class Column extends React.Component<IProps, IState> {
 
         if (this.props.columnConfig.isEntity) {
             headerActions.push(new HeaderAction('external-link', this.expandFullscreen));
-
-            headerActions.push(new HeaderAction('copy', () => {
-                copy(this.props.columnConfig.first);
-            }));
         }
 
         if (this.props.onClose) {

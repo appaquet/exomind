@@ -11,6 +11,7 @@ import { HeaderAction } from "./header";
 import { Message } from "./message";
 import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../stores/stores';
+import copy from 'clipboard-copy';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -53,6 +54,9 @@ export class EntityComponent extends React.Component<Props, State> {
         if (props.containerState) {
             props.containerState.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
             props.containerState.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
+            props.containerState.pushHeaderAction(new HeaderAction('copy', () => {
+                copy(`entity://${this.state.entityTraits.id}`);
+            }));
         }
 
         this.state = {};
