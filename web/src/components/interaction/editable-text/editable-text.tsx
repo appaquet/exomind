@@ -113,19 +113,13 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   focus(): void {
-    if (!this.state.editing) {
-      this.setState({
-        editing: true
-      });
-    }
+    this.setState({
+      editing: true
+    });
 
     setTimeout(() => {
       this.ensureFocus();
     }, 500);
-  }
-
-  blur(): void {
-    this.inputRef.current?.blur();
   }
 
   private handleReadClick = (e: MouseEvent) => {
@@ -143,7 +137,6 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private handleEditKeyPress = (event: React.KeyboardEvent) => {
-    console.log(event.key);
     if (event.key == 'Escape' || (!this.props.multiline && event.key == 'Enter')) {
       this.editFinish();
     }
@@ -159,7 +152,6 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private editFinish() {
-    console.log('editFinish');
     this.setState({
       editing: false
     });
@@ -175,7 +167,6 @@ export default class EditableText extends React.Component<IProps, IState> {
     }
 
     if (element != document.activeElement) {
-      console.log('focusing');
       element.focus();
       element.select();
     }

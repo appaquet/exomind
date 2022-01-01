@@ -33,6 +33,8 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
         this.state = {
             keywords: '',
         };
+
+        this.maybeRefreshQueries();
     }
 
     componentWillUnmount(): void {
@@ -40,13 +42,10 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
     }
 
     componentDidMount(): void {
-        this.maybeRefreshQueries();
         this.filterInputRef.current.focus();
     }
 
     render(): React.ReactNode {
-        this.maybeRefreshQueries();
-
         const loading = !(this.collectionsQuery?.hasResults ?? false);
         const entities = Array.from(this.collectionsQuery?.results() ?? []).map((res) => this.wrapEntityTraits(res.entity));
 
@@ -76,12 +75,6 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
 
     private wrapEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
 
-    private entityParents(entity: EntityTraits): string[] {
-        return entity
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .flatMap((cc) => cc.message.collection.entityId);
-    }
-
     private maybeRefreshQueries(): void {
         if (this.collectionsQueryKeywords != this.state.debouncedKeywords || !this.collectionsQuery) {
             this.collectionsQuery?.free();
@@ -108,6 +101,7 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
             this.setState({
                 debouncedKeywords: value
             });
+            this.maybeRefreshQueries();
         });
     }
 

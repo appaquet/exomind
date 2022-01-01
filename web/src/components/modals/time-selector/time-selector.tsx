@@ -124,7 +124,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         this.setState({ date: dates[0] });
     }
 
-    private handlePickerDone(): void {
+    private handlePickerDone = (): void => {
         if (this.props.onSelectionDone && this.state.date) {
             this.props.onSelectionDone(this.state.date);
         }

@@ -1,7 +1,10 @@
 
 import { Exocore, MutationBuilder } from 'exocore';
+import { observer } from 'mobx-react';
 import React from 'react';
+import Navigation from '../../../navigation';
 import { exomind } from '../../../protos';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import EditableText from '../../interaction/editable-text/editable-text';
 import { ContainerState } from '../container-state';
@@ -22,16 +25,31 @@ interface IState {
     currentLink: exomind.base.v1.ILink
 }
 
+@observer
 export default class Link extends React.Component<IProps, IState> {
+    private shortcutToken: ListenerToken;
+
     constructor(props: IProps) {
         super(props);
 
         this.state = {
             currentLink: new exomind.base.v1.Link(props.linkTrait.message),
         }
+
+        this.shortcutToken = Shortcuts.register({
+            key: 'Enter',
+            callback: this.handleShortcutEnter,
+            disabledContexts: ['input', 'modal'],
+        });
+    }
+
+    componentWillUnmount(): void {
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
+        Shortcuts.setListenerEnabled(this.shortcutToken, !this.props.containerState.closed);
+
         return (
             <div className="entity-component link">
                 <div className="entity-details">
@@ -76,6 +94,11 @@ export default class Link extends React.Component<IProps, IState> {
         this.setState({
             currentLink: this.state.currentLink,
         });
+    }
+
+    private handleShortcutEnter = (): boolean => {
+        Navigation.navigateExternal(this.state.currentLink.url);
+        return true;
     }
 }
 

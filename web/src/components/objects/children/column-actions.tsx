@@ -7,8 +7,8 @@ import TimeSelector from '../../modals/time-selector/time-selector';
 import { Selection } from "../entity-list/selection";
 import { IStores, StoresContext } from '../../../stores/stores';
 import { getEntityParentRelation } from '../../../stores/collections';
-import "./column-actions.less";
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
+import "./column-actions.less";
 
 interface IProps {
     parent: EntityTraits;

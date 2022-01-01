@@ -141,6 +141,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
     private handleShortcutNext = (): boolean => {
         let idx = this.state.hoveredIndex ?? -1;
         idx += 1;
+
         if (idx >= this.props.entities.length) {
             idx = this.props.entities.length - 1;
         }
@@ -155,10 +156,10 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
         if (idx < 0) {
             if (this.props.onBlur) {
-                this.props.onBlur();
                 this.setState({
                     hoveredIndex: undefined,
                 });
+                this.props.onBlur();
                 return true;
             } else {
                 idx = 0;
@@ -213,6 +214,9 @@ export class EntitySelector extends React.Component<IProps, IState> {
         if (this.state.hoveredIndex == undefined || !this.props.onBlur) {
             return false;
         }
+        this.setState({
+            hoveredIndex: undefined,
+        });
         this.props.onBlur();
         return true;
     }
