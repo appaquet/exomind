@@ -8,8 +8,10 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
 import './email-thread.less';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-state';
 import { runInAction } from 'mobx';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
+import { observer } from 'mobx-react';
 
 
 interface IProps {
@@ -18,7 +20,7 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -36,9 +38,12 @@ interface EmailState {
     original?: string;
 }
 
+@observer
 export default class EmailThread extends React.Component<IProps, IState> {
     private mounted = false;
+    private shortcutToken: ListenerToken;
     private draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
+    private threadElement: React.RefObject<HTMLUListElement> = React.createRef();
 
     constructor(props: IProps) {
         super(props);
@@ -73,6 +78,14 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         this.trackMarkAsRead();
 
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'e',
+                callback: this.handleShortcutDone,
+                disabledContexts: ['input', 'modal'],
+            },
+        ]);
+
         this.state = {
             collapsed: true,
             emailStates: emailStates,
@@ -86,14 +99,23 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     componentWillUnmount(): void {
         this.mounted = false;
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
+        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
+
+        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
+            console.log('focusing');
+            this.threadElement.current.focus();
+            console.log(this.threadElement.current, document.activeElement);
+        }
+
         const emails = this.renderEmails();
-        const emailControls = (this.state.controlledEmailId) ? this.renderEmailControls() : null;
+        const emailControls = (this.state.controlledEmailId && (this.props.containerState?.active ?? true)) ? this.renderEmailControls() : null;
         return (
-            <div className="entity-component email-thread" onMouseLeave={this.handleThreadMouseLeave.bind(this)}>
-                <ul className="thread">
+            <div className="entity-component email-thread" onMouseLeave={this.handleThreadMouseLeave}>
+                <ul className="thread" tabIndex={0} ref={this.threadElement}>
                     {emails}
                 </ul>
                 {emailControls}
@@ -136,7 +158,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     private renderEmail(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const open = emailState.isOpen;
-        const hovered = this.state.hoveredEmailId === email.id;
+        const hovered = this.state.hoveredEmailId === email.id && (this.props.containerState?.active ?? true);
         const classes = classNames({
             email: true,
             opened: open,
@@ -150,16 +172,16 @@ export default class EmailThread extends React.Component<IProps, IState> {
         return (
             <li key={email.id}
                 className={classes}
-                onMouseEnter={this.handleEmailMouseEnter.bind(this, emailState, email)}
-                onMouseLeave={this.handleEmailMouseLeave.bind(this)}>
+                onMouseEnter={() => this.handleEmailMouseEnter(emailState, email)}
+                onMouseLeave={this.handleEmailMouseLeave}>
 
-                <div className="preview-header" onClick={this.handleEmailClick.bind(this, emailState, email)}>
+                <div className="preview-header" onClick={() => this.handleEmailClick(emailState, email)}>
                     <span className="from">{EmailUtil.formatContact(email.message.from)}</span>
                     {snippetOrTo}
                     <span
                         className="time">{EmailUtil.formatDate(fromProtoTimestamp(email.message.receivedDate))}
                     </span>
-                    <span className="header-controls" onClick={this.handleOpenEmailClick.bind(this, email)}>
+                    <span className="header-controls" onClick={() => this.handleOpenEmailClick(email)}>
                         <i className="icon" />
                     </span>
                 </div>
@@ -185,7 +207,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         return (
             <li key="collapsed" className={classes}>
-                <div className="preview-header" onClick={this.handleCollapsedClick.bind(this)}>
+                <div className="preview-header" onClick={this.handleCollapsedClick}>
                     <div className="line">&nbsp;</div>
                     <div className="line">&nbsp;</div>
                     <div className="count">{count}</div>
@@ -200,10 +222,10 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
 
         return <li key={draft.id} className={classes}>
-            <div className="preview-header" onClick={this.handleDraftClick.bind(this, draft)}>
+            <div className="preview-header" onClick={() => this.handleDraftClick(draft)}>
                 <span className="snippet">Draft reply</span>
                 <span className="time">{EmailUtil.formatDate(draft.modificationDate ?? new Date())}</span>
-                <span className="header-controls" onClick={this.handleDraftClick.bind(this, draft)}><i
+                <span className="header-controls" onClick={() => this.handleDraftClick(draft)}><i
                     className="icon" /></span>
             </div>
         </li>;
@@ -244,7 +266,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
             markup = { __html: emailState.cleanedCurrent };
             more = (!_.isEmpty(emailState.original)) ?
-                <div className="more" onClick={this.handleOpenEmailClick.bind(this, email)}><span className="icon" />
+                <div className="more" onClick={() => this.handleOpenEmailClick(email)}><span className="icon" />
                 </div> : null;
 
         } else if (textPart) {
@@ -263,7 +285,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         );
     }
 
-    private handleCollapsedClick(): void {
+    private handleCollapsedClick = (): void => {
         this.setState({
             collapsed: false
         });
@@ -276,7 +298,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         }
     }
 
-    private handleThreadMouseLeave(): void {
+    private handleThreadMouseLeave = (): void => {
         this.setState({
             controlledEmailId: null
         });
@@ -289,7 +311,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleEmailMouseLeave(): void {
+    private handleEmailMouseLeave = (): void => {
         this.setState({
             hoveredEmailId: null,
         });
@@ -310,7 +332,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         });
     }
 
-    private handleDraftClick(draft: EntityTrait<exomind.base.v1.IDraftEmail>): void {
+    private handleDraftClick = (draft: EntityTrait<exomind.base.v1.IDraftEmail>): void => {
         if (this.props.onSelectionChange) {
             const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, draft.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
@@ -324,7 +346,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
             .find((trt) => trt.message.collection.entityId == 'inbox');
         if (inboxChild) {
             doneAction = <>
-                <li onClick={this.handleDoneEmail.bind(this, inboxChild)}><i className="done" /></li>
+                <li onClick={() => this.handleDoneEmail(inboxChild)}><i className="done" /></li>
             </>;
         }
 
@@ -332,29 +354,42 @@ export default class EmailThread extends React.Component<IProps, IState> {
             <div className="column-bottom-actions">
                 <ul>
                     {doneAction}
-                    <li onClick={this.handleReplyAllEmail.bind(this)}><i className="reply-all" /></li>
-                    <li onClick={this.handleReplyEmail.bind(this)}><i className="reply" /></li>
-                    <li onClick={this.handleForwardEmail.bind(this)}><i className="forward" /></li>
+                    <li onClick={this.handleReplyAllEmail}><i className="reply-all" /></li>
+                    <li onClick={this.handleReplyEmail}><i className="reply" /></li>
+                    <li onClick={this.handleForwardEmail}><i className="forward" /></li>
                 </ul>
             </div>
         );
     }
 
-    private handleDoneEmail(child: EntityTrait<exomind.base.v1.CollectionChild>): void {
+    private handleShortcutDone = (): boolean => {
+        const inboxChild = this.props.entity
+            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
+            .find((trt) => trt.message.collection.entityId == 'inbox');
+
+        if (inboxChild) {
+            this.handleDoneEmail(inboxChild);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private handleDoneEmail(child: EntityTrait<exomind.base.v1.ICollectionChild>): void {
         const mutation = MutationBuilder
             .updateEntity(this.props.entity.id)
             .deleteTrait(child.id)
             .build();
         Exocore.store.mutate(mutation);
 
-        if (this.props.containerController) {
+        if (this.props.containerState) {
             runInAction(() => {
-                this.props.containerController.closed = true;
+                this.props.containerState.closed = true;
             });
         }
     }
 
-    private handleReplyEmail(): void {
+    private handleReplyEmail = (): void => {
         // TODO: Reply
         // EmailsLogicXYZ.createReplyEmail(this.props.entity, email).onProcessed((cmd, obj) => {
         //     if (obj) {
@@ -364,7 +399,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         // });
     }
 
-    private handleReplyAllEmail(): void {
+    private handleReplyAllEmail = (): void => {
         // TODO: Reply all
         // EmailsLogicXYZ.createReplyAllEmail(this.props.entity, email).onProcessed((cmd, obj) => {
         //     if (obj) {
@@ -374,7 +409,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         // });
     }
 
-    private handleForwardEmail(): void {
+    private handleForwardEmail = (): void => {
         // TODO: Forward
         // EmailsLogicXYZ.createForwardEmail(this.props.entity, email).onProcessed((cmd, obj) => {
         //     if (obj) {

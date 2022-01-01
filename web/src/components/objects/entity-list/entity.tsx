@@ -16,13 +16,19 @@ import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
 
 export interface IProps {
+    id: string;
     entity: EntityTraits;
     parentEntity?: EntityTraits;
+
+    active?: boolean;
 
     selected?: boolean;
     onSelectionChange?: (sel: Selection) => void;
     onClick?: (e: React.MouseEvent) => void;
     actionsForEntity?: (entity: EntityTraits) => EntityActions;
+
+    onMouseLeave?: (e: React.MouseEvent) => void;
+    onMouseOver?: (e: React.MouseEvent) => void;
 
     draggable?: boolean;
     droppable?: boolean;
@@ -35,7 +41,6 @@ export interface IProps {
 interface IState {
     removed: boolean;
     selected: boolean;
-    hovered: boolean;
     beingDragged: boolean;
     parents?: Parents,
 }
@@ -47,24 +52,24 @@ export class Entity extends React.Component<IProps, IState> {
         this.state = {
             removed: false,
             selected: props.selected ?? false,
-            hovered: false,
             beingDragged: false,
         };
     }
 
     render(): React.ReactNode {
+        const active = this.props.active === true;
         const classes = classNames({
             item: true,
             done: this.state.removed,
             selected: (this.props.selected === true),
-            hover: this.state.hovered
+            hover: active,
         });
 
         let actionsComponent = null;
         let actions;
         if (this.props.actionsForEntity) {
             actions = this.props.actionsForEntity(this.props.entity);
-            if (this.state.hovered && !actions.isEmpty) {
+            if (active && !actions.isEmpty) {
                 actionsComponent = this.renderActions(actions);
             }
         }
@@ -81,10 +86,11 @@ export class Entity extends React.Component<IProps, IState> {
         }
 
         return (
-            <li className={classes}
+            <li id={this.props.id}
+                className={classes}
                 onClick={this.handleItemClick}
-                onMouseOver={this.handleItemMouseOver}
-                onMouseLeave={this.handleItemMouseLeave}>
+                onMouseOver={this.props.onMouseOver}
+                onMouseLeave={this.props.onMouseLeave}>
 
                 <div className="swipe-container">
                     <DragAndDrop
@@ -260,7 +266,7 @@ export class Entity extends React.Component<IProps, IState> {
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{entityTrait.displayName}</span></div>
-                    {entityTrait.message.description && 
+                    {entityTrait.message.description &&
                         <div className="text">{entityTrait.message.description}</div>
                     }
                     {this.renderParents(entityTrait.et)}
@@ -373,18 +379,6 @@ export class Entity extends React.Component<IProps, IState> {
         }
     }
 
-    private handleItemMouseOver = (): void => {
-        this.setState({
-            hovered: true
-        });
-    }
-
-    private handleItemMouseLeave = (): void => {
-        this.setState({
-            hovered: false
-        });
-    }
-
     private handleTaskChange(task: EntityTrait<exomind.base.v1.ITask>, actions: EntityActions, newTitle: string): void {
         task.rename(newTitle);
 
@@ -419,7 +413,6 @@ class EntityParents extends React.Component<EntityParentsProps> {
             if (this.props.onSelectionChange) {
                 const item = SelectedItem.fromEntityId(col.entityId);
                 this.props.onSelectionChange(new Selection(item));
-                e.preventDefault();
                 e.stopPropagation();
             }
         };

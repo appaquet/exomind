@@ -4,7 +4,7 @@ import { exomind } from '../../../protos';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-state';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
@@ -17,7 +17,7 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -55,10 +55,10 @@ export default class Snoozed extends React.Component<IProps, IState> {
             this.setState({ entities });
         })
 
-        if (props.containerController) {
+        if (props.containerState) {
             runInAction(() => {
-                props.containerController.title = 'Snoozed';
-                props.containerController.icon = { fa: 'clock-o' };
+                props.containerState.title = 'Snoozed';
+                props.containerState.icon = { fa: 'clock-o' };
             });
         }
 
@@ -81,16 +81,16 @@ export default class Snoozed extends React.Component<IProps, IState> {
                     <EntityList
                         entities={this.state.entities}
 
-                        onRequireLoadMore={this.handleLoadMore.bind(this)}
+                        onRequireLoadMore={this.handleLoadMore}
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        actionsForEntity={this.actionsForEntity.bind(this)}
+                        actionsForEntity={this.actionsForEntity}
 
                         draggable={false}
                         droppable={false}
 
-                        renderEntityDate={this.renderEntityDate.bind(this)}
+                        renderEntityDate={this.renderEntityDate}
                     />
                 </div>
             );
@@ -100,7 +100,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
         }
     }
 
-    private renderEntityDate(entity: EntityTrait<unknown>): React.ReactFragment {
+    private renderEntityDate = (entity: EntityTrait<unknown>): React.ReactFragment => {
         const snoozedTrait = entity.et.traitOfType<exomind.base.v1.ISnoozed>(exomind.base.v1.Snoozed);
         if (!snoozedTrait) {
             return 'Invalid';
@@ -117,13 +117,13 @@ export default class Snoozed extends React.Component<IProps, IState> {
         return 'Snoozed until ' + strDate;
     }
 
-    private handleLoadMore() {
+    private handleLoadMore = () => {
         this.entityQuery.expand();
     }
 
-    private actionsForEntity(et: EntityTraits): EntityActions {
+    private actionsForEntity = (et: EntityTraits): EntityActions => {
         return new EntityActions([
-            new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et)),
+            new ButtonAction('inbox', () => this.handleEntityMoveInbox(et)),
         ]);
     }
 

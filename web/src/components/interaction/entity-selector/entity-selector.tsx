@@ -9,15 +9,17 @@ import { HierarchyPills } from "../../objects/hierarchy-pills/hierarchy-pills";
 import './entity-selector.less'
 import classNames from "classnames";
 import { CancellableEvent } from "../../../utils/events";
+import { ListenerToken, Shortcuts } from "../../../shortcuts";
 
 interface IProps {
     multi?: boolean,
     entities: EntityTraits[],
     selectedIds?: string[],
     loading?: boolean,
-    onSelect: (entity: EntityTraits, event: CancellableEvent) => void,
-    onUnselect?: (entity: EntityTraits, event: CancellableEvent) => void,
+    onSelect: (entity: EntityTraits, event?: CancellableEvent) => void,
+    onUnselect?: (entity: EntityTraits, event?: CancellableEvent) => void,
     onNeedMore?: () => void,
+    onBlur?: () => void,
 }
 
 interface IState {
@@ -29,10 +31,52 @@ export class EntitySelector extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
 
+    private shortcutToken: ListenerToken;
+
     constructor(props: IProps) {
         super(props);
-
         this.state = {};
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'n',
+                callback: this.handleShortcutNext,
+                disabledContexts: ['input'],
+            },
+            {
+                key: 'ArrowDown',
+                callback: this.handleShortcutNext,
+                disabledContexts: [], // allow focusing out of search bar
+            },
+            {
+                key: ['p', 'ArrowUp'],
+                callback: this.handleShortcutPrevious,
+                disabledContexts: ['input'],
+            },
+            {
+                key: ['Mod-ArrowUp'],
+                callback: this.handleShortcutTop,
+                disabledContexts: ['input'],
+            },
+            {
+                key: ['Mod-ArrowDown'],
+                callback: this.handleShortcutBottom,
+                disabledContexts: [],
+            },
+            {
+                key: ['Space', 'Enter'],
+                callback: this.handleShortcutSelect,
+                disabledContexts: ['input'],
+            },
+            {
+                key: ['Tab'],
+                callback: this.handleShortcutBlur,
+                disabledContexts: ['input'],
+            },
+        ]);
+    }
+
+    componentWillUnmount(): void {
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
@@ -49,14 +93,6 @@ export class EntitySelector extends React.Component<IProps, IState> {
                 </Scrollable>
             </div>
         );
-    }
-
-    componentDidMount(): void {
-        document.addEventListener('keydown', this.handleKeyDown, false);
-    }
-
-    componentWillUnmount(): void {
-        document.removeEventListener('keydown', this.handleKeyDown, false);
     }
 
     private renderEntities(): React.ReactNode {
@@ -102,49 +138,86 @@ export class EntitySelector extends React.Component<IProps, IState> {
         this.props.onNeedMore?.();
     }
 
-    private handleKeyDown = (e: KeyboardEvent): void => {
-        if (e.key == 'ArrowUp') {
-            let idx = this.state.hoveredIndex ?? 0;
-            idx -= 1;
-            if (idx < 0) {
+    private handleShortcutNext = (): boolean => {
+        let idx = this.state.hoveredIndex ?? -1;
+        idx += 1;
+
+        if (idx >= this.props.entities.length) {
+            idx = this.props.entities.length - 1;
+        }
+
+        this.hoverIndex(idx);
+        return true;
+    }
+
+    private handleShortcutPrevious = (): boolean => {
+        let idx = this.state.hoveredIndex ?? 0;
+        idx -= 1;
+
+        if (idx < 0) {
+            if (this.props.onBlur) {
+                this.setState({
+                    hoveredIndex: undefined,
+                });
+                this.props.onBlur();
+                return true;
+            } else {
                 idx = 0;
             }
-
-            document.getElementById(`entity-${idx}`)?.scrollIntoView();
-            this.setState({
-                hoveredIndex: idx,
-            });
-            e.preventDefault();
-            e.stopPropagation();
-
-        } else if (e.key == 'ArrowDown') {
-            let idx = this.state.hoveredIndex ?? -1;
-            idx += 1;
-            if (idx >= this.props.entities.length) {
-                idx = this.props.entities.length - 1;
-            } else if (idx >= this.props.entities.length - 10) {
-                this.props.onNeedMore?.();
-            }
-
-            document.getElementById(`entity-${idx}`)?.scrollIntoView();
-            this.setState({
-                hoveredIndex: idx,
-            });
-            e.preventDefault();
-            e.stopPropagation();
-
-        } else if ((e.key == 'Enter' || e.key == ' ') && this.state.hoveredIndex != undefined) {
-            const entity = this.props.entities[this.state.hoveredIndex ?? 0];
-            const selectedIds = new Set(this.props.selectedIds ?? []);
-
-            if (!selectedIds.has(entity.id)) {
-                this.props.onSelect(entity, null);
-            } else {
-                this.props.onUnselect(entity, null);
-            }
-
-            e.preventDefault();
-            e.stopPropagation();
         }
+
+        this.hoverIndex(idx);
+        return true;
+    }
+
+    private handleShortcutTop = (): boolean => {
+        this.hoverIndex(0);
+        return true;
+    }
+
+    private handleShortcutBottom = (): boolean => {
+        this.hoverIndex(this.props.entities.length - 1);
+        return true;
+    }
+
+    private hoverIndex(idx: number) {
+        if (idx >= this.props.entities.length - 10) {
+            this.props.onNeedMore?.();
+        }
+
+        document.getElementById(`entity-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
+        this.setState({
+            hoveredIndex: idx,
+        });
+    }
+
+    private handleShortcutSelect = (): boolean => {
+        if (this.state.hoveredIndex == undefined) {
+            return false;
+        }
+
+        const entity = this.props.entities[this.state.hoveredIndex ?? 0];
+        const selectedIds = new Set(this.props.selectedIds ?? []);
+
+        this.hoverIndex(0);
+
+        if (!selectedIds.has(entity.id)) {
+            this.props.onSelect(entity, null);
+        } else {
+            this.props.onUnselect(entity, null);
+        }
+
+        return true;
+    }
+
+    private handleShortcutBlur = (): boolean => {
+        if (this.state.hoveredIndex == undefined || !this.props.onBlur) {
+            return false;
+        }
+        this.setState({
+            hoveredIndex: undefined,
+        });
+        this.props.onBlur();
+        return true;
     }
 }

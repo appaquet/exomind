@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react';
 import React from 'react';
-import { ContainerController } from '../../objects/container-controller';
+import { ContainerState } from '../../objects/container-state';
 import { EntityComponent } from '../../objects/entity-component';
 import './fullscreen.less';
 
@@ -10,21 +10,21 @@ interface IProps {
 
 @observer
 export default class Fullscreen extends React.Component<IProps> {
-  private containerController: ContainerController;
+  private containerState: ContainerState;
 
   constructor(props: IProps) {
     super(props);
-    this.containerController = new ContainerController();
+    this.containerState = new ContainerState();
   }
 
   render(): React.ReactNode {
-    document.title = 'Exomind - ' + this.containerController.title;
+    document.title = 'Exomind - ' + this.containerState.title;
 
     return (
       <div className="fullscreen">
         <EntityComponent
           entityId={this.props.entityId}
-          containerController={this.containerController}/>
+          containerState={this.containerState}/>
       </div>
     );
   }

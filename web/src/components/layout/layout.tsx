@@ -14,11 +14,53 @@ import Hamburger from './hamburger/hamburger';
 import { Header } from './header/header';
 import './layout.less';
 import Modal from './modal';
+import { Shortcuts } from '../../shortcuts';
+import { CollectionNavigator } from '../modals/collection-navigator/collection-navigator';
+import { EntityTraits } from '../../utils/entities';
 
 @observer
 export default class Layout extends React.Component {
   static contextType = StoresContext;
   declare context: IStores;
+
+  constructor(props: unknown) {
+    super(props);
+
+    Shortcuts.register([
+      {
+        key: 'Mod-g i',
+        callback: () => {
+          Navigation.navigate(Navigation.pathForInbox())
+          return true;
+        },
+      },
+      {
+        key: 'Mod-g z',
+        callback: () => {
+          Navigation.navigate(Navigation.pathForSnoozed())
+          return true;
+        },
+      },
+      {
+        key: 'Mod-g r',
+        callback: () => {
+          Navigation.navigate(Navigation.pathForRecent())
+          return true;
+        },
+      },
+      {
+        key: 'Mod-g c',
+        callback: this.handleGotoCollection,
+      },
+      {
+        key: 'Mod-g t',
+        callback: () => {
+          this.context.settings.toggleDarkMode();
+          return true;
+        },
+      },
+    ]);
+  }
 
   render(): React.ReactNode {
     const classes = classNames({
@@ -95,6 +137,18 @@ export default class Layout extends React.Component {
     } else {
       return <NotFound />;
     }
+  }
+
+  private handleGotoCollection = (): boolean => {
+    this.context.session.showModal(() => {
+      const onSelect = (entity: EntityTraits) => {
+        Navigation.navigate(Navigation.pathForEntity(entity));
+        this.context.session.hideModal();
+      };
+
+      return <CollectionNavigator onSelect={onSelect} />;
+    });
+    return true;
   }
 }
 

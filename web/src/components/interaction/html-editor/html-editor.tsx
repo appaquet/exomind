@@ -20,6 +20,7 @@ import Debouncer from "../../../utils/debouncer";
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
 import { createPopper } from '@popperjs/core';
 import { CancellableEvent } from "../../../utils/events";
+import { Shortcuts } from "../../../shortcuts";
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
@@ -137,6 +138,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                         this.toggleLink();
                         return true;
                     },
+                    'Escape': () => {
+                        this.blur();
+                        return true;
+                    },
                 })
             ],
             initialValue: content,
@@ -144,14 +149,20 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 handleDOMEvents: {
                     focus: () => {
                         if (this.props.onFocus) {
-                            this.props.onFocus();
+                            setTimeout(() => {
+                                this.props.onFocus();
+                            });
                         }
+                        Shortcuts.activateContext('text-editor');
                         return false;
                     },
                     blur: () => {
                         if (this.props.onBlur) {
-                            this.props.onBlur();
+                            setTimeout(() => {
+                                this.props.onBlur();
+                            });
                         }
+                        Shortcuts.deactivateContext('text-editor');
                         return false;
                     },
                     mousedown: (view, event) => {
@@ -182,9 +193,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             {this.state.cursor?.link && this.editor?.view.hasFocus() &&
                 <div className="link-popper" ref={this.popperRef}>
                     <ul>
-                        <li><a href="#" onMouseDown={this.handlePopperLinkEdit}><span className="edit" /></a></li>
-                        <li><a href="#" onMouseDown={this.handlePopperLinkOpen}><span className="open" /></a></li>
-                        <li><a href="#" onMouseDown={this.handlePopperLinkRemove}><span className="remove" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkEdit} onClick={this.handlePopperPreventClick}><span className="edit" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkOpen} onClick={this.handlePopperPreventClick}><span className="open" /></a></li>
+                        <li><a href="#" onMouseDown={this.handlePopperLinkRemove} onClick={this.handlePopperPreventClick}><span className="remove" /></a></li>
                     </ul>
                 </div>
             }
@@ -266,7 +277,11 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         if (url) {
             const state = this.editor.view.state;
             const dispatch = this.editor.view.dispatch;
-            if (title && cursor.selection.empty) {
+            if (cursor.selection.empty) {
+                if (!title) {
+                    title = url;
+                }
+
                 const linkMark = state.schema.marks.link.create({
                     href: url,
                 });
@@ -326,6 +341,17 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
     focus(): void {
         this.editor?.view?.focus();
+    }
+
+    blur(): void {
+        if (!this.editor) {
+            return;
+        }
+
+        if (this.editor.view.hasFocus()) {
+            const el = document.activeElement as HTMLElement;
+            el.blur();
+        }
     }
 
     private handleReady = (editor: CoreBangleEditor) => {
@@ -472,6 +498,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
     private handlePopperLinkRemove = (e: UIEvent) => {
         this.clearLink();
+        e.stopPropagation();
+        e.preventDefault();
+        return false;
+    }
+
+    private handlePopperPreventClick = (e: MouseEvent) => {
+        // prevent onClick since we bind on mouse down
         e.stopPropagation();
         e.preventDefault();
         return false;

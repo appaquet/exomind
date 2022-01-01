@@ -4,10 +4,11 @@ import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import InputModal from '../../modals/input-modal/input-modal';
 import TimeSelector from '../../modals/time-selector/time-selector';
-import { Selection } from "../../objects/entity-list/selection";
+import { Selection } from "../entity-list/selection";
 import { IStores, StoresContext } from '../../../stores/stores';
 import { getEntityParentRelation } from '../../../stores/collections';
-import "./bottom-actions.less";
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
+import "./column-actions.less";
 
 interface IProps {
     parent: EntityTraits;
@@ -20,9 +21,44 @@ interface IProps {
     removeOnPostpone?: boolean;
 }
 
-export class ColumnBottomActions extends React.Component<IProps> {
+export class ColumnActions extends React.Component<IProps> {
+    private shortcutToken: ListenerToken;
+
     static contextType = StoresContext;
     declare context: IStores;
+
+    constructor(props: IProps) {
+        super(props);
+
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'e',
+                callback: () => {
+                    if (this.props.selection.length == 0) {
+                        return false;
+                    }
+                    this.handleDoneClick();
+                    return true;
+                },
+                disabledContexts: ['input', 'modal'],
+            },
+            {
+                key: 'z',
+                callback: () => {
+                    if (this.props.selection.length == 0) {
+                        return false;
+                    }
+                    this.handleSnoozeClick();
+                    return true;
+                },
+                disabledContexts: ['input', 'modal'],
+            }
+        ]);
+    }
+
+    componentWillUnmount() {
+        Shortcuts.unregister(this.shortcutToken);
+    }
 
     render(): React.ReactNode {
         if (this.props.selection && this.props.selection.length <= 1) {
@@ -48,7 +84,7 @@ export class ColumnBottomActions extends React.Component<IProps> {
         return <div className="column-bottom-actions">
             <ul>
                 <li onClick={this.handleDoneClick}><i className="done" /></li>
-                <li onClick={this.handlePostponeClick}><i className="postpone" /></li>
+                <li onClick={this.handleSnoozeClick}><i className="postpone" /></li>
             </ul>
         </div>
     }
@@ -163,8 +199,7 @@ export class ColumnBottomActions extends React.Component<IProps> {
         }
     }
 
-    private handlePostponeClick = () => {
-
+    private handleSnoozeClick = () => {
         this.context.session.showModal(() => {
             return <TimeSelector onSelectionDone={this.handleTimeSelectorDone} />;
         });

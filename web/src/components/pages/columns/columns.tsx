@@ -4,6 +4,7 @@ import React from 'react';
 import { SelectedItem, Selection } from '../../objects/entity-list/selection';
 import Column from './column';
 import { ColumnConfig, ColumnConfigs } from './columns-config';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import './columns.less';
 
 interface IProps {
@@ -11,8 +12,53 @@ interface IProps {
     onConfigChange: (config: ColumnConfigs) => void;
 }
 
+interface IState {
+    activeColumn: number;
+}
+
 @observer
-export default class Columns extends React.Component<IProps> {
+export default class Columns extends React.Component<IProps, IState> {
+    private shortcutToken: ListenerToken;
+
+    constructor(props: IProps) {
+        super(props);
+
+        this.state = {
+            activeColumn: 0,
+        };
+
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'Ctrl-b ArrowRight',
+                callback: this.handleShortcutNext,
+                disabledContexts: ['modal'],
+            },
+            {
+                key: 'ArrowRight',
+                callback: this.handleShortcutNext,
+                disabledContexts: ['input', 'text-editor', 'modal'],
+            },
+            {
+                key: 'Ctrl-b ArrowLeft',
+                callback: this.handleShortcutPrev,
+                disabledContexts: ['modal'],
+            },
+            {
+                key: 'ArrowLeft',
+                callback: this.handleShortcutPrev,
+                disabledContexts: ['input', 'text-editor', 'modal'],
+            },
+            {
+                key: 'Ctrl-b x',
+                callback: this.handleShortcutClose,
+            }
+        ]);
+    }
+
+    componentWillUnmount(): void {
+        Shortcuts.unregister(this.shortcutToken);
+    }
+
     render(): React.ReactNode {
         const renderedColumns = this.renderColumns();
         const nbColumns = renderedColumns.length;
@@ -48,24 +94,68 @@ export default class Columns extends React.Component<IProps> {
                 [colClass]: true
             });
             const colKey = this.columnKey(columnConfig);
-
-            // we allow closing any columns, as long as it is not the last one
-            const canClose = colId > 0 || nextColumnConfig;
+            const active = this.state.activeColumn == colId;
 
             return [(
-                <div className={classes} key={colKey}>
+                <div
+                    className={classes}
+                    key={colKey}
+                    onMouseEnter={() => this.onColumnHovered(colId)}
+                    onMouseOver={() => this.onColumnHovered(colId)}>
+
                     <Column
+                        key={colKey}
                         columnId={colId}
                         columnConfig={columnConfig}
-                        key={colKey}
-
+                        active={active}
+                        onClose={() => this.handleColumnClose(colId)}
                         selection={selection}
                         onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
-                        onClose={canClose ? () => this.handleColumnClose(colId) : null}
                     />
                 </div>
             )];
         });
+    }
+
+    private handleShortcutNext = () => {
+        let activeColumn = this.state.activeColumn;
+        activeColumn++;
+
+        if (activeColumn >= this.getConfig().parts.length) {
+            activeColumn = this.getConfig().parts.length - 1;
+        }
+
+        this.setState({ activeColumn });
+
+        return true;
+    }
+
+    private handleShortcutPrev = () => {
+        let activeColumn = this.state.activeColumn;
+        activeColumn--;
+
+        if (activeColumn < 0) {
+            activeColumn = 0;
+        }
+
+        this.setState({ activeColumn });
+
+        return true;
+    }
+
+    private handleShortcutClose = () => {
+        this.handleColumnClose(this.state.activeColumn);
+        return true;
+    }
+
+    private onColumnHovered(columnId: number): void {
+        if (Shortcuts.usedRecently) {
+            return;
+        }
+
+        this.setState({
+            activeColumn: columnId
+        })
     }
 
     private columnKey(config: ColumnConfig): string {
@@ -124,7 +214,21 @@ export default class Columns extends React.Component<IProps> {
     }
 
     private handleColumnClose(colId: number) {
-        const columnsConfig = this.getConfig().pop(colId);
+        const config = this.getConfig();
+
+        // we allow closing any columns, as long as it is not the last one
+        const canClose = colId > 0 || config.parts.length > 1;
+        if (!canClose) {
+            return;
+        }
+
+        if (this.state.activeColumn == colId) {
+            this.setState({
+                activeColumn: 0,
+            });
+        }
+
+        const columnsConfig = config.pop(colId);
         this.props.onConfigChange(columnsConfig);
     }
 }

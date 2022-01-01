@@ -1,5 +1,7 @@
 import React from 'react';
+import { Shortcuts } from '../../shortcuts';
 import { IStores, StoresContext } from '../../stores/stores';
+import { CancellableEvent } from '../../utils/events';
 import './modal.less';
 
 
@@ -15,7 +17,7 @@ export default class Modal extends React.Component<IProps> {
     if (this.props.children) {
       return (
         <div id="modal" onClick={this.handleBackgroundClick}>
-          <div className="content" onClick={this.handleContentClick}>
+          <div className="content" onClick={this.preventMouseDefault} onMouseOver={this.preventMouseDefault} onWheel={this.preventMouseDefault}>
             {this.props.children}
           </div>
         </div>
@@ -25,13 +27,16 @@ export default class Modal extends React.Component<IProps> {
 
   componentDidMount(): void {
     document.addEventListener('keydown', this.handleKeyDown, false);
+    Shortcuts.activateContext('modal');
   }
 
   componentWillUnmount(): void {
     document.removeEventListener('keydown', this.handleKeyDown, false);
+    Shortcuts.deactivateContext('modal');
   }
 
-  private handleContentClick = (e: React.MouseEvent) => {
+  private preventMouseDefault = (e: CancellableEvent) => {
+    // prevent clicking under modal
     e.stopPropagation();
   }
 

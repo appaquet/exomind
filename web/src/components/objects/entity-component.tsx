@@ -4,13 +4,15 @@ import { exomind } from '../../protos';
 import { EntityTrait, EntityTraits } from "../../utils/entities";
 import { CollectionSelector } from '../modals/collection-selector/collection-selector';
 import TimeSelector from '../modals/time-selector/time-selector';
-import { ContainerController, ModifiableText } from "./container-controller";
+import { ContainerState, ModifiableText } from "./container-state";
 import './entity-component.less';
 import { Selection } from "./entity-list/selection";
 import { HeaderAction } from "./header";
 import { Message } from "./message";
 import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../stores/stores';
+import copy from 'clipboard-copy';
+import { observer } from 'mobx-react';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -27,7 +29,7 @@ interface Props {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 interface State {
@@ -36,6 +38,7 @@ interface State {
     trait?: EntityTrait<unknown>;
 }
 
+@observer
 export class EntityComponent extends React.Component<Props, State> {
     static contextType = StoresContext;
     declare context: IStores;
@@ -50,9 +53,12 @@ export class EntityComponent extends React.Component<Props, State> {
             .watchedQuery(query)
             .onChange(this.handleNewResults);
 
-        if (props.containerController) {
-            props.containerController.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
-            props.containerController.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
+        if (props.containerState) {
+            props.containerState.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
+            props.containerState.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
+            props.containerState.pushHeaderAction(new HeaderAction('copy', () => {
+                copy(`entity://${this.state.entityTraits.id}`);
+            }));
         }
 
         this.state = {};
@@ -71,7 +77,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         collection={col}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        containerController={this.props.containerController}
+                        containerState={this.props.containerState}
                     />;
                 },
                 note: (note) => {
@@ -80,6 +86,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         noteTrait={note}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 task: (task) => {
@@ -88,6 +95,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         taskTrait={task}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 link: (link) => {
@@ -96,6 +104,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         linkTrait={link}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 emailThread: () => {
@@ -103,7 +112,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         entity={this.state.entityTraits}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        containerController={this.props.containerController}
+                        containerState={this.props.containerState}
                     />;
                 },
                 email: (email) => {
@@ -112,6 +121,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         emailTrait={email}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+                        containerState={this.props.containerState}
                     />;
                 },
                 draftEmail: (draft) => {
@@ -120,7 +130,7 @@ export class EntityComponent extends React.Component<Props, State> {
                         draftTrait={draft}
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
-                        containerController={this.props.containerController}
+                        containerState={this.props.containerState}
                     />;
                 },
                 default: () => {
@@ -150,16 +160,18 @@ export class EntityComponent extends React.Component<Props, State> {
                 trait = et.priorityTrait;
             }
 
-            runInAction(() => {
-                this.props.containerController.icon = trait.icon;
-                if (trait.canEditName) {
-                    this.props.containerController.title = new ModifiableText(trait.displayName, (newTitle: string) => {
-                        trait.rename(newTitle);
-                    }, trait.editableName);
-                } else {
-                    this.props.containerController.title = trait.displayName;
-                }
-            });
+            if (this.props.containerState) {
+                runInAction(() => {
+                    this.props.containerState.icon = trait.icon;
+                    if (trait.canEditName) {
+                        this.props.containerState.title = new ModifiableText(trait.displayName, (newTitle: string) => {
+                            trait.rename(newTitle);
+                        }, trait.editableName);
+                    } else {
+                        this.props.containerState.title = trait.displayName;
+                    }
+                });
+            }
 
             this.setState({
                 results: results,

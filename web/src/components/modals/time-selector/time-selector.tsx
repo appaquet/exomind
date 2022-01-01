@@ -3,7 +3,8 @@ import React from 'react';
 import Flatpickr from "react-flatpickr";
 import "flatpickr/dist/themes/light.css";
 import './time-selector.less';
-import DateUtil, { SnoozeKey } from '../../../utils/dates';
+import DateUtil, { ISnoozeChoice, SnoozeKey } from '../../../utils/dates';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 
 interface IProps {
     onSelectionDone: (date: Date) => void;
@@ -12,10 +13,15 @@ interface IProps {
 interface IState {
     picker: boolean;
     date: Date;
+    selected?: number;
 }
 
+const choicePerRow = 3;
+
 export default class TimeSelector extends React.Component<IProps, IState> {
-    listElemRef: React.RefObject<HTMLUListElement>;
+    private listElemRef: React.RefObject<HTMLUListElement> = React.createRef();
+    private shortcutToken: ListenerToken;
+    private choices: ISnoozeChoice[];
 
     constructor(props: IProps) {
         super(props);
@@ -25,7 +31,34 @@ export default class TimeSelector extends React.Component<IProps, IState> {
             date: new Date(),
         };
 
-        this.listElemRef = React.createRef();
+        this.choices = DateUtil.getSnoozeChoices();
+
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'ArrowUp',
+                callback: () => this.handleShortcutMove(-choicePerRow),
+            },
+            {
+                key: 'ArrowDown',
+                callback: () => this.handleShortcutMove(choicePerRow),
+            },
+            {
+                key: 'ArrowLeft',
+                callback: () => this.handleShortcutMove(-1),
+            },
+            {
+                key: 'ArrowRight',
+                callback: () => this.handleShortcutMove(1),
+            },
+            {
+                key: 'Enter',
+                callback: this.handleShortcutSelect,
+            },
+        ]);
+    }
+
+    componentWillUnmount(): void {
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
@@ -37,7 +70,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         });
 
         return (
-            <div className={classes} onMouseOver={this.handlePreventDefault.bind(this)}>
+            <div className={classes}>
                 <div className="time-selector-header">Snooze until...</div>
                 {body}
             </div>
@@ -46,17 +79,21 @@ export default class TimeSelector extends React.Component<IProps, IState> {
 
     private renderList(): React.ReactNode {
         return (
-            <ul ref={this.listElemRef} onClick={this.handlePreventDefault.bind(this)} onWheel={this.handleListWheel.bind(this)}>
+            <ul ref={this.listElemRef}>
                 {this.renderLaterChoices()}
             </ul>
         );
     }
 
     private renderLaterChoices(): React.ReactNode {
-        return DateUtil.getSnoozeChoices()
-            .map((choice) => {
+        return this.choices
+            .map((choice, i) => {
+                const selected = this.state.selected === i;
+                const classes = classNames({
+                    selected
+                });
                 return (
-                    <li onClick={this.handleTimeClick.bind(this, choice.key)} key={choice.key}>
+                    <li className={classes} onClick={() => this.handleTimeClick(choice.key)} key={choice.key}>
                         <span>{choice.copy}</span>
                     </li>
                 )
@@ -71,11 +108,11 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                     <Flatpickr
                         data-enable-time
                         value={this.state.date}
-                        onChange={this.handlePickerChange.bind(this)}
+                        onChange={this.handlePickerChange}
                     />
                 </div>
                 <div className="button">
-                    <button onClick={this.handlePickerDone.bind(this)}>
+                    <button onClick={this.handlePickerDone}>
                         <span>Done</span>
                     </button>
                 </div>
@@ -83,17 +120,12 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         );
     }
 
-    private handlePreventDefault(e: MouseEvent): void {
-        // prevent browser from bubbling the click and mouseover under the list
-        e.stopPropagation();
-    }
-
-    private handlePickerChange(dates: Date[]): void {
+    private handlePickerChange = (dates: Date[]): void => {
         this.setState({ date: dates[0] });
     }
 
-    private handlePickerDone(): void {
-        if (this.props.onSelectionDone && this.state.date) {
+    private handlePickerDone = (): void => {
+        if (this.state.date) {
             this.props.onSelectionDone(this.state.date);
         }
     }
@@ -111,19 +143,47 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         }
     }
 
-    /**
-     * We catch wheel events to prevent scrolling parent when we're getting at the end or at the beginning of the list overflow
-     */
-    private handleListWheel(e: WheelEvent): void {
-        const listElem = this.listElemRef.current;
-        if (listElem.scrollTop === 0 && e.deltaY < 0) {
-            // if we are at the top, prevent scrolling up
-            e.preventDefault();
+    private handleShortcutMove(moveCount: number): boolean {
+        const nbChoices = this.choices.length;
 
-        } else if ((listElem.scrollTop + listElem.clientHeight) >= listElem.scrollHeight && e.deltaY > 0) {
-            // if we are at the bottom, prevent scrolling down
-            e.preventDefault();
+        let selected: number;
+        if (this.state.selected !== undefined) {
+            // wrap around
+            selected = this.state.selected + moveCount;
+            if (selected >= nbChoices) {
+                selected -= nbChoices;
+            } else if (selected < 0) {
+                selected += nbChoices;
+            }
+        } else {
+            selected = 0;
         }
+
+        this.setState({ selected });
+
+        return true;
+    }
+
+    private handleShortcutSelect = (): boolean => {
+        if (this.state.picker && this.state.date) {
+            this.props.onSelectionDone(this.state.date);
+            return true;
+        }
+
+        if (this.state.selected !== undefined) {
+            const choice = this.choices[this.state.selected];
+            if (choice.key == 'pick') {
+                this.setState({
+                    picker: true
+                });
+            } else {
+                const date = DateUtil.snoozeDate(choice.key);
+                this.props.onSelectionDone?.(date);
+            }
+            return true;
+        }
+
+        return false;
     }
 }
 

@@ -8,6 +8,8 @@
     overflow: scroll;
     .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
 
+    outline: none !important; // prevent tabindex outline on focus
+
     padding-bottom: @entity-component-header-height; // make sure we have plenty of space bellow for scroll
     height: 100%;
 

@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import { Exocore, QueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
+import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { ExpandableQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntityTraits } from '../../../utils/entities';
@@ -32,6 +33,8 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     private entityQuery?: WatchedQueryWrapper;
     private entityQueryId?: string;
 
+    private shortcutToken: ListenerToken;
+
     constructor(props: IProps) {
         super(props);
 
@@ -40,6 +43,17 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         this.state = {
             inputValue: props.initialValue ?? ''
         };
+
+        this.shortcutToken = Shortcuts.register([
+            {
+                key: 'Mod-k',
+                callback: this.handleShortcutFocusInput,
+            },
+            {
+                key: 'Enter',
+                callback: this.handleShortcutEnter,
+            },
+        ]);
     }
 
     componentDidMount(): void {
@@ -49,6 +63,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     componentWillUnmount(): void {
         this.entityQuery?.free();
         this.searchEntityQuery?.free();
+        Shortcuts.unregister(this.shortcutToken);
     }
 
     render(): React.ReactNode {
@@ -56,8 +71,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             'note-link-selector': true,
         });
 
-        const isEntityLink = this.state.inputValue.startsWith('entity://');
-        const renderEntitySelector = this.state.inputValue.length >= 3 && !this.state.inputValue.startsWith('htt');
+        const isEntityLink = this.isEntityLink;
         return (
             <div className={classes}>
                 <div className="text">Enter a link or type entity name</div>
@@ -73,7 +87,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
 
                 {isEntityLink && this.renderEntity()}
 
-                {!isEntityLink && renderEntitySelector && this.renderEntitySelector()}
+                {!isEntityLink && this.inEntitySelectMode && this.renderEntitySelector()}
 
                 <div className="buttons">
                     <button onClick={this.onCancel}>Cancel</button>
@@ -82,6 +96,14 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                 </div>
             </div>
         );
+    }
+
+    private get isEntityLink(): boolean {
+        return this.state.inputValue.startsWith('entity://');
+    }
+
+    private get inEntitySelectMode(): boolean {
+        return !this.isEntityLink && this.state.inputValue.length >= 3 && !this.state.inputValue.startsWith('htt');
     }
 
     private renderEntity(): React.ReactNode {
@@ -128,6 +150,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             multi={false}
             entities={this.state.entities ?? []}
             onSelect={this.handleEntitySelect}
+            onBlur={this.handleEntitySelectorBlur}
         />;
     }
 
@@ -174,6 +197,24 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         }
     }
 
+    private handleEntitySelectorBlur = (): void => {
+        this.inputRef.current?.focus();
+    }
+
+    private handleShortcutFocusInput = (): boolean => {
+        this.inputRef.current?.focus();
+        return true;
+    }
+
+    private handleShortcutEnter = (): boolean => {
+        if (this.inEntitySelectMode) {
+            // enter is handled by the entity selector
+            return false;
+        }
+        this.onDone();
+        return true;
+    }
+
     private onCancel = (): void => {
         this.props.onCancel();
     }
@@ -183,6 +224,9 @@ export default class LinkSelector extends React.Component<IProps, IState> {
     }
 
     private onDone = (): void => {
-        this.props.onDone({ url: this.state.inputValue });
+        this.props.onDone({
+            url: this.state.inputValue,
+            title: this.state.entity?.priorityTrait?.displayName,
+        });
     }
 }

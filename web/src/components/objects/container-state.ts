@@ -2,12 +2,13 @@ import { action, makeObservable, observable } from 'mobx';
 import { TraitIcon } from '../../utils/entities';
 import { HeaderAction } from './header';
 
-export class ContainerController {
+export class ContainerState {
     @observable title: string | ModifiableText;
     @observable icon: TraitIcon;
     @observable actions: HeaderAction[] = [];
     @observable closed: boolean;
     @observable showDetails: boolean;
+    @observable active: boolean;
 
     constructor() {
         makeObservable(this);

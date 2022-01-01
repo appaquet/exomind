@@ -4,7 +4,7 @@ import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { Children } from '../children/children';
 import { Selection } from '../entity-list/selection';
 import EditableText from "../../interaction/editable-text/editable-text";
-import { ContainerController } from "../container-controller";
+import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
 import { Exocore, MutationBuilder } from "exocore";
 
@@ -20,7 +20,7 @@ interface IProps {
     section?: string;
     actionsForSection?: (section: string) => string[];
 
-    containerController?: ContainerController;
+    containerState?: ContainerState;
 }
 
 @observer
@@ -28,21 +28,20 @@ export default class Collection extends React.Component<IProps> {
     constructor(props: IProps) {
         super(props);
 
-        this.props.containerController?.addDetailsHeaderAction();
+        this.props.containerState?.addDetailsHeaderAction();
     }
 
     render(): React.ReactNode {
         return (
             <Children
                 parent={this.props.entity}
-
                 actionsForEntity={this.actionsForChildrenType}
-
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
+                containerState={this.props.containerState}
             >
 
-                {this.props.containerController?.showDetails &&
+                {this.props.containerState?.showDetails &&
                     <div className="entity-details">
                         <div className="title field">
                             <span className="field-label">Name</span>

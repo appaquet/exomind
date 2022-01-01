@@ -8,12 +8,14 @@ import { CollectionSelector } from "../../modals/collection-selector/collection-
 import TimeSelector from "../../modals/time-selector/time-selector";
 import { ActionResult, ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
-import { ColumnBottomActions } from "../../pages/columns/bottom-actions";
+import { ColumnActions } from "./column-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
-import './children.less';
 import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
+import { ContainerState } from "../container-state";
+import { observer } from "mobx-react";
+import './children.less';
 
 const PINNED_WEIGHT = 5000000000000;
 
@@ -28,6 +30,7 @@ interface IProps {
     actionsForEntity?: (et: EntityTraits) => string[];
 
     removeOnPostpone?: boolean;
+    containerState?: ContainerState;
 }
 
 interface IState {
@@ -38,6 +41,7 @@ interface IState {
     editedEntity?: EntityTraits;
 }
 
+@observer
 export class Children extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
@@ -121,8 +125,8 @@ export class Children extends React.Component<IProps, IState> {
                 'children': true,
             });
 
-            const controls = (this.state.hovered) ?
-                <ColumnBottomActions
+            const controls = (this.props.containerState?.active ?? false) ?
+                <ColumnActions
                     parent={this.state.parent}
                     selection={this.props.selection}
                     onSelectionChange={this.props.onSelectionChange}
@@ -148,6 +152,7 @@ export class Children extends React.Component<IProps, IState> {
                         actionsForEntity={this.actionsForEntity}
 
                         onDropIn={this.handleDropInEntity}
+                        containerState={this.props.containerState}
                     />
 
                     {controls}

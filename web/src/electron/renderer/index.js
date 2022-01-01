@@ -1,56 +1,65 @@
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 
-import App from '../../app';
-import Navigation, { InMemoryHistory, setupLinkClickNavigation } from "../../navigation";
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { initNode } from '../../exocore';
+import App from "../../app";
+import Navigation, {
+  InMemoryHistory,
+  setupLinkClickNavigation,
+} from "../../navigation";
+import React from "react";
+import ReactDOM from "react-dom";
+import { initNode } from "../../exocore";
+import { Shortcuts } from "../../shortcuts";
 
-// the require added to index.html by electron-webpack isn't working in isolation mode. 
+// the require added to index.html by electron-webpack isn't working in isolation mode.
 window.exoElectron.installSourceMap();
 
 Navigation.initialize({
-    history: new InMemoryHistory(),
+  history: new InMemoryHistory(),
 
-    openPopup: (path) => {
-        window.exoElectron.openPopup(path.toString());
-    },
+  openPopup: (path) => {
+    window.exoElectron.openPopup(path.toString());
+  },
 
-    openExternal: (url) => {
-        window.exoElectron.openExternal(url);
-    }
+  openExternal: (url) => {
+    window.exoElectron.openExternal(url);
+  },
 });
 
-document.addEventListener('keydown', (e) => {
-    if (e.key == 'ArrowLeft' && e.metaKey) {
-        Navigation.navigateBack();
-        e.stopPropagation();
-        e.preventDefault();
-    } else if (e.key == 'ArrowRight' && e.metaKey) {
-        Navigation.navigateForward();
-        e.stopPropagation();
-        e.preventDefault();
-    }
-}, false);
-
+Shortcuts.register([
+  {
+    key: "Mod-ArrowLeft",
+    callback: () => {
+      Navigation.navigateBack();
+      return true;
+    },
+    disabledContexts: ["text-editor", "input"],
+  },
+  {
+    key: "Mod-ArrowRight",
+    callback: () => {
+      Navigation.navigateForward();
+      return true;
+    },
+    disabledContexts: ["text-editor", "input"],
+  },
+]);
 
 window.exoElectron.onNavigate((_event, path) => {
-    Navigation.navigate(path);
+  Navigation.navigate(path);
 });
 
 Promise.all([
-    new Promise((resolve) => {
-        window.addEventListener('DOMContentLoaded', resolve);
-    }),
-    initNode()
+  new Promise((resolve) => {
+    window.addEventListener("DOMContentLoaded", resolve);
+  }),
+  initNode(),
 ]).then(() => {
-    ReactDOM.render(<App />, document.getElementById('body'));
+  ReactDOM.render(<App />, document.getElementById("body"));
 
-    setupLinkClickNavigation((e, el) => {
-        e.preventDefault();
-        e.stopPropagation();
-        window.exoElectron.openExternal(el.href);
-    });
+  setupLinkClickNavigation((e, el) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.exoElectron.openExternal(el.href);
+  });
 });
-

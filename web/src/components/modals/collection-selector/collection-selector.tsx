@@ -1,6 +1,6 @@
 import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { memoize } from 'lodash';
-import React, { KeyboardEvent, MouseEvent } from 'react';
+import React, { KeyboardEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
@@ -91,7 +91,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         const selectedIds: string[] = this.state.entityParentsIds;
 
         return (
-            <div className="collection-selector" onMouseOver={this.handlePreventDefault}>
+            <div className="collection-selector">
                 <div className="collection-selector-header">Add to collections...</div>
                 <div className="filter">
                     <input type="text"
@@ -110,6 +110,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                     onSelect={this.handleItemCheck}
                     onUnselect={this.handleItemCheck}
                     onNeedMore={this.handleLoadMore}
+                    onBlur={this.handleSelectorBlur}
                 />
             </div>
         );
@@ -157,11 +158,6 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handlePreventDefault = (e: MouseEvent): void => {
-        // prevent browser from bubbling the click and mouseover under the list
-        e.stopPropagation();
-    }
-
     private handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const value = event.target.value;
         this.setState({
@@ -181,7 +177,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         }
     }
 
-    private handleItemCheck = (collectionEntity: EntityTraits, event: CancellableEvent): void => {
+    private handleItemCheck = (collectionEntity: EntityTraits, event?: CancellableEvent): void => {
         const currentChildTrait = this.state.entity
             .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
             .find((c) => c.message.collection.entityId == collectionEntity.id);
@@ -206,11 +202,15 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             Exocore.store.mutate(mutation);
         }
 
-        event.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
+        event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
     }
 
     private handleLoadMore = (): void => {
         this.collectionsQuery?.expand();
+    }
+
+    private handleSelectorBlur = (): void => {
+        this.filterInputRef.current?.focus();
     }
 }
 

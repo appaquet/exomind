@@ -28,6 +28,11 @@ class TabBarController: UITabBarController {
         self.settingsVC = self.viewControllers![self.settingsIndex]
 
         self.tabBar.tintColor = Stylesheet.tabBarSelectedFg
+        
+        // make sure that apparence with or without data under tabbar is the same since,
+        // from iOS 15, tab bar may be transparent when no data is under
+        // https://nemecek.be/blog/127/how-to-disable-automatic-transparent-tabbar-in-ios-15
+        self.tabBar.scrollEdgeAppearance = self.tabBar.standardAppearance
 
         // remove title and offset items because of created extra space
         for item in self.tabBar.items! {

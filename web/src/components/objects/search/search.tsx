@@ -4,7 +4,7 @@ import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
 import { CollectionSelector } from '../../modals/collection-selector/collection-selector';
-import { ContainerController } from '../container-controller';
+import { ContainerState } from '../container-state';
 import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
@@ -18,7 +18,7 @@ interface IProps {
   selection?: Selection;
   onSelectionChange?: (sel: Selection) => void;
 
-  containerController?: ContainerController;
+  containerState?: ContainerState;
 }
 
 interface IState {
@@ -61,7 +61,7 @@ export class Search extends React.Component<IProps, IState> {
         <EntityList
           entities={this.state.entities}
 
-          onRequireLoadMore={this.handleLoadMore.bind(this)}
+          onRequireLoadMore={this.handleLoadMore}
 
           droppable={false}
           draggable={false}
@@ -69,7 +69,8 @@ export class Search extends React.Component<IProps, IState> {
           selection={this.props.selection}
           onSelectionChange={this.props.onSelectionChange}
 
-          actionsForEntity={this.actionsForEntity.bind(this)}
+          actionsForEntity={this.actionsForEntity}
+          containerState={this.props.containerState}
         />;
       </div>
     );
@@ -102,22 +103,22 @@ export class Search extends React.Component<IProps, IState> {
   }
 
   private updateContainerTitle(props: IProps): void {
-    if (props.containerController) {
+    if (props.containerState) {
       runInAction(() => {
-        props.containerController.title = `Search '${props.query}'`;
-        props.containerController.icon = { fa: 'search' };
+        props.containerState.title = `Search '${props.query}'`;
+        props.containerState.icon = { fa: 'search' };
       });
     }
   }
 
-  private handleLoadMore(): void {
+  private handleLoadMore = (): void => {
     this.entityQuery?.expand();
   }
 
-  private actionsForEntity(et: EntityTraits): EntityActions {
+  private actionsForEntity = (et: EntityTraits): EntityActions => {
     return new EntityActions([
-      new ButtonAction('folder-open-o', this.handleEntityMoveCollection.bind(this, et)),
-      new ButtonAction('inbox', this.handleEntityMoveInbox.bind(this, et))
+      new ButtonAction('folder-open-o', () => this.handleEntityMoveCollection(et)),
+      new ButtonAction('inbox', () => this.handleEntityMoveInbox(et))
     ]);
   }
 
