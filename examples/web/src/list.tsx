@@ -20,7 +20,7 @@ export default class List extends React.Component<IListProps, IListState> {
     constructor(props: IListProps) {
         super(props);
 
-        this.state = {items: []};
+        this.state = { items: [] };
 
         this.registerQuery();
     }
@@ -28,7 +28,7 @@ export default class List extends React.Component<IListProps, IListState> {
     render() {
         return (
             <div>
-                <Input onAdd={this.onAdd.bind(this)}/>
+                <Input onAdd={this.onAdd} />
 
                 <ul>
                     {this.renderList()}
@@ -38,16 +38,16 @@ export default class List extends React.Component<IListProps, IListState> {
     }
 
     renderList() {
-        const DeleteButton = (props: {item: IListItem}) => {
-            return <button onClick={this.onDelete.bind(this, props.item)}>Delete</button>
+        const DeleteButton = (props: { item: IListItem }) => {
+            return <button onClick={() => this.onDelete(props.item)}>Delete</button>
         };
 
         return this.state.items.map(item =>
-            <li key={item.entity.id}>{item.message.string1} (<DeleteButton item={item}/>)</li>
+            <li key={item.entity.id}>{item.message.string1} (<DeleteButton item={item} />)</li>
         );
     }
 
-    async onAdd(text: string) {
+    onAdd = async (text: string) => {
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exocore.test.TestMessage({
@@ -77,7 +77,7 @@ export default class List extends React.Component<IListProps, IListState> {
             let res = results.entities.flatMap((res) => {
                 return matchTrait(res.entity.traits[0], {
                     [Exocore.registry.messageFullName(exocore.test.TestMessage)]: (trait, message) => {
-                        return {entity: res.entity, trait: trait, message: message};
+                        return { entity: res.entity, trait: trait, message: message };
                     }
                 })
             });
@@ -113,19 +113,19 @@ class Input extends React.Component<IInputProps, IInputState> {
     render() {
         return (
             <div>
-                <input value={this.state.text} onChange={this.onTextChange.bind(this)}/>
-                <button onClick={this.onAddClick.bind(this)}>Add</button>
+                <input value={this.state.text} onChange={this.onTextChange} />
+                <button onClick={this.onAddClick}>Add</button>
             </div>
         )
     }
 
-    onTextChange(e: ChangeEvent<HTMLInputElement>) {
+    onTextChange = (e: ChangeEvent<HTMLInputElement>) => {
         this.setState({
             text: e.target.value
         });
     }
 
-    onAddClick() {
+    onAddClick = () => {
         this.props.onAdd(this.state.text);
 
         this.setState({

@@ -34,7 +34,7 @@ class App extends React.Component<IAppProps, IAppState> {
         if (this.state.status === 'connected') {
             return (
                 <div>
-                    <button onClick={this.rejoin.bind(this)}>Rejoin</button>
+                    <button onClick={this.rejoin}>Rejoin</button>
 
                     <List />
                 </div>
@@ -48,7 +48,7 @@ class App extends React.Component<IAppProps, IAppState> {
         return (<div>
             <h3>Connecting...</h3>
 
-            <button onClick={this.rejoin.bind(this)}>Rejoin</button>
+            <button onClick={this.rejoin}>Rejoin</button>
         </div>);
     }
 
@@ -95,7 +95,7 @@ class App extends React.Component<IAppProps, IAppState> {
         });
     }
 
-    private rejoin() {
+    private rejoin = () => {
         this.setState({ node: null });
         this.configure(true);
     }
