@@ -138,6 +138,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                         this.toggleLink();
                         return true;
                     },
+                    'Ctrl-Enter': () => {
+                        return this.tryOpenActiveLink(null, null);
+                    },
                     'Escape': () => {
                         this.blur();
                         return true;
@@ -396,9 +399,21 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             return false;
         }
 
-        let el = event.target as HTMLElement;
+        return this.tryOpenActiveLink(event.target as HTMLElement, event);
+    }
+
+    private tryOpenActiveLink(target: HTMLElement | null, event: CancellableEvent | null): boolean {
+        if (!target) {
+            const cursor = this.getCursor();
+            target = cursor.domNode;
+        }
+
+        if (!target) {
+            return false;
+        }
 
         // if tagname is not a link, try to go up into the parenthood up 10 levels
+        let el = target;
         for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
             if (el.parentNode) {
                 el = el.parentNode as HTMLElement;
@@ -407,6 +422,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
         if (el.tagName !== 'A') {
             return false;
+        }
+
+        if (!event) {
+            event = {
+                preventDefault: () => { /*nop*/ },
+                stopPropagation: () => { /*nop*/ },
+            };
         }
 
         // if it's a link, we prevent cursor from changing by stopping propagation here

@@ -192,13 +192,17 @@ extension RichTextEditor {
     }
 
     func replaceKeyboardInputAccessoryView() {
+        guard let windowScene = self.view.window?.windowScene else {
+            return
+        }
+        
         // locate accessory view
-        let windowCount = UIApplication.shared.windows.count
+        let windowCount = windowScene.windows.count
         if (windowCount < 2) {
             return
         }
 
-        let tempWindow: UIWindow = UIApplication.shared.windows[1] as UIWindow
+        let tempWindow: UIWindow = windowScene.windows[1] as UIWindow
         let accessoryView: UIView = traverseSubViews(tempWindow)
         if (accessoryView.description.hasPrefix("<UIWebFormAccessory")) {
             // Found the inputAccessoryView UIView

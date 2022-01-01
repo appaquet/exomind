@@ -6,8 +6,11 @@ class RootViewController: UIViewController {
     private var currentView: UIViewController?
 
     static func mainInstance() -> RootViewController? {
-        let app = UIApplication.shared
-        let vc = app.windows[0].rootViewController as? RootViewController
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return nil
+        }
+        
+        let vc = windowScene.windows.first?.rootViewController as? RootViewController
         return vc
     }
 

@@ -60,7 +60,7 @@ export class EntityList extends React.Component<IProps, IState> {
         this.listId = EntityList.nextListId++;
         this.shortcutToken = Shortcuts.register([
             {
-                key: 'n',
+                key: ['n', 'j'],
                 callback: this.handleShortcutNext,
                 disabledContexts: ['input', 'modal'],
             },
@@ -70,7 +70,7 @@ export class EntityList extends React.Component<IProps, IState> {
                 disabledContexts: ['modal'], // allow focusing out of search bar
             },
             {
-                key: ['p', 'ArrowUp'],
+                key: ['p', 'k', 'ArrowUp'],
                 callback: this.handleShortcutPrevious,
                 disabledContexts: ['input', 'modal'],
             },
