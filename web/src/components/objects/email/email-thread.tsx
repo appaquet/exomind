@@ -102,20 +102,20 @@ export default class EmailThread extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
-    componentDidUpdate(): void {
-        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
-            this.threadElement.current.focus();
-        }
-    }
-
     render(): React.ReactNode {
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
+
+        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
+            console.log('focusing');
+            this.threadElement.current.focus();
+            console.log(this.threadElement.current, document.activeElement);
+        }
 
         const emails = this.renderEmails();
         const emailControls = (this.state.controlledEmailId && (this.props.containerState?.active ?? true)) ? this.renderEmailControls() : null;
         return (
             <div className="entity-component email-thread" onMouseLeave={this.handleThreadMouseLeave}>
-                <ul className="thread" ref={this.threadElement}>
+                <ul className="thread" tabIndex={0} ref={this.threadElement}>
                     {emails}
                 </ul>
                 {emailControls}
