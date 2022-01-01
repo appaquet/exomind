@@ -9,22 +9,41 @@ EXOCORE_C_ROOT="$EXOCORE_ROOT/clients/c"
 
 MODE=${1:-debug}
 if [[ "$MODE" == "release" ]]; then
-    LIPO_ARGS="--release"
+    CARGO_ARGS="--release"
 elif [[ "$MODE" == "debug" ]]; then
-    LIPO_ARGS=""
+    CARGO_ARGS=""
 else
     echo "syntax: $0 [release|debug]"
     exit 1
 fi
 
-pushd $EXOCORE_C_ROOT
-cargo lipo $LIPO_ARGS
-popd
-
-pushd $EXOCORE_IOS_ROOT
 EXOCORE_IOS_LIB_DIR="$EXOCORE_IOS_ROOT/lib"
 rm -rf $EXOCORE_IOS_LIB_DIR
-mkdir $EXOCORE_IOS_LIB_DIR
-cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/  # TODO: debug vs release
+mkdir -p $EXOCORE_IOS_LIB_DIR/libs
+mkdir -p $EXOCORE_IOS_LIB_DIR/header
+
+# Build static libs
+pushd $EXOCORE_C_ROOT
+SIM_TARGETS="aarch64-apple-ios-sim,x86_64-apple-ios"
+cargo lipo $CARGO_ARGS --targets $SIM_TARGETS 
+mkdir -p $EXOCORE_IOS_LIB_DIR/libs/sim
+cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/sim
+
+IOS_TARGETS="aarch64-apple-ios"
+cargo lipo $CARGO_ARGS --targets $IOS_TARGETS 
+mkdir -p $EXOCORE_IOS_LIB_DIR/libs/ios
+cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/ios
 popd
 
+# Build framework
+xcodebuild \
+    -create-xcframework \
+    -library $EXOCORE_IOS_LIB_DIR/libs/sim/libexocore.a \
+    -headers $EXOCORE_IOS_LIB_DIR/header/ \
+    -library $EXOCORE_IOS_LIB_DIR/libs/ios/libexocore.a \
+    -headers $EXOCORE_IOS_LIB_DIR/header/ \
+    -output $EXOCORE_IOS_LIB_DIR/ExocoreLibs.xcframework
+
+# Prevent duplicate libs in release archive
+rm -rf $EXOCORE_IOS_LIB_DIR/libs 
+rm -rf $EXOCORE_IOS_LIB_DIR/header
