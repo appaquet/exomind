@@ -125,7 +125,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
     }
 
     private handlePickerDone = (): void => {
-        if (this.props.onSelectionDone && this.state.date) {
+        if (this.state.date) {
             this.props.onSelectionDone(this.state.date);
         }
     }
@@ -165,14 +165,18 @@ export default class TimeSelector extends React.Component<IProps, IState> {
     }
 
     private handleShortcutSelect = (): boolean => {
-        if (this.state.selected === undefined) {
-            return false;
+        if (this.state.picker && this.state.date) {
+            this.props.onSelectionDone(this.state.date);
+            return true;
         }
 
-        const date = DateUtil.snoozeDate(this.choices[this.state.selected].key);
-        this.props.onSelectionDone?.(date);
+        if (this.state.selected !== undefined) {
+            const date = DateUtil.snoozeDate(this.choices[this.state.selected].key);
+            this.props.onSelectionDone?.(date);
+            return true;
+        }
 
-        return true;
+        return false;
     }
 }
 
