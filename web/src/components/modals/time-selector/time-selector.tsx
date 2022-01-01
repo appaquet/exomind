@@ -171,8 +171,15 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         }
 
         if (this.state.selected !== undefined) {
-            const date = DateUtil.snoozeDate(this.choices[this.state.selected].key);
-            this.props.onSelectionDone?.(date);
+            const choice = this.choices[this.state.selected];
+            if (choice.key == 'pick') {
+                this.setState({
+                    picker: true
+                });
+            } else {
+                const date = DateUtil.snoozeDate(choice.key);
+                this.props.onSelectionDone?.(date);
+            }
             return true;
         }
 
