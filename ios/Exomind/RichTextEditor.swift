@@ -10,7 +10,7 @@ class RichTextEditor: UIViewController {
 
     private var keyboardRect = CGRect(x: 0, y: 500, width: 0, height: 0)
     private var callback: ((JSON?) -> Void)?
-
+    
     convenience init(callback: @escaping (JSON?) -> Void) {
         self.init(nibName: nil, bundle: nil)
 
@@ -19,6 +19,7 @@ class RichTextEditor: UIViewController {
         self.webview = RichTextEditorWebView()
         self.view = self.webview
 
+        self.webview.editor = self
         self.webview.onHeightChange = { [weak self] (height) in
             self?.ensureCursorVisible()
         }
@@ -49,10 +50,6 @@ class RichTextEditor: UIViewController {
     }
 
     @objc func handleKeyboardWillShow(_ notification: Notification) {
-        if let _ = ((notification as NSNotification).userInfo?[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue {
-            self.replaceKeyboardInputAccessoryView()
-        }
-
         self.webview.checkSize()
 
         // https://stackoverflow.com/questions/31774006/how-to-get-height-of-keyboard#33130819
@@ -156,65 +153,9 @@ class RichTextEditor: UIViewController {
     }
 }
 
-extension RichTextEditor {
-    // from http://stackoverflow.com/questions/30312525/replace-inputaccessoryview-of-keyboard-in-uiwebview-in-swift
-
-    func addNewAccessoryView(_ oldAccessoryView: UIView) {
-        let newAccessoryView = RichTextEditorToolsView(frame: oldAccessoryView.frame)
-        newAccessoryView.editor = self
-        oldAccessoryView.addSubview(newAccessoryView)
-
-        // so that we hide the < > controls
-        // this is platform specific... but only way easy
-        newAccessoryView.backgroundColor = UIColor.systemGray4
-
-        newAccessoryView.snp.makeConstraints { (make) in
-            make.left.equalTo(oldAccessoryView.snp.left)
-            make.top.equalTo(oldAccessoryView.snp.top).offset(1)
-            make.height.equalTo(oldAccessoryView.snp.height)
-            make.right.equalTo(oldAccessoryView.snp.right)
-        }
-    }
-
-    func traverseSubViews(_ vw: UIView) -> UIView {
-        if (vw.description.hasPrefix("<UIWebFormAccessory")) {
-            return vw
-        }
-        for subview in vw.subviews as [UIView?] {
-            if ((subview?.subviews.count)! > 0) {
-                let subvw = self.traverseSubViews(subview!)
-                if (subvw.description.hasPrefix("<UIWebFormAccessory")) {
-                    return subvw
-                }
-            }
-        }
-        return UIView()
-    }
-
-    func replaceKeyboardInputAccessoryView() {
-        guard let windowScene = self.view.window?.windowScene else {
-            return
-        }
-        
-        // locate accessory view
-        let windowCount = windowScene.windows.count
-        if (windowCount < 2) {
-            return
-        }
-
-        let tempWindow: UIWindow = windowScene.windows[1] as UIWindow
-        let accessoryView: UIView = traverseSubViews(tempWindow)
-        if (accessoryView.description.hasPrefix("<UIWebFormAccessory")) {
-            // Found the inputAccessoryView UIView
-            if (accessoryView.subviews.count > 0) {
-                self.addNewAccessoryView(accessoryView)
-            }
-        }
-    }
-}
-
 fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
     fileprivate var scrollDelegate: DisableScrollDelegate?
+    fileprivate weak var editor: RichTextEditor?
     
     func initialize(_ callback: @escaping (JSON?) -> Void) {
         self.initialize("html-editor", callback: callback)
@@ -249,6 +190,17 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
                     forMainFrameOnly: true
                 )
         self.configuration.userContentController.addUserScript(script)
+        
+        // Remove keyboard acessories on the right that are usually bold / italic since we have them in our bar
+        self.inputAssistantItem.trailingBarButtonGroups = []
+    }
+    
+    override var inputAccessoryView: UIView? {
+        guard let editor = self.editor else { return nil }
+        
+        let view = RichTextEditorToolsView(frame: CGRect(x: 0, y: 0, width: 0, height: 40))
+        view.editor = editor
+        return view
     }
 
     func disableScroll(_ correctionCallback: @escaping () -> ()) {
@@ -334,6 +286,8 @@ fileprivate class RichTextEditorToolsView: UIView {
     }
 
     func createView() {
+        self.backgroundColor = UIColor.systemGray5
+        
         let buttonViews = buttons.enumerated().map { (i, tup) -> UIButton in
             let (_, icon) = tup
             let button = UIButton()
