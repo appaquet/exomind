@@ -43,6 +43,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
     private mounted = false;
     private shortcutToken: ListenerToken;
     private draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
+    private threadElement: React.RefObject<HTMLUListElement> = React.createRef();
 
     constructor(props: IProps) {
         super(props);
@@ -101,6 +102,12 @@ export default class EmailThread extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
+    componentDidUpdate(): void {
+        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
+            this.threadElement.current.focus();
+        }
+    }
+
     render(): React.ReactNode {
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
@@ -108,7 +115,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         const emailControls = (this.state.controlledEmailId && (this.props.containerState?.active ?? true)) ? this.renderEmailControls() : null;
         return (
             <div className="entity-component email-thread" onMouseLeave={this.handleThreadMouseLeave}>
-                <ul className="thread">
+                <ul className="thread" ref={this.threadElement}>
                     {emails}
                 </ul>
                 {emailControls}
