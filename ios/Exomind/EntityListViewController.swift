@@ -358,10 +358,13 @@ fileprivate struct EntityResult: Equatable, Hashable {
     let collections: [CollectionPillData]
 
     static func ==(lhs: EntityResult, rhs: EntityResult) -> Bool {
-        lhs.result == rhs.result
+        lhs.result == rhs.result && lhs.collections == rhs.collections
     }
 
     func hash(into hasher: inout Hasher) {
         self.result.hash(into: &hasher)
+        for collection in collections {
+            collection.id.hash(into: &hasher)
+        }
     }
 }
