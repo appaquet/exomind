@@ -14,8 +14,8 @@ import LinkSelector from './link-selector';
 import { CancellableEvent } from '../../../utils/events';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { ContainerState } from '../container-state';
-import './note.less';
 import { observer } from 'mobx-react';
+import './note.less';
 
 interface IProps {
     entity: EntityTraits;
@@ -69,11 +69,13 @@ export default class Note extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
-    componentDidUpdate(): void {
-        const note = new exomind.base.v1.Note(this.props.noteTrait.message);
-        if (!this.state.focused && !_.isEqual(this.state.currentNote, note)) {
+    componentDidUpdate(prevProps: IProps): void {
+        // allow incoming changes if we're not focused on note
+        const prevNote = new exomind.base.v1.Note(prevProps.noteTrait.message);
+        const newNote = new exomind.base.v1.Note(this.props.noteTrait.message);
+        if (!this.state.focused && !_.isEqual(prevNote, newNote)) {
             this.setState({
-                currentNote: note,
+                currentNote: newNote,
             });
         }
 
@@ -82,11 +84,11 @@ export default class Note extends React.Component<IProps, IState> {
                 this.state.editor?.blur();
             });
         }
+
+        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
     }
 
     render(): React.ReactNode {
-        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
-
         return (
             <div className="entity-component note">
                 <div className="entity-details">
@@ -109,6 +111,7 @@ export default class Note extends React.Component<IProps, IState> {
                         onCursorChange={this.handleCursorChange}
                         onLinkClick={this.handleLinkClick}
                         linkSelector={this.linkSelector}
+                        placeholder="Type here..."
                     />
                 </div>
             </div>

@@ -8,9 +8,11 @@ import './hybrid.less';
 window.isHybridExomind = true;
 
 // callback to iOS
-window.sendIos = (data) => {
+export const sendIos = (data) => {
+  // eslint-disable-next-line no-undef
   webkit.messageHandlers['onMessage'].postMessage(data);
 };
+window.sendIos = sendIos;
 
 // For some reason, React needs to be imported first
 // This prevents unused warning
