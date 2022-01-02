@@ -73,7 +73,6 @@ export class Entity extends React.Component<IProps, IState> {
                 actionsComponent = this.renderActions(actions);
             }
         }
-
         if (!actions) {
             actions = new EntityActions();
         }
@@ -103,6 +102,7 @@ export class Entity extends React.Component<IProps, IState> {
                         onDropOut={this.props.onDropOut}>
 
                         {actionsComponent}
+
                         {this.renderElement(this.props.entity, actions)}
                     </DragAndDrop>
                 </div>

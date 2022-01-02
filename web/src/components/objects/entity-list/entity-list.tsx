@@ -19,17 +19,17 @@ export interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    actionsForEntity?: (entity: EntityTraits) => EntityActions;
 
-    header?: React.ReactNode;
+    actionsForEntity?: (entity: EntityTraits) => EntityActions;
+    editedEntity?: EntityTraits; // used to refresh when creating entity to be inlined edited
 
     droppable?: boolean;
     draggable?: boolean;
     onDropIn?: (e: IDroppedItem) => void;
 
-    containerState?: ContainerState,
-
     renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
+
+    containerState?: ContainerState,
 }
 
 interface IState {
@@ -112,19 +112,16 @@ export class EntityList extends React.Component<IProps, IState> {
 
         const classes = classNames({
             'entity-list': true,
-            'header-control': !!this.props.header,
         });
 
         const nbItems = this.props.entities.length;
         return (
             <div className={classes}>
                 <Scrollable
-                    initialTopInset={(this.props.header) ? 30 : 0}
                     loadMoreItems={15}
                     onNeedMore={this.props.onRequireLoadMore}
                     nbItems={nbItems}>
 
-                    {this.props.header}
                     {this.renderCollection()}
 
                 </Scrollable>
@@ -136,7 +133,6 @@ export class EntityList extends React.Component<IProps, IState> {
         if (this.props.entities.length == 0) {
             return this.renderEmptyList();
         }
-
         const count = this.props.entities.length;
         const items = this.props.entities.map((entity, idx) => {
             const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
@@ -203,7 +199,7 @@ export class EntityList extends React.Component<IProps, IState> {
     }
 
     private handleItemMouseOver(entityId: string, idx: number): void {
-        if (Shortcuts.usedRecently) {
+        if (Shortcuts.usedRecently || this.state.activeEntityId === entityId) {
             return;
         }
 

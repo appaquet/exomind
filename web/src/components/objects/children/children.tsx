@@ -149,7 +149,9 @@ export class Children extends React.Component<IProps, IState> {
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+
                         actionsForEntity={this.actionsForEntity}
+                        editedEntity={this.state.editedEntity}
 
                         onDropIn={this.handleDropInEntity}
                         containerState={this.props.containerState}

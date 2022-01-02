@@ -106,9 +106,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
         if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
-            console.log('focusing');
             this.threadElement.current.focus();
-            console.log(this.threadElement.current, document.activeElement);
         }
 
         const emails = this.renderEmails();

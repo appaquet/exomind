@@ -149,7 +149,7 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     private onColumnHovered(columnId: number): void {
-        if (Shortcuts.usedRecently) {
+        if (Shortcuts.usedRecently || this.state.activeColumn == columnId) {
             return;
         }
 
