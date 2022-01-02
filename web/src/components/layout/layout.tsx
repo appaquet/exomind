@@ -17,6 +17,7 @@ import Modal from './modal';
 import { Shortcuts } from '../../shortcuts';
 import { CollectionNavigator } from '../modals/collection-navigator/collection-navigator';
 import { EntityTraits } from '../../utils/entities';
+import { ContextualMenu } from './menu';
 
 @observer
 export default class Layout extends React.Component {
@@ -84,7 +85,9 @@ export default class Layout extends React.Component {
 
         {hamburgerMenu}
 
-        {this.renderModal()}
+        {this.context.session.currentModal && this.renderModal()}
+
+        {this.context.session.currentMenu && this.renderContextualMenu()}
 
         <div id="content">
           {this.renderPath()}
@@ -103,12 +106,6 @@ export default class Layout extends React.Component {
 
   private handleColumnsChange(config: ColumnConfigs): void {
     Navigation.navigate(Navigation.pathForColumnsConfig(config));
-  }
-
-  private renderModal(): React.ReactNode | null {
-    if (this.context.session.currentModal) {
-      return <Modal>{this.context.session.currentModal()}</Modal>;
-    }
   }
 
   private renderPath(): React.ReactNode {
@@ -139,6 +136,18 @@ export default class Layout extends React.Component {
     }
   }
 
+  private renderModal(): React.ReactNode {
+    return <Modal>{this.context.session.currentModal()}</Modal>;
+  }
+
+  private renderContextualMenu(): React.ReactNode {
+    const handleClose = () => {
+      this.context.session.hideMenu();
+    };
+
+    return <ContextualMenu menu={this.context.session.currentMenu} onClose={handleClose} />;
+  }
+
   private handleGotoCollection = (): boolean => {
     this.context.session.showModal(() => {
       const onSelect = (entity: EntityTraits) => {
@@ -148,6 +157,7 @@ export default class Layout extends React.Component {
 
       return <CollectionNavigator onSelect={onSelect} />;
     });
+
     return true;
   }
 }

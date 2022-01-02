@@ -14,7 +14,7 @@ export class EntityActions {
 }
 
 export class ButtonAction {
-    constructor(public icon: string, public callback: (action: ButtonAction, e: unknown) => ActionResult) {
+    constructor(public icon: string, public callback: (action: ButtonAction, e: MouseEvent) => ActionResult) {
         this.icon = icon;
         this.callback = callback;
     }

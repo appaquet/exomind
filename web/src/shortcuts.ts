@@ -2,12 +2,13 @@
 export type Context =
     'text-editor' |
     'input' | // automatically inferred if focused on an input element
-    'modal';
+    'modal' | 
+    'contextual-menu';
 export type ListenerToken = number;
 
 interface Mapping {
     key: string | string[];
-    callback: (event: KeyboardEvent) => boolean;
+    callback: (event: KeyboardEvent) => boolean; // TODO: rename to handler
     disabledContexts?: Context[];
     token?: ListenerToken;
     disabled?: boolean;

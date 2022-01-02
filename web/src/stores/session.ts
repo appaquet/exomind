@@ -1,5 +1,6 @@
 import { LocalNode } from "exocore";
 import { action, makeAutoObservable, observable } from "mobx";
+import { IMenu } from "../components/layout/menu";
 import Path from "../utils/path";
 
 export type ModalRenderer = () => React.ReactNode;
@@ -46,5 +47,18 @@ export class SessionStore {
             this.modalCancel = null;
             modelCancel();
         }
+    }
+
+    @observable currentMenu?: IMenu;
+    @action showMenu(menu: IMenu, element: HTMLElement | null = null): void {
+        if (element) {
+            menu.reference = element;
+        }
+
+        this.currentMenu = menu;
+    }
+
+    @action hideMenu(): void {
+        this.currentMenu = null;
     }
 }

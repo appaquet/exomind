@@ -62,42 +62,42 @@ export class EntityList extends React.Component<IProps, IState> {
             {
                 key: ['n', 'j'],
                 callback: this.handleShortcutNext,
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
             {
                 key: 'ArrowDown',
                 callback: this.handleShortcutNext,
-                disabledContexts: ['modal'], // allow focusing out of search bar
+                disabledContexts: ['modal', 'contextual-menu'], // allow focusing out of search bar
             },
             {
                 key: ['p', 'k', 'ArrowUp'],
                 callback: this.handleShortcutPrevious,
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
             {
                 key: ['Mod-ArrowUp'],
                 callback: this.handleShortcutTop,
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
             {
                 key: ['Mod-ArrowDown'],
                 callback: this.handleShortcutBottom,
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
             {
                 key: ['Space', 'Enter'],
                 callback: () => this.handleShortcutSelect(false),
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
             {
                 key: 'x',
                 callback: () => this.handleShortcutSelect(true),
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
             {
                 key: 'Escape',
                 callback: this.handleShortcutClearSelect,
-                disabledContexts: ['input', 'modal'],
+                disabledContexts: ['input', 'modal', 'contextual-menu'],
             },
         ]);
         this.state = {};

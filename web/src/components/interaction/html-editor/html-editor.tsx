@@ -18,7 +18,7 @@ import { queryIsCodeActiveBlock } from "@bangle.dev/base-components/dist/code-bl
 import { indentListItem, outdentListItem } from "@bangle.dev/base-components/dist/list-item/list-item-component";
 import Debouncer from "../../../utils/debouncer";
 import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
-import { createPopper } from '@popperjs/core';
+import { createPopper, Instance } from '@popperjs/core';
 import { CancellableEvent } from "../../../utils/events";
 import { Shortcuts } from "../../../shortcuts";
 
@@ -59,7 +59,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     private editor?: CoreBangleEditor;
     private debouncer: Debouncer;
     private popperRef: React.RefObject<HTMLDivElement> = React.createRef();
-    private popper?: unknown;
+    private popper?: Instance;
     private popperElement?: unknown;
 
     constructor(props: IProps) {
@@ -97,6 +97,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 localChanges: false,
             });
         }
+    }
+
+    componentWillUnmount(): void {
+        this.popper?.destroy();
     }
 
     private createEditorState(content: string): BangleEditorState<unknown> {
@@ -589,6 +593,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
     private maybeCreateLinkPopper(): void {
         if (this.popper && !this.state.cursor?.link) {
+            this.popper?.destroy();
             this.popper = null;
             this.popperElement = null;
             return;
