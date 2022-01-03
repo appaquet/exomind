@@ -1,12 +1,22 @@
 import { MouseEvent } from "react";
+import { IAction } from "../../../utils/actions";
 import { IMenuItem } from "../../layout/menu";
 
 export type ActionResult = 'remove' | void;
 
-export class EntityActions {
-    constructor(public buttons: ButtonAction[] = [], public inlineEdit: InlineAction | null = null) {
-        this.buttons = buttons;
-        this.inlineEdit = inlineEdit;
+export class ListEntityActions {
+    constructor(public buttons: ButtonAction[] = [], public inlineAction: InlineAction | null = null) {
+    }
+
+    static fromActions(actions: IAction[]): ListEntityActions {
+        const buttons = actions.map(a => {
+            return new ButtonAction(a.label, a.icon, (_ba, e) => {
+                // TODO: Handle async
+                a.execute(e, a);
+                return;
+            });
+        });
+        return new ListEntityActions(buttons);
     }
 
     get isEmpty(): boolean {
@@ -28,9 +38,6 @@ export class EntityActions {
 
 export class ButtonAction {
     constructor(public label: string, public icon: string, public callback: (action: ButtonAction, e: MouseEvent) => ActionResult) {
-        this.label = label;
-        this.icon = icon;
-        this.callback = callback;
     }
 
     trigger(e: MouseEvent): ActionResult {

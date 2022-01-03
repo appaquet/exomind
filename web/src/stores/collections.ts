@@ -1,9 +1,12 @@
-import { exocore, Exocore, MutationBuilder, QueryBuilder, WatchedQueryWrapper } from "exocore";
+import { exocore, Exocore, QueryBuilder, WatchedQueryWrapper } from "exocore";
 import { memoize } from "lodash";
 import Long from "long";
 import { observable, ObservableMap, runInAction } from "mobx";
 import { exomind } from "../protos";
 import { EntityTrait, EntityTraits, TraitIcon } from "../utils/entities";
+
+export const PINNED_WEIGHT = 5000000000000;
+export const WEIGHT_SPACING = 1000;
 
 export class CollectionStore {
     private entityParents: Map<string, Parents> = observable.map();
@@ -63,18 +66,6 @@ export class CollectionStore {
                 }
             });
         });
-    }
-
-    async removeEntityFromParents(entities: EntityTraits[], parentId: string): Promise<void> {
-        for (const et of entities) {
-            const mutationBuilder = MutationBuilder.updateEntity(et.entity.id);
-
-            const parentRelation = getEntityParentRelation(et, parentId);
-            if (parentRelation) {
-                mutationBuilder.deleteTrait(parentRelation.id);
-                await Exocore.store.mutate(mutationBuilder.build());
-            }
-        }
     }
 
     private getEntityParentsInner(entity: EntityTraits, lineage?: Set<string>): (Parents | null) {
@@ -267,4 +258,9 @@ export function getEntityParentWeight(entity: EntityTraits, parentId: string): n
     } else {
         return weight;
     }
+}
+
+export function isPinnedInParent(entity: EntityTraits, parentId: string): boolean {
+    const child = getEntityParentRelation(entity, parentId)
+    return child.message.weight >= PINNED_WEIGHT;
 }

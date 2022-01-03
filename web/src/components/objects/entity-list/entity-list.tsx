@@ -7,7 +7,7 @@ import DragAndDrop, { DragData } from "../../interaction/drag-and-drop/drag-and-
 import Scrollable from "../../interaction/scrollable/scrollable";
 import { ContainerState } from "../container-state";
 import { Entity } from './entity';
-import { EntityActions } from "./entity-action";
+import { ListEntityActions } from "./actions";
 import { SelectedItem, Selection } from "./selection";
 import './entity-list.less';
 
@@ -20,7 +20,7 @@ export interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
-    actionsForEntity?: (entity: EntityTraits) => EntityActions;
+    actionsForEntity?: (entity: EntityTraits) => ListEntityActions;
     editedEntity?: EntityTraits; // used to refresh when creating entity to be inlined edited
 
     droppable?: boolean;

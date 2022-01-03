@@ -10,7 +10,7 @@ import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
 import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
 import { SelectedItem, Selection } from "./selection";
-import { ButtonAction, EntityActions } from './entity-action';
+import { ButtonAction, ListEntityActions } from './actions';
 import { observer } from 'mobx-react';
 import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
@@ -25,7 +25,7 @@ export interface IProps {
     selected?: boolean;
     onSelectionChange?: (sel: Selection) => void;
     onClick?: (e: React.MouseEvent) => void;
-    actionsForEntity?: (entity: EntityTraits) => EntityActions;
+    actionsForEntity?: (entity: EntityTraits) => ListEntityActions;
 
     onMouseLeave?: (e: React.MouseEvent) => void;
     onMouseOver?: (e: React.MouseEvent) => void;
@@ -77,7 +77,7 @@ export class Entity extends React.Component<IProps, IState> {
             }
         }
         if (!actions) {
-            actions = new EntityActions();
+            actions = new ListEntityActions();
         }
 
         let dropPositions: DropPosition[];
@@ -113,10 +113,10 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderActions(actions: EntityActions): React.ReactNode {
+    private renderActions(actions: ListEntityActions): React.ReactNode {
         let limitedButtons = actions.buttons;
-        if (actions.buttons.length > 3) {
-            limitedButtons = actions.buttons.slice(0, 3);
+        if (actions.buttons.length > 2) {
+            limitedButtons = actions.buttons.slice(0, 2);
 
             limitedButtons.push(new ButtonAction('More', 'bars', (action, event) => {
                 this.context.session.showMenu({
@@ -155,7 +155,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderElement(entityTraits: EntityTraits, actions: EntityActions): React.ReactNode {
+    private renderElement(entityTraits: EntityTraits, actions: ListEntityActions): React.ReactNode {
         return entityTraits.priorityMatch({
             emailThread: (entityTrait) => {
                 return this.renderEmailThreadElement(entityTraits, entityTrait);
@@ -289,7 +289,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private renderTaskElement(actions: EntityActions, entityTrait: EntityTrait<exomind.base.v1.ITask>): React.ReactNode {
+    private renderTaskElement(actions: ListEntityActions, entityTrait: EntityTrait<exomind.base.v1.ITask>): React.ReactNode {
         const task = entityTrait.message;
         const onTitleChange = (newTitle: string) => {
             this.handleTaskChange(entityTrait, actions, newTitle);
@@ -303,7 +303,7 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="title1">
                         <EditableText
                             text={task.title}
-                            initializeEditing={!!actions.inlineEdit}
+                            initializeEditing={!!actions.inlineAction}
                             onChange={onTitleChange}
                         />
                     </div>
@@ -393,11 +393,11 @@ export class Entity extends React.Component<IProps, IState> {
         }
     }
 
-    private handleTaskChange(task: EntityTrait<exomind.base.v1.ITask>, actions: EntityActions, newTitle: string): void {
+    private handleTaskChange(task: EntityTrait<exomind.base.v1.ITask>, actions: ListEntityActions, newTitle: string): void {
         task.rename(newTitle);
 
-        if (actions.inlineEdit) {
-            actions.inlineEdit.trigger();
+        if (actions.inlineAction) {
+            actions.inlineAction.trigger();
         }
     }
 }

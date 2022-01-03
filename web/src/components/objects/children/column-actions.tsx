@@ -9,6 +9,7 @@ import { IStores, StoresContext } from '../../../stores/stores';
 import { getEntityParentRelation } from '../../../stores/collections';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import "./column-actions.less";
+import { Commands } from '../../../utils/commands';
 
 interface IProps {
     parent: EntityTraits;
@@ -190,8 +191,7 @@ export class ColumnActions extends React.Component<IProps> {
 
     private handleDoneClick = async () => {
         const entities = await this.getSelectedEntities();
-
-        this.context.collections.removeEntityFromParents(entities, this.props.parent.id);
+        await Commands.removeFromParent(entities, this.props.parent.id);
 
         if (this.props.selection) {
             this.props.onSelectionChange(this.props.selection.cleared());

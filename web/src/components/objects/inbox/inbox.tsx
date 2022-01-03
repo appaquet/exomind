@@ -28,18 +28,11 @@ export class Inbox extends React.Component<IProps> {
             <Children
                 parentId="inbox"
 
-                actionsForEntity={this.actionsForChildrenType}
-
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
 
-                removeOnPostpone={true}
                 containerState={this.props.containerState}
             />
         );
-    }
-
-    private actionsForChildrenType = (): string[] => {
-        return ['done', 'postpone', 'move'];
     }
 }
