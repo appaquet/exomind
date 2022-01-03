@@ -201,7 +201,11 @@ export class Children extends React.Component<IProps, IState> {
                 case 'inbox':
                     return new ButtonAction('Move to inbox', 'inbox', () => { return this.handleEntityMoveInbox(et) });
                 case 'pin':
-                    return new ButtonAction('Pin to top', this.isPinned(et) ? 'caret-down' : 'thumb-tack', () => { return this.handleEntityPin(et) });
+                    if (!this.isPinned(et)) {
+                        return new ButtonAction('Pin to top', 'thumb-tack', () => { return this.handleEntityPin(et) });
+                    } else {
+                        return new ButtonAction('Unpin from top', 'thumb-tack', () => { return this.handleEntityPin(et) });
+                    }
                 case 'restore': {
                     const icon = (this.props.parentId == 'inbox') ? 'inbox' : 'folder-o';
                     return new ButtonAction('Restore', icon, () => { return this.handleEntityRestore(et) });

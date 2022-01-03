@@ -72,7 +72,6 @@ export class ColumnActions extends React.Component<IProps> {
         return <div className="column-bottom-actions">
             <ul>
                 <li onClick={this.handleNewNoteClick}><i className="new-note" /></li>
-                <li onClick={this.handleNewEmailClick}><i className="new-email" /></li>
                 <li onClick={this.handleNewCollectionClick}><i className="new-collection" /></li>
                 <li onClick={this.handleNewTaskClick}><i className="new-task" /></li>
                 <li onClick={this.handleNewLinkClick}><i className="new-link" /></li>

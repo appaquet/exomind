@@ -125,10 +125,9 @@ export default class Navigation {
 
 export function setupLinkClickNavigation(fallback: (e: MouseEvent, el: HTMLElement) => void): void {
   document.addEventListener('click', (e) => {
+    // if tagname is not a link, try to go up into the parenthood up 20 levels
     let el = e.target as HTMLElement;
-
-    // if tagname is not a link, try to go up into the parenthood up 10 levels
-    for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
+    for (let i = 0; el.tagName !== 'A' && i < 20; i++) {
       if (el.parentNode) {
         el = el.parentNode as HTMLElement;
       }

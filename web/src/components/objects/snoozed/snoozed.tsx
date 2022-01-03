@@ -9,9 +9,9 @@ import { ButtonAction, EntityActions } from '../entity-list/entity-action';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
-import './snoozed.less';
 import DateUtil from '../../../utils/dates';
 import { runInAction } from 'mobx';
+import './snoozed.less';
 
 interface IProps {
     selection?: Selection;
@@ -91,6 +91,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
                         droppable={false}
 
                         renderEntityDate={this.renderEntityDate}
+                        containerState={this.props.containerState}
                     />
                 </div>
             );

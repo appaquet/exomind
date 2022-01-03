@@ -93,7 +93,12 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                     selected
                 });
                 return (
-                    <li className={classes} onClick={() => this.handleTimeClick(choice.key)} key={choice.key}>
+                    <li className={classes}
+                        key={choice.key}
+                        onMouseOver={() => this.handleMouseOver(i)}
+                        onMouseOut={() => this.handleMouseOut(i)}
+                        onClick={() => this.handleTimeClick(choice.key)}
+                    >
                         <span>{choice.copy}</span>
                     </li>
                 )
@@ -140,6 +145,16 @@ export default class TimeSelector extends React.Component<IProps, IState> {
             if (this.props.onSelectionDone) {
                 this.props.onSelectionDone(date);
             }
+        }
+    }
+
+    private handleMouseOver(choiceOrd: number): void {
+        this.setState({ selected: choiceOrd });
+    }
+
+    private handleMouseOut(choiceOrd: number): void {
+        if (this.state.selected === choiceOrd) {
+            this.setState({ selected: undefined });
         }
     }
 
