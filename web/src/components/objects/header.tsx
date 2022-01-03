@@ -8,6 +8,7 @@ import EntityIcon from './entity-icon';
 import { IStores, StoresContext } from '../../stores/stores';
 import { IMenuItem } from '../layout/menu';
 import _ from 'lodash';
+import { IAction } from '../../utils/actions';
 
 interface IProps {
     title: string;
@@ -68,7 +69,7 @@ export class Header extends React.Component<IProps> {
             const showMenu = (e: MouseEvent) => {
                 e.stopPropagation();
                 this.context.session.showMenu({
-                    items: this.props.actions.map((a) => a.toMenuItem()),
+                    items: _.chain(this.props.actions).sortBy((a) => a.order).map((a) => a.toMenuItem()).value(),
                 }, e.currentTarget as HTMLElement);
             };
 
@@ -96,6 +97,12 @@ export class Header extends React.Component<IProps> {
 
 export class HeaderAction {
     constructor(public label: string, public icon: string, public callback: (e: MouseEvent) => void, public overflow: boolean = false, public order: number = 0) {
+    }
+
+    static fromAction(action: IAction, overflow = false): HeaderAction {
+        return new HeaderAction(action.label, action.icon, (e) => {
+            action.execute(e, action);
+        }, overflow, action.priority);
     }
 
     toMenuItem(): IMenuItem {

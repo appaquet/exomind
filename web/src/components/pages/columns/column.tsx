@@ -82,7 +82,7 @@ export default class Column extends React.Component<IProps, IState> {
         }
 
         if (this.props.columnConfig.isEntity) {
-            headerActions.push(new HeaderAction('Pop out', 'external-link', this.expandFullscreen, true));
+            headerActions.push(new HeaderAction('Pop out', 'external-link', this.expandFullscreen, true, 0));
         }
 
         if (this.props.onClose) {

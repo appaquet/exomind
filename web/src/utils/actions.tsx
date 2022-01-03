@@ -196,7 +196,7 @@ export class Actions {
         return {
             key: 'delete',
             label: 'Delete',
-            icon: 'times',
+            icon: 'trash',
             execute: async () => {
                 if (confirm('Are you sure you want to delete this entity?')) {
                     await Commands.delete(et);

@@ -11,8 +11,8 @@ import { HeaderAction } from "./header";
 import { Message } from "./message";
 import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../stores/stores';
-import copy from 'clipboard-copy';
 import { observer } from 'mobx-react';
+import { Actions } from '../../utils/actions';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));
@@ -52,15 +52,6 @@ export class EntityComponent extends React.Component<Props, State> {
         this.entityQuery = Exocore.store
             .watchedQuery(query)
             .onChange(this.handleNewResults);
-
-        if (props.containerState) {
-            props.containerState.pushHeaderAction(new HeaderAction('Snooze...', 'clock-o', this.handleShowTimeSelector, true));
-            props.containerState.pushHeaderAction(new HeaderAction('Add to collections...', 'folder-open-o', this.handleShowCollectionSelector, true));
-            props.containerState.pushHeaderAction(new HeaderAction('Copy link', 'link', () => {
-                copy(`entity://${this.state.entityTraits.id}`);
-            }, true));
-        }
-
         this.state = {};
     }
 
@@ -169,6 +160,14 @@ export class EntityComponent extends React.Component<Props, State> {
                         }, trait.editableName);
                     } else {
                         this.props.containerState.title = trait.displayName;
+                    }
+
+                    if (!this.state.entityTraits) {
+                        const actions = Actions.forEntity(et);
+                        for (const action of actions) {
+                            const headerAction = HeaderAction.fromAction(action, true);
+                            this.props.containerState.pushHeaderAction(headerAction);
+                        }
                     }
                 });
             }
