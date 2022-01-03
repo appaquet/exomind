@@ -100,6 +100,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     componentWillUnmount(): void {
+        this.editor = null;
         this.popper?.destroy();
     }
 
@@ -410,12 +411,14 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 }
             }
 
-            const cursor = this.getCursor(newState);
-            if (this.props.onCursorChange) {
-                this.props.onCursorChange(cursor);
-            }
+            if (this.editor) {
+                const cursor = this.getCursor(newState);
+                if (this.props.onCursorChange) {
+                    this.props.onCursorChange(cursor);
+                }
 
-            this.setState({ cursor });
+                this.setState({ cursor });
+            }
         });
     }
 

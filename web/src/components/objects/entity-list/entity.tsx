@@ -10,7 +10,7 @@ import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
 import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
 import { SelectedItem, Selection } from "./selection";
-import { EntityActions } from './entity-action';
+import { ButtonAction, EntityActions } from './entity-action';
 import { observer } from 'mobx-react';
 import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
@@ -46,6 +46,9 @@ interface IState {
 }
 
 export class Entity extends React.Component<IProps, IState> {
+    static contextType = StoresContext;
+    declare context: IStores;
+
     constructor(props: IProps) {
         super(props);
 
@@ -111,7 +114,18 @@ export class Entity extends React.Component<IProps, IState> {
     }
 
     private renderActions(actions: EntityActions): React.ReactNode {
-        const actionsComponents = actions.buttons.map((action) => {
+        let limitedButtons = actions.buttons;
+        if (actions.buttons.length > 3) {
+            limitedButtons = actions.buttons.slice(0, 3);
+
+            limitedButtons.push(new ButtonAction('More', 'ellipsis-h', (action, event) => {
+                this.context.session.showMenu({
+                    items: actions.toMenuItems(),
+                }, event.currentTarget as HTMLElement);
+            }));
+        }
+
+        const actionsComponents = limitedButtons.map((action) => {
             const classes = classNames({
                 'action-icon': true,
                 fa: true,

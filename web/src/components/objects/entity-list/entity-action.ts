@@ -1,4 +1,5 @@
 import { MouseEvent } from "react";
+import { IMenuItem } from "../../layout/menu";
 
 export type ActionResult = 'remove' | void;
 
@@ -11,10 +12,23 @@ export class EntityActions {
     get isEmpty(): boolean {
         return !this.buttons || this.buttons.length == 0;
     }
+
+    toMenuItems(): IMenuItem[] {
+        return this.buttons.map(b => {
+            return {
+                label: b.label,
+                icon: b.icon,
+                onClick: (e: MouseEvent) => {
+                    return b.trigger(e);
+                }
+            }
+        });
+    }
 }
 
 export class ButtonAction {
-    constructor(public icon: string, public callback: (action: ButtonAction, e: MouseEvent) => ActionResult) {
+    constructor(public label: string, public icon: string, public callback: (action: ButtonAction, e: MouseEvent) => ActionResult) {
+        this.label = label;
         this.icon = icon;
         this.callback = callback;
     }

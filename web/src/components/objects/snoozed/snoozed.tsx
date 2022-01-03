@@ -123,7 +123,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
 
     private actionsForEntity = (et: EntityTraits): EntityActions => {
         return new EntityActions([
-            new ButtonAction('inbox', () => this.handleEntityMoveInbox(et)),
+            new ButtonAction('Move to inbox', 'inbox', () => this.handleEntityMoveInbox(et)),
         ]);
     }
 

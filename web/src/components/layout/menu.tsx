@@ -1,6 +1,6 @@
 import { Instance, createPopper, Modifier } from "@popperjs/core";
 import classNames from "classnames";
-import React from "react";
+import React, { MouseEvent as ReactMouseEvent } from "react";
 import { ListenerToken, Shortcuts } from "../../shortcuts";
 import './menu.less';
 
@@ -12,6 +12,7 @@ export interface IMenu {
 export interface IMenuItem {
     label: string;
     icon?: string;
+    onClick: (e: ReactMouseEvent) => void;
 }
 
 interface IProps {
@@ -84,11 +85,20 @@ export class ContextualMenu extends React.Component<IProps> {
                                 fa: true,
                                 ['fa-' + item.icon]: true,
                             });
+                        } else {
+                            iconClass = classNames({
+                                icon: true,
+                            });
                         }
 
+                        const onClick = (e: ReactMouseEvent) => {
+                            item.onClick(e)
+                            this.props.onClose?.();
+                        };
+
                         return (
-                            <li key={index}>
-                                {item.icon && <span className={iconClass} />}
+                            <li key={index} onClick={onClick}>
+                                <span className={iconClass} />
                                 <span className="item-label">{item.label}</span>
                             </li>
                         );

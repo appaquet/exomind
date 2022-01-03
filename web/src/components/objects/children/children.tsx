@@ -15,6 +15,7 @@ import { IStores, StoresContext } from "../../../stores/stores";
 import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
 import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
+import copy from 'clipboard-copy';
 import './children.less';
 
 const PINNED_WEIGHT = 5000000000000;
@@ -188,25 +189,30 @@ export class Children extends React.Component<IProps, IState> {
             return new EntityActions();
         }
 
-        const actions = this.props.actionsForEntity(et);
-        const buttonActions = actions.map((action) => {
+        const entityActions = this.props.actionsForEntity(et);
+        const actions = entityActions.map((action) => {
             switch (action) {
                 case 'done':
-                    return new ButtonAction('check', () => { return this.handleEntityDone(et) });
+                    return new ButtonAction('Archive', 'check', () => { return this.handleEntityDone(et) });
                 case 'postpone':
-                    return new ButtonAction('clock-o', () => { return this.handleEntityPostpone(et) });
+                    return new ButtonAction('Snooze...', 'clock-o', () => { return this.handleEntityPostpone(et) });
                 case 'move':
-                    return new ButtonAction('folder-open-o', () => { return this.handleEntityMoveCollection(et) });
+                    return new ButtonAction('Add to collections...', 'folder-open-o', () => { return this.handleEntityMoveCollection(et) });
                 case 'inbox':
-                    return new ButtonAction('inbox', () => { return this.handleEntityMoveInbox(et) });
+                    return new ButtonAction('Move to inbox', 'inbox', () => { return this.handleEntityMoveInbox(et) });
                 case 'pin':
-                    return new ButtonAction(this.isPinned(et) ? 'caret-down' : 'thumb-tack', () => { return this.handleEntityPin(et) });
+                    return new ButtonAction('Pin to top', this.isPinned(et) ? 'caret-down' : 'thumb-tack', () => { return this.handleEntityPin(et) });
                 case 'restore': {
                     const icon = (this.props.parentId == 'inbox') ? 'inbox' : 'folder-o';
-                    return new ButtonAction(icon, () => { return this.handleEntityRestore(et) });
+                    return new ButtonAction('Restore', icon, () => { return this.handleEntityRestore(et) });
                 }
             }
         });
+
+        actions.push(new ButtonAction('Copy link', 'link', () => {
+            copy(`entity://${et.id}`);
+        }));
+
 
         // when we just created an entity that require it to be edited right away (ex: task)
         let inlineEdit;
@@ -218,7 +224,7 @@ export class Children extends React.Component<IProps, IState> {
             });
         }
 
-        return new EntityActions(buttonActions, inlineEdit);
+        return new EntityActions(actions, inlineEdit);
     }
 
     private handleEntityDone(et: EntityTraits): ActionResult {
