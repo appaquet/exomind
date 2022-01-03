@@ -15,6 +15,7 @@ export type ActionResult = 'remove' | void;
 export type SiteSection = 'inbox' | 'recent' | 'search' | 'snoozed';
 
 export interface IAction {
+    key: string;
     label: string;
     icon?: string;
     execute: (e: CancellableEvent, action: IAction) => Promise<ActionResult>;
@@ -72,8 +73,27 @@ export class Actions {
         return _.sortBy(actions, (a) => a.priority);
     }
 
-    static removeFromParent(et: EntityTraits, parent: EntityTraits | string): IAction {
+    static forSelectedEntities(entities: EntityTraits[], context: IContext | null = null): IAction[] {
+        const actions: IAction[] = [];
+        const push = (priority: number, action: IAction) => {
+            action.priority = priority;
+            actions.push(action);
+        };
+
+        const parentId = Commands.getEntityId(context?.parent);
+
+        if (context?.parent) {
+            push(10, this.removeFromParent(entities, context?.parent));
+        }
+
+        push(20, this.snooze(entities, parentId, parentId === 'inbox'));
+
+        return _.sortBy(actions, (a) => a.priority);
+    }
+
+    static removeFromParent(et: EntityTraits | EntityTraits[], parent: EntityTraits | string): IAction {
         return {
+            key: 'remove-from-parent',
             label: 'Remove',
             icon: 'check',
             execute: async () => {
@@ -85,6 +105,7 @@ export class Actions {
 
     static selectEntityCollections(et: EntityTraits): IAction {
         return {
+            key: 'select-entity-collections',
             label: 'Add to collections...',
             icon: 'folder-open-o',
             execute: async () => {
@@ -97,6 +118,7 @@ export class Actions {
 
     static pinInParent(et: EntityTraits, parent: EntityTraits | string): IAction {
         return {
+            key: 'pin-in-parent',
             label: 'Pin to top',
             icon: 'thumb-tack',
             execute: async () => {
@@ -107,6 +129,7 @@ export class Actions {
 
     static unpinInParent(et: EntityTraits, parent: EntityTraits | string): IAction {
         return {
+            key: 'unpin-in-parent',
             label: 'Unpin from top',
             icon: 'thumb-tack',
             execute: async () => {
@@ -117,6 +140,7 @@ export class Actions {
 
     static addToInbox(et: EntityTraits): IAction {
         return {
+            key: 'add-to-inbox',
             label: 'Move to inbox',
             icon: 'inbox',
             execute: async () => {
@@ -127,6 +151,7 @@ export class Actions {
 
     static copyLink(et: EntityTraits): IAction {
         return {
+            key: 'copy-link',
             label: 'Copy link',
             icon: 'link',
             execute: async () => {
@@ -135,8 +160,9 @@ export class Actions {
         }
     }
 
-    static snooze(et: EntityTraits, parent: EntityTraits | string | null = null, removeFromParent = false): IAction {
+    static snooze(et: EntityTraits | EntityTraits[], parent: EntityTraits | string | null = null, removeFromParent = false): IAction {
         return {
+            key: 'snooze',
             label: 'Snooze...',
             icon: 'clock-o',
             execute: async () => {
@@ -157,6 +183,7 @@ export class Actions {
 
     static removeSnooze(et: EntityTraits): IAction {
         return {
+            key: 'remove-snooze',
             label: 'Remove snooze',
             icon: 'clock-o',
             execute: async () => {
@@ -167,6 +194,7 @@ export class Actions {
 
     static delete(et: EntityTraits): IAction {
         return {
+            key: 'delete',
             label: 'Delete',
             icon: 'times',
             execute: async () => {

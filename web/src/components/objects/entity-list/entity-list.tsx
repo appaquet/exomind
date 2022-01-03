@@ -332,6 +332,10 @@ export class EntityList extends React.Component<IProps, IState> {
             selection = new Selection([item]);
         }
 
+        if (multi) {
+            selection = selection.withForceMulti();
+        }
+
         this.props.onSelectionChange(selection);
     }
 

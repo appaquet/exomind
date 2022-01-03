@@ -1,10 +1,13 @@
 import _ from 'lodash';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 
+// TODO: Move to util
+
 export class Selection {
     items: SelectedItem[];
+    private forceMulti: boolean;
 
-    constructor(items?: SelectedItem[] | SelectedItem | undefined) {
+    constructor(items?: SelectedItem[] | SelectedItem | undefined, forceMulti = false) {
         if (!items) {
             items = [];
         } else if (!Array.isArray(items)) {
@@ -12,6 +15,7 @@ export class Selection {
         }
 
         this.items = items;
+        this.forceMulti = forceMulti;
     }
 
     contains(needle: SelectedItem): boolean {
@@ -25,7 +29,7 @@ export class Selection {
     }
 
     copy(): Selection {
-        return new Selection(_.clone(this.items));
+        return new Selection(_.clone(this.items), this.forceMulti);
     }
 
     cleared(): Selection {
@@ -40,11 +44,15 @@ export class Selection {
         return this.items.length;
     }
 
+    get isMulti(): boolean {
+        return this.forceMulti || this.length > 1;
+    }
+
     withItem(item: SelectedItem): Selection {
         const newItems = [];
         newItems.push(...this.items);
         newItems.push(item);
-        return new Selection(newItems);
+        return new Selection(newItems, this.forceMulti);
     }
 
     withoutItem(item: SelectedItem): Selection {
@@ -56,7 +64,12 @@ export class Selection {
             }
         });
 
-        return new Selection(newItems);
+        return new Selection(newItems, this.forceMulti);
+    }
+
+    withForceMulti(): Selection {
+        this.forceMulti = true;
+        return this;
     }
 }
 

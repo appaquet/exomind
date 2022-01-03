@@ -10,7 +10,7 @@ import EditableText from '../../interaction/editable-text/editable-text';
 import EntityIcon from '../entity-icon';
 import { HierarchyPills } from '../hierarchy-pills/hierarchy-pills';
 import { SelectedItem, Selection } from "./selection";
-import { ButtonAction, ListEntityActions } from './actions';
+import { ListEntityAction, ListEntityActions } from './actions';
 import { observer } from 'mobx-react';
 import { IStores, StoresContext } from '../../../stores/stores';
 import './entity.less';
@@ -118,7 +118,7 @@ export class Entity extends React.Component<IProps, IState> {
         if (actions.buttons.length > 2) {
             limitedButtons = actions.buttons.slice(0, 2);
 
-            limitedButtons.push(new ButtonAction('More', 'bars', (action, event) => {
+            limitedButtons.push(new ListEntityAction('More', 'bars', async (action, event) => {
                 this.context.session.showMenu({
                     items: actions.toMenuItems(),
                 }, event.currentTarget as HTMLElement);
@@ -131,10 +131,10 @@ export class Entity extends React.Component<IProps, IState> {
                 fa: true,
                 ['fa-' + action.icon]: true
             });
-            const cb = (e: React.MouseEvent) => {
-                const result = action.trigger(e);
+            const cb = async (e: React.MouseEvent) => {
                 e.stopPropagation();
 
+                const result = await action.trigger(e);
                 if (result == 'remove') {
                     this.removeItem();
                 }

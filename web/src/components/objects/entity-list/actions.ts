@@ -5,15 +5,13 @@ import { IMenuItem } from "../../layout/menu";
 export type ActionResult = 'remove' | void;
 
 export class ListEntityActions {
-    constructor(public buttons: ButtonAction[] = [], public inlineAction: InlineAction | null = null) {
+    constructor(public buttons: ListEntityAction[] = [], public inlineAction: InlineAction | null = null) {
     }
 
     static fromActions(actions: IAction[]): ListEntityActions {
         const buttons = actions.map(a => {
-            return new ButtonAction(a.label, a.icon, (_ba, e) => {
-                // TODO: Handle async
-                a.execute(e, a);
-                return;
+            return new ListEntityAction(a.label, a.icon, (_ba, e) => {
+                return a.execute(e, a);
             });
         });
         return new ListEntityActions(buttons);
@@ -29,18 +27,18 @@ export class ListEntityActions {
                 label: b.label,
                 icon: b.icon,
                 onClick: (e: MouseEvent) => {
-                    return b.trigger(e);
+                    b.trigger(e);
                 }
             }
         });
     }
 }
 
-export class ButtonAction {
-    constructor(public label: string, public icon: string, public callback: (action: ButtonAction, e: MouseEvent) => ActionResult) {
+export class ListEntityAction {
+    constructor(public label: string, public icon: string, public callback: (action: ListEntityAction, e: MouseEvent) => Promise<ActionResult>) {
     }
 
-    trigger(e: MouseEvent): ActionResult {
+    async trigger(e: MouseEvent): Promise<ActionResult> {
         return this.callback(this, e);
     }
 }

@@ -95,6 +95,10 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     componentDidMount(): void {
         this.mounted = true;
+
+        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
+            this.threadElement.current.focus();
+        }
     }
 
     componentWillUnmount(): void {
@@ -102,13 +106,15 @@ export default class EmailThread extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
-    render(): React.ReactNode {
+    componentDidUpdate(): void {
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
-
+        
         if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
             this.threadElement.current.focus();
         }
+    }
 
+    render(): React.ReactNode {
         const emails = this.renderEmails();
         const emailControls = (this.state.controlledEmailId && (this.props.containerState?.active ?? true)) ? this.renderEmailControls() : null;
         return (

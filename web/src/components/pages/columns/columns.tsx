@@ -86,7 +86,11 @@ export default class Columns extends React.Component<IProps, IState> {
                     selectionItems = [this.configToSelection(nextColumnConfig)];
                 }
             }
+
             const selection = new Selection(Array.from(selectionItems.filter((col => !!col))));
+            if (nextColumnConfig?.isMultiple ?? false) {
+                selection.withForceMulti();
+            }
 
             const colClass = `column-container-${colId}`;
             const classes = classNames({
@@ -197,16 +201,15 @@ export default class Columns extends React.Component<IProps, IState> {
             }));
 
             let selectionConfig: ColumnConfig;
-            if (selectionConfigs.length == 1) {
-                selectionConfig = selectionConfigs[0];
-            } else if (selectionConfigs.length > 1) {
+            if (selection.isMulti) {
                 selectionConfig = ColumnConfig.forMultiple(selectionConfigs);
+            } else {
+                selectionConfig = selectionConfigs[0];
             }
 
             if (selectionConfig) {
                 columnsConfig = columnsConfig.set(colId + 1, selectionConfig);
             }
-
         } else {
             columnsConfig = columnsConfig.unset(colId + 1);
         }
