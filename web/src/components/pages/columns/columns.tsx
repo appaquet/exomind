@@ -95,6 +95,7 @@ export default class Columns extends React.Component<IProps, IState> {
             });
             const colKey = this.columnKey(columnConfig);
             const active = this.state.activeColumn == colId;
+            const canClose = this.canCloseColumn(config, colId);
 
             return [(
                 <div
@@ -108,7 +109,7 @@ export default class Columns extends React.Component<IProps, IState> {
                         columnId={colId}
                         columnConfig={columnConfig}
                         active={active}
-                        onClose={() => this.handleColumnClose(colId)}
+                        onClose={canClose ? () => this.handleColumnClose(colId) : undefined}
                         selection={selection}
                         onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
                     />
@@ -217,8 +218,7 @@ export default class Columns extends React.Component<IProps, IState> {
         const config = this.getConfig();
 
         // we allow closing any columns, as long as it is not the last one
-        const canClose = colId > 0 || config.parts.length > 1;
-        if (!canClose) {
+        if (!this.canCloseColumn(config, colId)) {
             return;
         }
 
@@ -230,6 +230,10 @@ export default class Columns extends React.Component<IProps, IState> {
 
         const columnsConfig = config.pop(colId);
         this.props.onConfigChange(columnsConfig);
+    }
+
+    private canCloseColumn(config: ColumnConfigs, colId: number): boolean {
+        return colId > 0 || config.parts.length > 1;
     }
 }
 

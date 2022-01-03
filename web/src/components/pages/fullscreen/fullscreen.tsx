@@ -14,7 +14,9 @@ export default class Fullscreen extends React.Component<IProps> {
 
   constructor(props: IProps) {
     super(props);
+
     this.containerState = new ContainerState();
+    this.containerState.active = true;
   }
 
   render(): React.ReactNode {

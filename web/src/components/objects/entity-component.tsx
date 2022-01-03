@@ -54,11 +54,11 @@ export class EntityComponent extends React.Component<Props, State> {
             .onChange(this.handleNewResults);
 
         if (props.containerState) {
-            props.containerState.pushHeaderAction(new HeaderAction('clock-o', this.handleShowTimeSelector));
-            props.containerState.pushHeaderAction(new HeaderAction('folder-open-o', this.handleShowCollectionSelector));
-            props.containerState.pushHeaderAction(new HeaderAction('link', () => {
+            props.containerState.pushHeaderAction(new HeaderAction('Snooze...', 'clock-o', this.handleShowTimeSelector));
+            props.containerState.pushHeaderAction(new HeaderAction('Add to collections...', 'folder-open-o', this.handleShowCollectionSelector));
+            props.containerState.pushHeaderAction(new HeaderAction('Copy link', 'link', () => {
                 copy(`entity://${this.state.entityTraits.id}`);
-            }));
+            }, true));
         }
 
         this.state = {};
