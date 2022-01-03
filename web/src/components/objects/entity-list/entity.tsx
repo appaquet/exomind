@@ -118,7 +118,7 @@ export class Entity extends React.Component<IProps, IState> {
         if (actions.buttons.length > 3) {
             limitedButtons = actions.buttons.slice(0, 3);
 
-            limitedButtons.push(new ButtonAction('More', 'ellipsis-h', (action, event) => {
+            limitedButtons.push(new ButtonAction('More', 'bars', (action, event) => {
                 this.context.session.showMenu({
                     items: actions.toMenuItems(),
                 }, event.currentTarget as HTMLElement);

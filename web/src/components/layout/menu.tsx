@@ -32,7 +32,6 @@ export class ContextualMenu extends React.Component<IProps> {
             {
                 key: 'Escape',
                 callback: () => {
-                    console.log('pressed');
                     if (this.props.onClose) {
                         this.props.onClose();
                         return true;

@@ -86,7 +86,7 @@ export default class Column extends React.Component<IProps, IState> {
         }
 
         if (this.props.onClose) {
-            headerActions.push(new HeaderAction('Close', 'close', this.props.onClose));
+            headerActions.push(new HeaderAction('Close', 'close', this.props.onClose, false, 100));
         }
 
         return (

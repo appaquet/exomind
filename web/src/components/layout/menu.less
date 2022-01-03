@@ -14,17 +14,17 @@
   border: var(--contextual-menu-border);
   border-radius: 5px;
 
-  // &[data-popper-reference-hidden] {
-  //   // see https://popper.js.org/docs/v2/modifiers/hide/
-  //   visibility: hidden;
-  //   pointer-events: none;
-  // }
+  &[data-popper-reference-hidden] {
+    // see https://popper.js.org/docs/v2/modifiers/hide/
+    visibility: hidden;
+    pointer-events: none;
+  }
 
-  // &:not([data-popper-placement]) {
-  //   // hide until it's properly positioned
-  //   visibility: hidden;
-  //   pointer-events: none;
-  // }
+  &:not([data-popper-placement]) {
+    // hide until it's properly positioned
+    visibility: hidden;
+    pointer-events: none;
+  }
 
   ul {
     .make-list();

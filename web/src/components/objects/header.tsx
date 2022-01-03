@@ -7,6 +7,7 @@ import { TraitIcon } from '../../utils/entities.js';
 import EntityIcon from './entity-icon';
 import { IStores, StoresContext } from '../../stores/stores';
 import { IMenuItem } from '../layout/menu';
+import _ from 'lodash';
 
 interface IProps {
     title: string;
@@ -62,21 +63,8 @@ export class Header extends React.Component<IProps> {
     }
 
     private renderActions() {
-        const actionFragments: React.ReactFragment[] = this.props.actions
-            .filter((a) => !a.overflow)
-            .map(action => {
-                const classes = classNames({
-                    'fa': true,
-                    ['fa-' + action.icon]: true
-                });
-                return (
-                    <li key={action.icon} onClick={() => this.handleActionClick(action)}>
-                        <i className={classes} />
-                    </li>
-                );
-            });
-
-        if (this.props.actions.length > actionFragments.length) {
+        const visibleActions = this.props.actions.filter(action => !action.overflow);
+        if (this.props.actions.length > visibleActions.length) {
             const showMenu = (e: MouseEvent) => {
                 e.stopPropagation();
                 this.context.session.showMenu({
@@ -84,37 +72,37 @@ export class Header extends React.Component<IProps> {
                 }, e.currentTarget as HTMLElement);
             };
 
-            const classes = classNames({
-                'fa': true,
-                ['fa-ellipsis-h']: true
-            });
-
-            actionFragments.push((
-                <li key="more" onClick={showMenu}>
-                    <i className={classes} />
-                </li>
-            ));
+            visibleActions.push(new HeaderAction('More', 'bars', showMenu, false));
         }
+
+        const actionFragments: React.ReactFragment[] = _.chain(visibleActions)
+            .sortBy((a) => a.order)
+            .map(action => {
+                const classes = classNames({
+                    'fa': true,
+                    ['fa-' + action.icon]: true
+                });
+                return (
+                    <li key={action.icon} onClick={(e) => action.callback(e)}>
+                        <i className={classes} />
+                    </li>
+                );
+            })
+            .value();
 
         return <ul className="actions">{actionFragments}</ul>;
-    }
-
-    private handleActionClick(action: HeaderAction) {
-        if (action.callback) {
-            action.callback();
-        }
     }
 }
 
 export class HeaderAction {
-    constructor(public label: string, public icon: string, public callback: () => void, public overflow: boolean = false) {
+    constructor(public label: string, public icon: string, public callback: (e: MouseEvent) => void, public overflow: boolean = false, public order: number = 0) {
     }
 
     toMenuItem(): IMenuItem {
         return {
             label: this.label,
             icon: this.icon,
-            onClick: () => this.callback()
+            onClick: (e) => this.callback(e)
         };
     }
 }
