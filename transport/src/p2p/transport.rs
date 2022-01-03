@@ -1,4 +1,5 @@
 use std::{
+    num::NonZeroU8,
     sync::{Arc, RwLock},
     task::{Context, Poll},
 };
@@ -96,6 +97,8 @@ impl Libp2pTransport {
             ping: Ping::default(),
         };
 
+        const DIAL_CONCURRENCY_FACTOR: u8 = 5;
+
         #[cfg(all(feature = "p2p-web", target_arch = "wasm32"))]
         let mut swarm = {
             use libp2p::wasm_ext::{ffi::websocket_transport, ExtTransport};
@@ -118,7 +121,10 @@ impl Libp2pTransport {
                 ))
                 .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)))
                 .boxed();
-            Swarm::new(transport, behaviour, *self.local_node.peer_id())
+
+            libp2p::swarm::SwarmBuilder::new(transport, behaviour, *self.local_node.peer_id())
+                .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
+                .build()
         };
 
         #[cfg(feature = "p2p-full")]
@@ -136,6 +142,7 @@ impl Libp2pTransport {
             }
 
             libp2p::swarm::SwarmBuilder::new(transport, behaviour, *self.local_node.peer_id())
+                .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
                 .executor(Box::new(CoreExecutor))
                 .build()
         };

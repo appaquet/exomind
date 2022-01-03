@@ -84,6 +84,17 @@ export class MutationBuilder {
         return new MutationBuilder(entityId);
     }
 
+    static deleteEntity(entityId: string): exocore.store.MutationRequest {
+        return new exocore.store.MutationRequest({
+            mutations: [
+                new exocore.store.EntityMutation({
+                    entityId: entityId,
+                    deleteEntity: new exocore.store.DeleteEntityMutation({ entityId: entityId }),
+                }),
+            ],
+        });
+    }
+
     andUpdateEntity(entityId: string): MutationBuilder {
         this.entityId = entityId;
 
