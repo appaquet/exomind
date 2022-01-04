@@ -10,7 +10,6 @@ import HtmlEditor from '../../interaction/html-editor/html-editor';
 import { ContainerState } from '../container-state';
 import { Selection } from '../entity-list/selection';
 import './draft-email.less';
-import { runInAction } from 'mobx';
 
 interface IProps {
     entity: EntityTraits;
@@ -75,13 +74,6 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
                 <div className="object-body">
                     {this.renderBody()}
-                </div>
-
-                <div className="column-bottom-actions">
-                    <ul>
-                        <li onClick={this.handleSendDraft}><i className="send" /></li>
-                        <li onClick={this.handleDeleteDraft}><i className="delete" /></li>
-                    </ul>
                 </div>
             </div>
         );
@@ -273,29 +265,6 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                     savedDraft: new exomind.base.v1.DraftEmail(this.state.currentDraft),
                 });
             }
-        }
-    }
-
-    private handleSendDraft = (): void => {
-        // TODO: this.state.currentDraft.sendingDate = new Date();
-        alert('not implemented');
-
-        this.saveObject();
-        this.close();
-    }
-
-    private handleDeleteDraft = (): void => {
-        // TODO: ExomindDSL.on(this.props.entity).mutate.remove([this.props.draftTrait]).execute();
-        // alert('not implemented');
-
-        this.close();
-    }
-
-    private close(): void {
-        if (this.props.containerState) {
-            runInAction(() => {
-                this.props.containerState.closed = true;
-            });
         }
     }
 }

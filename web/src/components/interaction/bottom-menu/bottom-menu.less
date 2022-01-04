@@ -1,0 +1,78 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.bottom-menu {
+  .center-horizontal-element();
+
+  bottom: 10px;
+  height: 45px;
+  padding: 5px;
+  position: absolute;
+  white-space: nowrap; // prevent line break and icons wrapping on second line
+
+  background-color: var(--contextual-menu-bg);
+  color: var(--contextual-menu-fg);
+  border: var(--contextual-menu-border);
+  border-radius: 5px;
+
+  .shadow-z-3();
+
+  ul {
+    .make-list();
+    li {
+      .make-list-item();
+      display: inline-block;
+      margin: 0 5px;
+      padding: 8px 0;
+      width: 35px;
+      height: 35px;
+      text-align: center;
+      border-radius: 5px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: var(--contextual-menu-bg-hover);
+      }
+
+      // TODO: Cleanup
+      i {
+        &.done {
+          .icon-font-awesome("check");
+        }
+        &.postpone {
+          .icon-font-awesome("clock-o");
+        }
+        &.reply {
+          .icon-font-awesome("reply");
+        }
+        &.reply-all {
+          .icon-font-awesome("reply-all");
+        }
+        &.forward {
+          .icon-font-awesome("forward");
+        }
+        &.send {
+          .icon-font-awesome("paper-plane");
+        }
+        &.delete {
+          .icon-font-awesome("close");
+        }
+        &.new-note {
+          .icon-font-awesome("pencil");
+        }
+        &.new-collection {
+          .icon-font-awesome("folder-o");
+        }
+        &.new-email {
+          .icon-font-awesome("envelope-o");
+        }
+        &.new-task {
+          .icon-font-awesome("check-square-o");
+        }
+        &.new-link {
+          .icon-font-awesome("link");
+        }
+      }
+    }
+  }
+}

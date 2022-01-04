@@ -15,6 +15,10 @@ Navigation.initialize({
         window.open(url, '_blank', 'menubar=no,location=no,status=no,titlebar=no,toolbar=no');
     },
 
+    closeWindow: () => {
+        window.close('','_parent','');
+    },
+
     openExternal: (url) => {
         window.open(url, '_blank');
     }

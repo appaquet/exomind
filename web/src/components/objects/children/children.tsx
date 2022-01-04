@@ -6,7 +6,6 @@ import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from "../../../stores/queries";
 import { ListEntityActions, InlineAction } from '../entity-list/actions';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
-import { ColumnActions } from "./column-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
@@ -14,6 +13,8 @@ import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/
 import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
 import { Actions, IAction } from "../../../utils/actions";
+import { BottomMenu, IActionShortcut } from "../../interaction/bottom-menu/bottom-menu";
+import { IEntityCreateResult } from "../../../utils/commands";
 import './children.less';
 
 interface IProps {
@@ -120,14 +121,6 @@ export class Children extends React.Component<IProps, IState> {
                 'children': true,
             });
 
-            const controls = (this.props.containerState?.active ?? false) ?
-                <ColumnActions
-                    parent={this.state.parent}
-                    selection={this.props.selection}
-                    onSelectionChange={this.props.onSelectionChange}
-                    onCreated={(entity) => this.handleCreatedEntity(entity)}
-                /> : null;
-
             return (
                 <div className={classes}
                     onMouseEnter={this.handleMouseEnter}
@@ -151,13 +144,53 @@ export class Children extends React.Component<IProps, IState> {
                         containerState={this.props.containerState}
                     />
 
-                    {controls}
-
+                    {this.renderBottomMenu()}
                 </div>
             );
 
         } else {
             return <Message text="Loading..." showAfterMs={200} />;
+        }
+    }
+
+    private renderBottomMenu(): React.ReactFragment {
+        if (!this.state.parent || !(this.props.containerState.active ?? false)) {
+            return null;
+        }
+
+        if (this.props.selection && !this.props.selection.isEmpty && this.props.selection.isMulti) {
+            const selectedEntities = this.getSelectedEntities();
+            const actions = Actions.forSelectedEntities(selectedEntities, { parent: this.state.parent });
+            const actionShortcuts: IActionShortcut[] = [
+                {
+                    shortcutKey: 'e',
+                    disabledContexts: ['input', 'modal'],
+                    actionKey: 'remove-from-parent',
+                },
+                {
+                    shortcutKey: 'z',
+                    disabledContexts: ['input', 'modal'],
+                    actionKey: 'snooze',
+                },
+            ];
+
+            return (
+                <BottomMenu
+                    actions={actions}
+                    shortcuts={actionShortcuts}
+                    onExecuted={this.clearSelection}
+                />
+            );
+
+        } else {
+
+            const actions = Actions.forObjectCreation(this.state.parent);
+            return (
+                <BottomMenu
+                    actions={actions}
+                    onExecuted={(_action, res) => this.handleEntityCreated(res.createResult)}
+                />
+            );
         }
     }
 
@@ -259,22 +292,47 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleCreatedEntity(entity: EntityTraits) {
-        if (this.props.onSelectionChange && this.props.selection) {
-            if (entity.traitOfType(exomind.base.v1.Task)) {
-                this.setState({
-                    editedEntity: entity,
-                });
-            } else {
-                this.props.onSelectionChange(new Selection(SelectedItem.fromEntity(entity)));
-            }
+    private handleEntityCreated(res: IEntityCreateResult) {
+        if (!res.entity) {
+            alert(`Failed to create entity: ${res.error}`);
+            return;
+        }
+
+        const entity = res.entity;
+
+        if (entity.traitOfType(exomind.base.v1.Task)) {
+            // special case for new tasks that we edit inline
+            this.setState({
+                editedEntity: entity,
+            });
+        }
+
+        if (this.props.onSelectionChange) {
+            this.props.onSelectionChange(new Selection(SelectedItem.fromEntity(entity)));
         }
     }
 
-    private removeFromSelection(entity: EntityTraits) {
-        if (this.props.onSelectionChange && this.props.selection) {
-            const newSelection = this.props.selection.withoutItem(SelectedItem.fromEntity(entity));
-            this.props.onSelectionChange(newSelection);
+    private clearSelection = () => {
+        if (this.props.onSelectionChange) {
+            this.props.onSelectionChange(new Selection());
         }
+    }
+
+    private getSelectedEntities(): EntityTraits[] {
+        const indexedEntities = this.state.entities.reduce((acc: { [key: string]: EntityTraits; }, entity) => {
+            acc[entity.id] = entity;
+            return acc;
+        }, {});
+
+        const selectedEntities = this.props.selection.items.flatMap((sel) => {
+            const entity = indexedEntities[sel.entityId];
+            if (!entity) {
+                return [];
+            }
+
+            return [entity];
+        });
+
+        return selectedEntities;
     }
 }

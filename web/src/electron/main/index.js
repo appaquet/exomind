@@ -105,3 +105,7 @@ ipcMain.on("open-popup", (_event, navPath) => {
     window.webContents.send("navigate", navPath);
   });
 });
+
+ipcMain.on("close-window", (event) => {
+  BrowserWindow.fromWebContents(event.sender).close();
+});

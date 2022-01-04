@@ -10,8 +10,11 @@ export class ListEntityActions {
 
     static fromActions(actions: IAction[]): ListEntityActions {
         const buttons = actions.map(a => {
-            return new ListEntityAction(a.label, a.icon, (_ba, e) => {
-                return a.execute(e, a);
+            return new ListEntityAction(a.label, a.icon, async (_ba, e) => {
+                const res = await a.execute(e);
+                if (res?.remove === true) {
+                    return 'remove';
+                }
             });
         });
         return new ListEntityActions(buttons);

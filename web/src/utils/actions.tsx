@@ -4,21 +4,26 @@ import { CancellableEvent } from "./events";
 import { Stores } from "../stores/stores";
 import { CollectionSelector } from "../components/modals/collection-selector/collection-selector";
 import React from "react";
-import { Commands } from "./commands";
+import { Commands, IEntityCreateResult } from "./commands";
 import copy from 'clipboard-copy';
 import TimeSelector from "../components/modals/time-selector/time-selector";
 import _ from "lodash";
+import InputModal from "../components/modals/input-modal/input-modal";
 
 export type ActionIcon = ActionFaIcon;
 export type ActionFaIcon = string
-export type ActionResult = 'remove' | void;
 export type SiteSection = 'inbox' | 'recent' | 'search' | 'snoozed';
+
+export interface IActionResult {
+    remove?: boolean;
+    createResult?: IEntityCreateResult;
+}
 
 export interface IAction {
     key: string;
     label: string;
     icon?: string;
-    execute: (e: CancellableEvent, action: IAction) => Promise<ActionResult>;
+    execute: (e: CancellableEvent) => Promise<IActionResult>;
     priority?: number;
 }
 
@@ -91,6 +96,23 @@ export class Actions {
         return _.sortBy(actions, (a) => a.priority);
     }
 
+    static forObjectCreation(parent: EntityTraits | string): IAction[] {
+        const parentId = Commands.getEntityId(parent);
+
+        const actions: IAction[] = [];
+        const push = (priority: number, action: IAction) => {
+            action.priority = priority;
+            actions.push(action);
+        };
+
+        push(10, this.createNote(parentId));
+        push(11, this.createTask(parentId));
+        push(12, this.createCollection(parentId));
+        push(13, this.createLink(parentId));
+
+        return _.sortBy(actions, (a) => a.priority);
+    }
+
     static removeFromParent(et: EntityTraits | EntityTraits[], parent: EntityTraits | string): IAction {
         return {
             key: 'remove-from-parent',
@@ -98,7 +120,9 @@ export class Actions {
             icon: 'check',
             execute: async () => {
                 await Commands.removeFromParent(et, parent);
-                return 'remove';
+                return {
+                    remove: true,
+                };
             }
         }
     }
@@ -112,6 +136,7 @@ export class Actions {
                 Stores.session.showModal(() => {
                     return <CollectionSelector entity={et} />;
                 });
+                return {};
             },
         }
     }
@@ -123,6 +148,7 @@ export class Actions {
             icon: 'thumb-tack',
             execute: async () => {
                 await Commands.pinEntityInParent(et, parent);
+                return {};
             }
         }
     }
@@ -134,6 +160,7 @@ export class Actions {
             icon: 'thumb-tack',
             execute: async () => {
                 await Commands.unpinEntityInParent(et, parent);
+                return {};
             }
         }
     }
@@ -145,6 +172,7 @@ export class Actions {
             icon: 'inbox',
             execute: async () => {
                 await Commands.addToParent(et, 'inbox');
+                return {};
             }
         }
     }
@@ -156,6 +184,7 @@ export class Actions {
             icon: 'link',
             execute: async () => {
                 copy(`entity://${et.id}`);
+                return {};
             }
         }
     }
@@ -170,7 +199,9 @@ export class Actions {
                     const handleSnooze = async (date: Date) => {
                         Stores.session.hideModal();
                         await Commands.snooze(et, date, parent, removeFromParent);
-                        resolve();
+                        resolve({
+                            remove: removeFromParent,
+                        });
                     }
 
                     Stores.session.showModal(() => {
@@ -188,6 +219,7 @@ export class Actions {
             icon: 'clock-o',
             execute: async () => {
                 await Commands.removeSnooze(et);
+                return {};
             }
         }
     }
@@ -201,6 +233,72 @@ export class Actions {
                 if (confirm('Are you sure you want to delete this entity?')) {
                     await Commands.delete(et);
                 }
+                return {};
+            }
+        }
+    }
+
+    static createNote(parent: EntityTraits | string): IAction {
+        return {
+            key: 'create-note',
+            label: 'Create note',
+            icon: 'pencil',
+            execute: async () => {
+                const createResult = await Commands.createNote(parent);
+                return { createResult }
+            }
+        }
+    }
+
+    static createTask(parent: EntityTraits | string): IAction {
+        return {
+            key: 'create-task',
+            label: 'Create task',
+            icon: 'check-square-o',
+            execute: async () => {
+                const createResult = await Commands.createTask(parent);
+                return { createResult }
+            }
+        }
+    }
+
+    static createCollection(parent: EntityTraits | string): IAction {
+        return {
+            key: 'create-collection',
+            label: 'Create collection',
+            icon: 'folder-o',
+            execute: async () => {
+                const createResult = await Commands.createCollection(parent);
+                return { createResult }
+            }
+        }
+    }
+
+    static createLink(parent: EntityTraits | string): IAction {
+        return {
+            key: 'create-link',
+            label: 'Create link',
+            icon: 'link',
+            execute: async () => {
+                return new Promise((resolve) => {
+                    const handleLink = async (url: string) => {
+                        console.log('hiding');
+                        Stores.session.hideModal();
+
+                        if (!url) {
+                            return;
+                        }
+
+                        const createResult = await Commands.createLink(parent, url, url);
+                        resolve({ createResult });
+                    };
+
+                    Stores.session.showModal(() => {
+                        return <InputModal
+                            text="URL of the link"
+                            onDone={handleLink} />;
+                    });
+                });
             }
         }
     }

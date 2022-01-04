@@ -7,6 +7,7 @@ import Path from './utils/path';
 export interface INavigationHost {
   history: IHistory;
   openPopup(path: Path): void;
+  closeWindow(): void;
   openExternal(url: string): void;
 }
 
@@ -53,6 +54,10 @@ export default class Navigation {
   static navigatePopup(path: string | Path): void {
     const obj = new Path(path);
     Navigation.host.openPopup(obj);
+  }
+
+  static closeWindow(): void {
+    Navigation.host.closeWindow();
   }
 
   static navigateExternal(url: string): void {

@@ -21,6 +21,10 @@ Navigation.initialize({
     window.exoElectron.openPopup(path.toString());
   },
 
+  closeWindow: () => {
+    window.exoElectron.closeWindow();
+  },
+
   openExternal: (url) => {
     window.exoElectron.openExternal(url);
   },

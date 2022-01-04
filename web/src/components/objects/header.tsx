@@ -101,7 +101,7 @@ export class HeaderAction {
 
     static fromAction(action: IAction, overflow = false): HeaderAction {
         return new HeaderAction(action.label, action.icon, (e) => {
-            action.execute(e, action);
+            action.execute(e);
         }, overflow, action.priority);
     }
 

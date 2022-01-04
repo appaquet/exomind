@@ -75,6 +75,8 @@ export class Commands {
 
         const parentId = this.getEntityId(parent);
 
+        console.log('snooze', entities, date, parentId, removeFromParent);
+
         const promises = [];
         for (const et of entities) {
             let mb = MutationBuilder
@@ -129,6 +131,87 @@ export class Commands {
         return await Promise.all(promises);
     }
 
+    static async createNote(parent: EntityTraits | string, title: string | null = null): Promise<IEntityCreateResult> {
+        const parentId = this.getEntityId(parent);
+
+        const mutation = MutationBuilder
+            .createEntity()
+            .putTrait(new exomind.base.v1.Note({
+                title: title || 'New note',
+            }))
+            .putTrait(new exomind.base.v1.CollectionChild({
+                collection: new exocore.store.Reference({
+                    entityId: parentId,
+                }),
+                weight: new Date().getTime(),
+            }), `child_${parentId}`)
+            .returnEntities()
+            .build();
+
+        return await this.executeNewEntityMutation(mutation);
+    }
+
+    static async createTask(parent: EntityTraits | string, title: string | null = null): Promise<IEntityCreateResult> {
+        const parentId = this.getEntityId(parent);
+
+        const mutation = MutationBuilder
+            .createEntity()
+            .putTrait(new exomind.base.v1.Task({
+                title: title || 'New task',
+            }))
+            .putTrait(new exomind.base.v1.CollectionChild({
+                collection: new exocore.store.Reference({
+                    entityId: parentId,
+                }),
+                weight: new Date().getTime(),
+            }), `child_${parentId}`)
+            .returnEntities()
+            .build();
+
+        return await this.executeNewEntityMutation(mutation);
+    }
+
+    static async createCollection(parent: EntityTraits | string, name: string | null = null): Promise<IEntityCreateResult> {
+        const parentId = this.getEntityId(parent);
+
+        const mutation = MutationBuilder
+            .createEntity()
+            .putTrait(new exomind.base.v1.Collection({
+                name: name || 'New collection',
+            }))
+            .putTrait(new exomind.base.v1.CollectionChild({
+                collection: new exocore.store.Reference({
+                    entityId: parentId,
+                }),
+                weight: new Date().getTime(),
+            }), `child_${parentId}`)
+            .returnEntities()
+            .build();
+
+        return await this.executeNewEntityMutation(mutation);
+    }
+
+    static async createLink(parent: EntityTraits | string, url: string, title: string | null = null): Promise<IEntityCreateResult> {
+        const parentId = this.getEntityId(parent);
+
+        const mutation = MutationBuilder
+            .createEntity()
+            .putTrait(new exomind.base.v1.Link({
+                url: url,
+                title: title || url,
+            }))
+            .putTrait(new exomind.base.v1.CollectionChild({
+                collection: new exocore.store.Reference({
+                    entityId: parentId,
+                }),
+                weight: new Date().getTime(),
+            }), `child_${parentId}`)
+            .returnEntities()
+            .build();
+
+        return await this.executeNewEntityMutation(mutation);
+    }
+
     static getEntityParentRelation(entity: EntityTraits, parentId: string): EntityTrait<exomind.base.v1.CollectionChild> {
         return entity
             .traitsOfType<exomind.base.v1.CollectionChild>(exomind.base.v1.CollectionChild)
@@ -147,4 +230,22 @@ export class Commands {
 
         return entity.id;
     }
+
+    private static async executeNewEntityMutation(mutation: exocore.store.MutationRequest): Promise<IEntityCreateResult> {
+        const result = await Exocore.store.mutate(mutation);
+        if (result.entities.length > 0) {
+            return {
+                entity: new EntityTraits(result.entities[0]),
+            };
+        } else {
+            return {
+                error: "no entity returned",
+            };
+        }
+    }
+}
+
+export interface IEntityCreateResult {
+    entity?: EntityTraits;
+    error?: string;
 }

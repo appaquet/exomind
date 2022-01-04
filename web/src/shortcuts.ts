@@ -6,7 +6,7 @@ export type Context =
     'contextual-menu';
 export type ListenerToken = number;
 
-interface Mapping {
+export interface IMapping {
     key: string | string[];
     callback: (event: KeyboardEvent) => boolean; // TODO: rename to handler
     disabledContexts?: Context[];
@@ -15,12 +15,12 @@ interface Mapping {
 }
 
 interface Listener {
-    mappings: Mapping[];
+    mappings: IMapping[];
     disabled: boolean;
 }
 
 export class Shortcuts {
-    private static mappings: { [key: string]: Mapping[] } = {};
+    private static mappings: { [key: string]: IMapping[] } = {};
     private static listeners: { [token: ListenerToken]: Listener } = {};
     private static nextListener = 0;
 
@@ -42,7 +42,7 @@ export class Shortcuts {
         return new Date().getTime() - this.lastShortcutTime.getTime() < 1000;
     }
 
-    static register(mapping: Mapping | Mapping[], enabled = true): ListenerToken {
+    static register(mapping: IMapping | IMapping[], enabled = true): ListenerToken {
         if (!Array.isArray(mapping)) {
             mapping = [mapping];
         }

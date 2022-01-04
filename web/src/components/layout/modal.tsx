@@ -32,7 +32,11 @@ export default class Modal extends React.Component<IProps> {
 
   componentWillUnmount(): void {
     document.removeEventListener('keydown', this.handleKeyDown, false);
-    Shortcuts.deactivateContext('modal');
+
+    setTimeout(() => {
+      // prevent keydown event that closed the modal to propagate
+      Shortcuts.deactivateContext('modal');
+    }, 500);
   }
 
   private preventMouseDefault = (e: CancellableEvent) => {
