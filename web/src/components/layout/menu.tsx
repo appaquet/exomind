@@ -97,6 +97,28 @@ export class ContextualMenu extends React.Component<IProps> {
         );
     }
 
+    private createPopper() {
+        this.popper?.destroy();
+
+        // monitors if menu is hidden by popper because reference elements has disappear from view
+        const hideWatcher: Modifier<string, unknown> = {
+            name: 'hideWatcher',
+            enabled: true,
+            phase: 'main',
+            fn: () => {
+                const attr = this.menuDiv.current?.attributes.getNamedItem('data-popper-reference-hidden');
+                if (attr) {
+                    this.props.onClose?.();
+                }
+            },
+        };
+
+        this.popper = createPopper(this.props.menu.reference, this.menuDiv.current, {
+            placement: 'left-start',
+            modifiers: [hideWatcher],
+        });
+    }
+
     private handleClick = (e: MouseEvent): void => {
         // check if click is outside of menu
         let found = false;
@@ -118,27 +140,5 @@ export class ContextualMenu extends React.Component<IProps> {
         } else {
             this.props.onClose?.();
         }
-    }
-
-    private createPopper() {
-        this.popper?.destroy();
-
-        // monitors if menu is hidden by popper because reference elements has disappear from view
-        const hideWatcher: Modifier<string, unknown> = {
-            name: 'hideWatcher',
-            enabled: true,
-            phase: 'main',
-            fn: () => {
-                const attr = this.menuDiv.current?.attributes.getNamedItem('data-popper-reference-hidden');
-                if (attr) {
-                    this.props.onClose?.();
-                }
-            },
-        };
-
-        this.popper = createPopper(this.props.menu.reference, this.menuDiv.current, {
-            placement: 'left-start',
-            modifiers: [hideWatcher],
-        });
     }
 }

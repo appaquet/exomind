@@ -25,7 +25,6 @@ interface IProps {
     onSelectionChange?: (sel: Selection) => void;
     onEntityAction?: (action: string, entity: EntityTraits) => void;
 
-    extraActionsForEntity?: (et: EntityTraits) => IAction[];
     containerState?: ContainerState;
 }
 
@@ -218,12 +217,7 @@ export class Children extends React.Component<IProps, IState> {
     }
 
     private actionsForEntity = (et: EntityTraits): ListEntityActions => {
-        let actions = Actions.forEntity(et, { parent: this.props.parent || this.props.parentId });
-
-        if (this.props.extraActionsForEntity) {
-            actions = actions.concat(this.props.extraActionsForEntity(et));
-        }
-
+        const actions = Actions.forEntity(et, { parent: this.props.parent || this.props.parentId });
         const listActions = ListEntityActions.fromActions(actions);
 
         // when we just created an entity that require it to be edited right away (ex: task)

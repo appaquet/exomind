@@ -306,7 +306,6 @@ export class Actions {
             execute: async () => {
                 return new Promise((resolve) => {
                     const handleLink = async (url: string) => {
-                        console.log('hiding');
                         Stores.session.hideModal();
 
                         if (!url) {

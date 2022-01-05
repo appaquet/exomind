@@ -75,8 +75,6 @@ export class Commands {
 
         const parentId = this.getEntityId(parent);
 
-        console.log('snooze', entities, date, parentId, removeFromParent);
-
         const promises = [];
         for (const et of entities) {
             let mb = MutationBuilder

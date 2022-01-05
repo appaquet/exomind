@@ -1,10 +1,9 @@
 import _ from 'lodash';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 
-// TODO: Move to util
-
 export class Selection {
     items: SelectedItem[];
+
     private forceMulti: boolean;
 
     constructor(items?: SelectedItem[] | SelectedItem | undefined, forceMulti = false) {
