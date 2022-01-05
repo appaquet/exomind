@@ -12,8 +12,8 @@ import { IStores, StoresContext } from "../../../stores/stores";
 import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
 import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
-import { Actions, IAction } from "../../../utils/actions";
-import { BottomMenu, IActionShortcut } from "../../interaction/bottom-menu/bottom-menu";
+import { Actions, IAction, IActionResult } from "../../../utils/actions";
+import { BottomMenu, BottomMenuItem, IActionShortcut } from "../../interaction/bottom-menu/bottom-menu";
 import { IEntityCreateResult } from "../../../utils/commands";
 import './children.less';
 
@@ -158,10 +158,14 @@ export class Children extends React.Component<IProps, IState> {
             return null;
         }
 
-        if (this.props.selection && !this.props.selection.isEmpty && this.props.selection.isMulti) {
+        let items: BottomMenuItem[] = [];
+        let actionShortcuts: IActionShortcut[] = [];
+
+        // Archive / snooze actions
+        if (this.props.selection && !this.props.selection.isEmpty) {
             const selectedEntities = this.getSelectedEntities();
-            const actions = Actions.forSelectedEntities(selectedEntities, { parent: this.state.parent });
-            const actionShortcuts: IActionShortcut[] = [
+            items = Actions.forSelectedEntities(selectedEntities, { parent: this.state.parent });
+            actionShortcuts = [
                 {
                     shortcutKey: 'e',
                     disabledContexts: ['input', 'modal'],
@@ -174,24 +178,27 @@ export class Children extends React.Component<IProps, IState> {
                 },
             ];
 
-            return (
-                <BottomMenu
-                    actions={actions}
-                    shortcuts={actionShortcuts}
-                    onExecuted={this.clearSelection}
-                />
-            );
-
-        } else {
-
-            const actions = Actions.forObjectCreation(this.state.parent);
-            return (
-                <BottomMenu
-                    actions={actions}
-                    onExecuted={(_action, res) => this.handleEntityCreated(res.createResult)}
-                />
-            );
+            items.push('divider');
         }
+
+        // Creation actions
+        items = items.concat(Actions.forObjectCreation(this.state.parent));
+
+        const handleExecuted = (action: IAction, result: IActionResult) => {
+            if (action.key.startsWith('create-')) {
+                this.handleEntityCreated(action, result.createResult);
+            } else if (result.remove === true) {
+                this.clearSelection();
+            }
+        };
+
+        return (
+            <BottomMenu
+                items={items}
+                shortcuts={actionShortcuts}
+                onExecuted={handleExecuted}
+            />
+        );
     }
 
     private handleLoadMore = () => {
@@ -292,7 +299,7 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleEntityCreated(res: IEntityCreateResult) {
+    private handleEntityCreated(action: IAction, res: IEntityCreateResult) {
         if (!res.entity) {
             alert(`Failed to create entity: ${res.error}`);
             return;
@@ -305,6 +312,8 @@ export class Children extends React.Component<IProps, IState> {
             this.setState({
                 editedEntity: entity,
             });
+
+            return; // we don't want to select newly created tasks as we edit them inline
         }
 
         if (this.props.onSelectionChange) {

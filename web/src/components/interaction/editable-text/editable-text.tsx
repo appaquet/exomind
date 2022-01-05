@@ -11,6 +11,8 @@ interface IProps {
   onChange?: (value: string) => void;
   initializeEditing?: boolean;
   onBound?: (ed: EditableText) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 interface IState {
@@ -157,13 +159,15 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private editFinish() {
+    this.setState({
+      editing: false
+    });
+
     if (this.props.onChange) {
       this.props.onChange(this.state.value);
     }
 
-    this.setState({
-      editing: false
-    });
+    this.props.onBlur?.();
   }
 
   private ensureFocus() {
@@ -176,5 +180,7 @@ export default class EditableText extends React.Component<IProps, IState> {
       element.focus();
       element.select();
     }
+
+    this.props.onFocus?.();
   }
 }

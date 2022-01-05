@@ -100,9 +100,15 @@ export default class EmailThread extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        const classes = classNames({
+            'email-thread': true,
+            'entity-component': true,
+            'active': this.props.containerState?.active ?? false,
+        });
+
         const emails = this.renderEmails();
         return (
-            <div className="entity-component email-thread" onMouseLeave={this.handleThreadMouseLeave}>
+            <div className={classes} onMouseLeave={this.handleThreadMouseLeave}>
                 <ul className="thread" tabIndex={0} ref={this.threadElement}>
                     {emails}
                 </ul>

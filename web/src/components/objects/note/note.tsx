@@ -15,6 +15,7 @@ import { CancellableEvent } from '../../../utils/events';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { ContainerState } from '../container-state';
 import { observer } from 'mobx-react';
+import classNames from 'classnames';
 import './note.less';
 
 interface IProps {
@@ -89,8 +90,14 @@ export default class Note extends React.Component<IProps, IState> {
     }
 
     render(): React.ReactNode {
+        const classes = classNames({
+            'entity-component': true,
+            'note': true,
+            'active': this.props.containerState?.active ?? false,
+        });
+
         return (
-            <div className="entity-component note">
+            <div className={classes}>
                 <div className="entity-details">
                     <div className="title field">
                         <span className="field-label">Title</span>

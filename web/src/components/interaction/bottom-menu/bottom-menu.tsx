@@ -6,8 +6,10 @@ import { Context as ShortcutContext, IMapping, ListenerToken, Shortcuts, } from 
 import _ from 'lodash';
 import "./bottom-menu.less";
 
+export type BottomMenuItem = IAction | 'divider';
+
 interface IProps {
-    actions: IAction[];
+    items: BottomMenuItem[];
     shortcuts?: IActionShortcut[];
     onExecuted?: (action: IAction, result: IActionResult) => void;
 }
@@ -39,13 +41,19 @@ export class BottomMenu extends React.Component<IProps> {
     render(): React.ReactNode {
         return <div className="bottom-menu">
             <ul>
-                {this.props.actions.map((action) => {
-                    return <li key={action.label} onClick={(e) => this.handleExecuteAction(e, action)}>
-                        <i className={classNames({
-                            'fa': true,
-                            ['fa-' + action.icon]: true,
-                        })} />
-                    </li>
+                {this.props.items.map((action, i) => {
+                    if (action === 'divider') {
+                        return <li className="divider" key={i}>&nbsp;</li>;
+                    } else {
+                        return [
+                            <li className="action" key={action.label} onClick={(e) => this.handleExecuteAction(e, action)}>
+                                <i className={classNames({
+                                    'fa': true,
+                                    ['fa-' + action.icon]: true,
+                                })} />
+                            </li>
+                        ];
+                    }
                 })}
             </ul>
         </div>
@@ -61,10 +69,10 @@ export class BottomMenu extends React.Component<IProps> {
             return;
         }
 
-        const indexedActions = _.keyBy(this.props.actions, 'key');
+        const indexedActions = _.keyBy(this.props.items, 'key');
         const connectedShortcuts: IMapping[] = this.props.shortcuts
             .map(shortcut => {
-                const action = indexedActions[shortcut.actionKey];
+                const action = indexedActions[shortcut.actionKey] as IAction;
                 if (!action) {
                     throw new Error(`Action with key ${shortcut.actionKey} not found`);
                 }

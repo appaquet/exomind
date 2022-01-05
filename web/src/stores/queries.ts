@@ -4,12 +4,12 @@ import { Exocore, exocore, WatchedQueryWrapper } from 'exocore';
 export class ExpandableQuery {
     query: exocore.store.IEntityQuery;
     onChange: () => void;
-
     hasResults: boolean;
 
-    queries: exocore.store.IEntityQuery[] = [];
-    watched_queries: WatchedQueryWrapper[] = [];
-    queries_results: exocore.store.IEntityResults[] = [];
+    private queries: exocore.store.IEntityQuery[] = [];
+    private watched_queries: WatchedQueryWrapper[] = [];
+    private queries_results: exocore.store.IEntityResults[] = [];
+    private freed = false;
 
     constructor(query: exocore.store.IEntityQuery, onChange: () => void) {
         this.query = query;
@@ -88,12 +88,15 @@ export class ExpandableQuery {
     }
 
     triggerChanged(): void {
-        this.onChange();
+        if (!this.freed) {
+            this.onChange();
+        }
     }
 
     free(): void {
         for (const query of this.watched_queries) {
             query.free();
         }
+        this.freed = true;
     }
 }

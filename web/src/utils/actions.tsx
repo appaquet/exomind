@@ -7,8 +7,10 @@ import React from "react";
 import { Commands, IEntityCreateResult } from "./commands";
 import copy from 'clipboard-copy';
 import TimeSelector from "../components/modals/time-selector/time-selector";
+import { exomind } from '../protos';
 import _ from "lodash";
 import InputModal from "../components/modals/input-modal/input-modal";
+import Navigation from "../navigation";
 
 export type ActionIcon = ActionFaIcon;
 export type ActionFaIcon = string
@@ -59,6 +61,10 @@ export class Actions {
             }
         }
 
+        if (parentId) {
+            push(32, this.moveTopParent(entity, parentId));
+        }
+
         if (parentId !== 'inbox') {
             push(15, this.addToInbox(entity));
         }
@@ -67,6 +73,10 @@ export class Actions {
             const action = this.removeSnooze(entity);
             action.icon = 'times';
             push(10, action);
+        }
+
+        if (this.isNoteEntity(entity)) {
+            push(45, this.popOutToWindow(entity));
         }
 
         push(16, this.selectEntityCollections(entity));
@@ -86,8 +96,7 @@ export class Actions {
         };
 
         const parentId = Commands.getEntityId(context?.parent);
-
-        if (context?.parent) {
+        if (parentId) {
             push(10, this.removeFromParent(entities, context?.parent));
         }
 
@@ -106,9 +115,9 @@ export class Actions {
         };
 
         push(10, this.createNote(parentId));
-        push(11, this.createTask(parentId));
-        push(12, this.createCollection(parentId));
-        push(13, this.createLink(parentId));
+        push(11, this.createCollection(parentId));
+        push(12, this.createLink(parentId));
+        push(13, this.createTask(parentId));
 
         return _.sortBy(actions, (a) => a.priority);
     }
@@ -161,6 +170,20 @@ export class Actions {
             execute: async () => {
                 await Commands.unpinEntityInParent(et, parent);
                 return {};
+            }
+        }
+    }
+
+    static moveTopParent(et: EntityTraits | EntityTraits[], parent: EntityTraits | string): IAction {
+        return {
+            key: 'move-top-parent',
+            label: 'Move top',
+            icon: 'arrow-up',
+            execute: async () => {
+                await Commands.addToParent(et, parent);
+                return {
+                    remove: true,
+                };
             }
         }
     }
@@ -303,6 +326,18 @@ export class Actions {
         }
     }
 
+    static popOutToWindow(et: EntityTraits): IAction {
+        return {
+            key: 'pop-out',
+            label: 'Pop out',
+            icon: 'external-link',
+            execute: async () => {
+                Navigation.navigatePopup(Navigation.pathForFullscreen(et.id));
+                return {};
+            }
+        }
+    }
+
     private static isSpecialEntity(entityId: string): boolean {
         switch (entityId) {
             case 'inbox':
@@ -312,5 +347,9 @@ export class Actions {
             default:
                 return false;
         }
+    }
+
+    private static isNoteEntity(entity: EntityTraits): boolean {
+        return !!entity.traitOfType<exomind.base.v1.INote>(exomind.base.v1.Note);
     }
 }

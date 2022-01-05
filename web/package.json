@@ -95,7 +95,7 @@
     "domhandler": "^4.3.0",
     "domutils": "^2.4.2",
     "emoji-regex": "^10.0.0",
-    "exocore": "file:///Users/appaquet/Projects/exomind/exocore/exocore-v0.1.18.tgz",
+    "exocore": "^0.1.18",
     "font-awesome": "^4.4.0",
     "htmlparser2": "^7.2.0",
     "less": "^4.1.2",

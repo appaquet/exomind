@@ -1,6 +1,5 @@
 import classNames from 'classnames';
 import React from 'react';
-import Navigation from '../../../navigation';
 import { ContainerState, ModifiableText } from '../../objects/container-state';
 import { EntityComponent } from '../../objects/entity-component';
 import { Selection } from '../../objects/entity-list/selection';
@@ -9,11 +8,11 @@ import { Inbox } from "../../objects/inbox/inbox";
 import Snoozed from "../../objects/snoozed/snoozed";
 import Recent from "../../objects/recent/recent";
 import { Search } from '../../objects/search/search';
-import './column.less';
 import { ColumnConfig } from './columns-config';
 import { Message } from '../../objects/message';
 import { observer } from 'mobx-react';
 import { observable, runInAction } from 'mobx';
+import './column.less';
 
 interface IProps {
     columnConfig: ColumnConfig;
@@ -79,10 +78,6 @@ export default class Column extends React.Component<IProps, IState> {
             this.containerState.actions.forEach(action => {
                 headerActions.push(action);
             });
-        }
-
-        if (this.props.columnConfig.isEntity) {
-            headerActions.push(new HeaderAction('Pop out', 'external-link', this.expandFullscreen, true, 0));
         }
 
         if (this.props.onClose) {
@@ -156,10 +151,5 @@ export default class Column extends React.Component<IProps, IState> {
         } else {
             return <Message text="Unknown column type" />;
         }
-    }
-
-    private expandFullscreen = () => {
-        const entityId = this.props.columnConfig.first;
-        Navigation.navigatePopup(Navigation.pathForFullscreen(entityId));
     }
 }

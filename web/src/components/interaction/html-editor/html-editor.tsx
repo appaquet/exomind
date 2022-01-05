@@ -303,7 +303,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         if (url) {
             const state = this.editor.view.state;
             const dispatch = this.editor.view.dispatch;
-            if (cursor.selection.empty) {
+            if (cursor.selection.empty && !cursor.link) {
                 if (!title) {
                     title = url;
                 }
