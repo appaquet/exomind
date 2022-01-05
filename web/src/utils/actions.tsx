@@ -27,6 +27,7 @@ export interface IAction {
     icon?: string;
     execute: (e: CancellableEvent) => Promise<IActionResult>;
     priority?: number;
+    disabled?: boolean;
 }
 
 export interface IContext {

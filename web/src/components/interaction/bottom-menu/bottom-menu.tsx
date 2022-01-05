@@ -41,10 +41,14 @@ export class BottomMenu extends React.Component<IProps> {
     render(): React.ReactNode {
         return <div className="bottom-menu">
             <ul>
-                {this.props.items.map((action, i) => {
+                {this.props.items.flatMap((action, i) => {
                     if (action === 'divider') {
-                        return <li className="divider" key={i}>&nbsp;</li>;
+                        return [<li className="divider" key={i}>&nbsp;</li>];
                     } else {
+                        if (action.disabled) {
+                            return [];
+                        }
+
                         return [
                             <li className="action" key={action.label} onClick={(e) => this.handleExecuteAction(e, action)}>
                                 <i className={classNames({

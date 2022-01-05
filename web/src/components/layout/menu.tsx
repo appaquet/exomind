@@ -44,23 +44,7 @@ export class ContextualMenu extends React.Component<IProps> {
     }
 
     componentDidMount(): void {
-        // monitors if menu is hidden by popper because reference elements has disappear from view
-        const hideWatcher: Modifier<string, unknown> = {
-            name: 'hideWatcher',
-            enabled: true,
-            phase: 'main',
-            fn: () => {
-                const attr = this.menuDiv.current?.attributes.getNamedItem('data-popper-reference-hidden');
-                if (attr) {
-                    this.props.onClose?.();
-                }
-            },
-        };
-
-        this.popper = createPopper(this.props.menu.reference, this.menuDiv.current, {
-            placement: 'left-start',
-            modifiers: [hideWatcher],
-        });
+        this.createPopper();
         document.addEventListener('click', this.handleClick);
         Shortcuts.activateContext('contextual-menu');
     }
@@ -70,6 +54,12 @@ export class ContextualMenu extends React.Component<IProps> {
         document.removeEventListener('click', this.handleClick);
         Shortcuts.unregister(this.shortcutToken);
         Shortcuts.deactivateContext('contextual-menu');
+    }
+
+    componentDidUpdate(prevProps: Readonly<IProps>): void {
+        if (this.props.menu.reference != prevProps.menu.reference) {
+            this.createPopper();
+        }
     }
 
     render(): React.ReactNode {
@@ -128,5 +118,27 @@ export class ContextualMenu extends React.Component<IProps> {
         } else {
             this.props.onClose?.();
         }
+    }
+
+    private createPopper() {
+        this.popper?.destroy();
+
+        // monitors if menu is hidden by popper because reference elements has disappear from view
+        const hideWatcher: Modifier<string, unknown> = {
+            name: 'hideWatcher',
+            enabled: true,
+            phase: 'main',
+            fn: () => {
+                const attr = this.menuDiv.current?.attributes.getNamedItem('data-popper-reference-hidden');
+                if (attr) {
+                    this.props.onClose?.();
+                }
+            },
+        };
+
+        this.popper = createPopper(this.props.menu.reference, this.menuDiv.current, {
+            placement: 'left-start',
+            modifiers: [hideWatcher],
+        });
     }
 }
