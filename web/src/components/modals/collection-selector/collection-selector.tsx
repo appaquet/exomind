@@ -1,4 +1,4 @@
-import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
+import { Exocore, exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import { memoize } from 'lodash';
 import React, { KeyboardEvent } from 'react';
 import { exomind } from '../../../protos';
@@ -7,7 +7,8 @@ import { ExpandableQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
 import { CancellableEvent } from '../../../utils/events';
-
+import { getEntityParentRelation } from '../../../stores/collections';
+import { Commands } from '../../../utils/commands';
 import './collection-selector.less';
 
 interface IProps {
@@ -178,28 +179,11 @@ export class CollectionSelector extends React.Component<IProps, IState> {
     }
 
     private handleItemCheck = (collectionEntity: EntityTraits, event?: CancellableEvent): void => {
-        const currentChildTrait = this.state.entity
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .find((c) => c.message.collection.entityId == collectionEntity.id);
-
-        if (!currentChildTrait) {
-            const mutation = MutationBuilder
-                .updateEntity(this.state.entity.id)
-                .putTrait(new exomind.base.v1.CollectionChild({
-                    collection: new exocore.store.Reference({
-                        entityId: collectionEntity.id,
-                    }),
-                    weight: new Date().getTime(),
-                }), `child_${collectionEntity.id}`)
-                .build();
-            Exocore.store.mutate(mutation);
-
+        const parentRel = getEntityParentRelation(this.state.entity, collectionEntity.id);
+        if (!parentRel) {
+            Commands.addToParent(this.state.entity, collectionEntity.id);
         } else {
-            const mutation = MutationBuilder
-                .updateEntity(this.state.entity.id)
-                .deleteTrait(currentChildTrait.id)
-                .build();
-            Exocore.store.mutate(mutation);
+            Commands.removeFromParent(this.state.entity, collectionEntity.id);
         }
 
         event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double

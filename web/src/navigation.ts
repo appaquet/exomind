@@ -7,6 +7,7 @@ import Path from './utils/path';
 export interface INavigationHost {
   history: IHistory;
   openPopup(path: Path): void;
+  closeWindow(): void;
   openExternal(url: string): void;
 }
 
@@ -53,6 +54,10 @@ export default class Navigation {
   static navigatePopup(path: string | Path): void {
     const obj = new Path(path);
     Navigation.host.openPopup(obj);
+  }
+
+  static closeWindow(): void {
+    Navigation.host.closeWindow();
   }
 
   static navigateExternal(url: string): void {
@@ -125,10 +130,9 @@ export default class Navigation {
 
 export function setupLinkClickNavigation(fallback: (e: MouseEvent, el: HTMLElement) => void): void {
   document.addEventListener('click', (e) => {
+    // if tagname is not a link, try to go up into the parenthood up 20 levels
     let el = e.target as HTMLElement;
-
-    // if tagname is not a link, try to go up into the parenthood up 10 levels
-    for (let i = 0; el.tagName !== 'A' && i < 10; i++) {
+    for (let i = 0; el.tagName !== 'A' && i < 20; i++) {
       if (el.parentNode) {
         el = el.parentNode as HTMLElement;
       }

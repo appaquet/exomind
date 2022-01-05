@@ -1,23 +1,21 @@
 import classNames from "classnames";
-import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React from 'react';
 import { exomind } from "../../../protos";
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from "../../../stores/queries";
-import { CollectionSelector } from "../../modals/collection-selector/collection-selector";
-import TimeSelector from "../../modals/time-selector/time-selector";
-import { ActionResult, ButtonAction, EntityActions, InlineAction } from '../entity-list/entity-action';
+import { ListEntityActions, InlineAction } from '../entity-list/actions';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
-import { ColumnActions } from "./column-actions";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
 import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
 import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
+import { Actions, IAction, IActionResult } from "../../../utils/actions";
+import { BottomMenu, BottomMenuItem, IActionShortcut } from "../../interaction/bottom-menu/bottom-menu";
+import { IEntityCreateResult } from "../../../utils/commands";
 import './children.less';
-
-const PINNED_WEIGHT = 5000000000000;
 
 interface IProps {
     parent?: EntityTraits;
@@ -27,9 +25,6 @@ interface IProps {
     onSelectionChange?: (sel: Selection) => void;
     onEntityAction?: (action: string, entity: EntityTraits) => void;
 
-    actionsForEntity?: (et: EntityTraits) => string[];
-
-    removeOnPostpone?: boolean;
     containerState?: ContainerState;
 }
 
@@ -125,15 +120,6 @@ export class Children extends React.Component<IProps, IState> {
                 'children': true,
             });
 
-            const controls = (this.props.containerState?.active ?? false) ?
-                <ColumnActions
-                    parent={this.state.parent}
-                    selection={this.props.selection}
-                    onSelectionChange={this.props.onSelectionChange}
-                    onCreated={(entity) => this.handleCreatedEntity(entity)}
-                    removeOnPostpone={this.props.removeOnPostpone}
-                /> : null;
-
             return (
                 <div className={classes}
                     onMouseEnter={this.handleMouseEnter}
@@ -149,20 +135,69 @@ export class Children extends React.Component<IProps, IState> {
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
+
                         actionsForEntity={this.actionsForEntity}
+                        editedEntity={this.state.editedEntity}
 
                         onDropIn={this.handleDropInEntity}
                         containerState={this.props.containerState}
                     />
 
-                    {controls}
-
+                    {this.renderBottomMenu()}
                 </div>
             );
 
         } else {
             return <Message text="Loading..." showAfterMs={200} />;
         }
+    }
+
+    private renderBottomMenu(): React.ReactFragment {
+        if (!this.state.parent || !(this.props.containerState.active ?? false)) {
+            return null;
+        }
+
+        let items: BottomMenuItem[] = [];
+        let actionShortcuts: IActionShortcut[] = [];
+
+        // Archive / snooze actions
+        if (this.props.selection && !this.props.selection.isEmpty) {
+            const selectedEntities = this.getSelectedEntities();
+            items = Actions.forSelectedEntities(selectedEntities, { parent: this.state.parent });
+            actionShortcuts = [
+                {
+                    shortcutKey: 'e',
+                    disabledContexts: ['input', 'modal'],
+                    actionKey: 'remove-from-parent',
+                },
+                {
+                    shortcutKey: 'z',
+                    disabledContexts: ['input', 'modal'],
+                    actionKey: 'snooze',
+                },
+            ];
+
+            items.push('divider');
+        }
+
+        // Creation actions
+        items = items.concat(Actions.forObjectCreation(this.state.parent));
+
+        const handleExecuted = (action: IAction, result: IActionResult) => {
+            if (action.key.startsWith('create-')) {
+                this.handleEntityCreated(action, result.createResult);
+            } else if (result.remove === true) {
+                this.clearSelection();
+            }
+        };
+
+        return (
+            <BottomMenu
+                items={items}
+                shortcuts={actionShortcuts}
+                onExecuted={handleExecuted}
+            />
+        );
     }
 
     private handleLoadMore = () => {
@@ -181,145 +216,20 @@ export class Children extends React.Component<IProps, IState> {
         });
     }
 
-    private actionsForEntity = (et: EntityTraits): EntityActions => {
-        if (!this.props.actionsForEntity) {
-            return new EntityActions();
-        }
-
-        const actions = this.props.actionsForEntity(et);
-        const buttonActions = actions.map((action) => {
-            switch (action) {
-                case 'done':
-                    return new ButtonAction('check', () => { return this.handleEntityDone(et) });
-                case 'postpone':
-                    return new ButtonAction('clock-o', () => { return this.handleEntityPostpone(et) });
-                case 'move':
-                    return new ButtonAction('folder-open-o', () => { return this.handleEntityMoveCollection(et) });
-                case 'inbox':
-                    return new ButtonAction('inbox', () => { return this.handleEntityMoveInbox(et) });
-                case 'pin':
-                    return new ButtonAction(this.isPinned(et) ? 'caret-down' : 'thumb-tack', () => { return this.handleEntityPin(et) });
-                case 'restore': {
-                    const icon = (this.props.parentId == 'inbox') ? 'inbox' : 'folder-o';
-                    return new ButtonAction(icon, () => { return this.handleEntityRestore(et) });
-                }
-            }
-        });
+    private actionsForEntity = (et: EntityTraits): ListEntityActions => {
+        const actions = Actions.forEntity(et, { parent: this.props.parent || this.props.parentId });
+        const listActions = ListEntityActions.fromActions(actions);
 
         // when we just created an entity that require it to be edited right away (ex: task)
-        let inlineEdit;
         if (this.state.editedEntity && this.state.editedEntity.id == et.id) {
-            inlineEdit = new InlineAction(() => {
+            listActions.inlineAction = new InlineAction(() => {
                 this.setState({
                     editedEntity: null,
                 });
             });
         }
 
-        return new EntityActions(buttonActions, inlineEdit);
-    }
-
-    private handleEntityDone(et: EntityTraits): ActionResult {
-        this.context.collections.removeEntityFromParents([et], this.parentId);
-
-        this.removeFromSelection(et);
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('done', et);
-        }
-
-        return 'remove';
-    }
-
-    private handleEntityPostpone(et: EntityTraits): ActionResult {
-        this.context.session.showModal(() => {
-            return <TimeSelector onSelectionDone={(date) => this.handleTimeSelectorDone(et, date)} />;
-        });
-    }
-
-    private handleTimeSelectorDone(et: EntityTraits, date: Date) {
-        this.context.session.hideModal();
-
-        let mb = MutationBuilder
-            .updateEntity(et.id)
-            .putTrait(new exomind.base.v1.Snoozed({
-                untilDate: toProtoTimestamp(date),
-            }), "snoozed")
-            .returnEntities();
-
-        if (this.parentId === 'inbox') {
-            const parentRelation = getEntityParentRelation(et, 'inbox');
-            if (parentRelation) {
-                mb = mb.deleteTrait(parentRelation.id);
-            }
-        }
-
-        Exocore.store.mutate(mb.build());
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('postpone', et);
-        }
-    }
-
-    private handleEntityMoveCollection(et: EntityTraits) {
-        this.context.session.showModal(() => {
-            return <CollectionSelector entity={et} />;
-        });
-    }
-
-    private handleEntityMoveInbox(et: EntityTraits) {
-        const mb = MutationBuilder
-            .updateEntity(et.id)
-            .putTrait(new exomind.base.v1.CollectionChild({
-                collection: new exocore.store.Reference({
-                    entityId: et.id,
-                }),
-                weight: new Date().getTime(),
-            }), 'child_inbox');
-        Exocore.store.mutate(mb.build());
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('inbox', et);
-        }
-    }
-
-    private isPinned(et: EntityTraits): boolean {
-        const child = et
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .filter((child) => child.message.collection.entityId == this.state.parent?.id)?.[0];
-        if (!child) {
-            return false;
-        }
-
-        return child.message.weight >= PINNED_WEIGHT;
-    }
-
-    private handleEntityPin(et: EntityTraits) {
-        const child = et
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .filter((child) => child.message.collection.entityId == this.state.parent?.id)?.[0];
-        if (!child) {
-            return;
-        }
-
-        if (child.message.weight >= PINNED_WEIGHT) {
-            child.message.weight = new Date().getTime();
-        } else {
-            child.message.weight = new Date().getTime() + PINNED_WEIGHT;
-        }
-
-        const mb = MutationBuilder
-            .updateEntity(et.id)
-            .putTrait(child.message, child.id);
-        Exocore.store.mutate(mb.build());
-    }
-
-    private handleEntityRestore(et: EntityTraits) {
-        // TODO: ExomindDSL.on(entity).relations.addParent(this.state.parentEntity);
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('restore', et);
-        }
+        return listActions;
     }
 
     private handleDropInEntity = (droppedItem: IDroppedItem) => {
@@ -383,22 +293,49 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private handleCreatedEntity(entity: EntityTraits) {
-        if (this.props.onSelectionChange && this.props.selection) {
-            if (entity.traitOfType(exomind.base.v1.Task)) {
-                this.setState({
-                    editedEntity: entity,
-                });
-            } else {
-                this.props.onSelectionChange(new Selection(SelectedItem.fromEntity(entity)));
-            }
+    private handleEntityCreated(action: IAction, res: IEntityCreateResult) {
+        if (!res.entity) {
+            alert(`Failed to create entity: ${res.error}`);
+            return;
+        }
+
+        const entity = res.entity;
+
+        if (entity.traitOfType(exomind.base.v1.Task)) {
+            // special case for new tasks that we edit inline
+            this.setState({
+                editedEntity: entity,
+            });
+
+            return; // we don't want to select newly created tasks as we edit them inline
+        }
+
+        if (this.props.onSelectionChange) {
+            this.props.onSelectionChange(new Selection(SelectedItem.fromEntity(entity)));
         }
     }
 
-    private removeFromSelection(entity: EntityTraits) {
-        if (this.props.onSelectionChange && this.props.selection) {
-            const newSelection = this.props.selection.withoutItem(SelectedItem.fromEntity(entity));
-            this.props.onSelectionChange(newSelection);
+    private clearSelection = () => {
+        if (this.props.onSelectionChange) {
+            this.props.onSelectionChange(new Selection());
         }
+    }
+
+    private getSelectedEntities(): EntityTraits[] {
+        const indexedEntities = this.state.entities.reduce((acc: { [key: string]: EntityTraits; }, entity) => {
+            acc[entity.id] = entity;
+            return acc;
+        }, {});
+
+        const selectedEntities = this.props.selection.items.flatMap((sel) => {
+            const entity = indexedEntities[sel.entityId];
+            if (!entity) {
+                return [];
+            }
+
+            return [entity];
+        });
+
+        return selectedEntities;
     }
 }

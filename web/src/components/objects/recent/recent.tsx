@@ -1,16 +1,16 @@
 import classNames from 'classnames';
-import { Exocore, exocore, MutationBuilder, QueryBuilder } from 'exocore';
+import { exocore, QueryBuilder } from 'exocore';
 import React from 'react';
-import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
 import { ContainerState } from '../container-state';
-import { ButtonAction, EntityActions } from '../entity-list/entity-action';
+import { ListEntityActions } from '../entity-list/actions';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
-import './recent.less';
 import { runInAction } from 'mobx';
+import { Actions } from '../../../utils/actions';
+import './recent.less';
 
 interface IProps {
     selection?: Selection;
@@ -101,22 +101,8 @@ export default class Recent extends React.Component<IProps, IState> {
         this.entityQuery.expand();
     }
 
-    private actionsForEntity = (et: EntityTraits): EntityActions => {
-        return new EntityActions([
-            new ButtonAction('inbox', () => this.handleEntityMoveInbox(et)),
-        ]);
-    }
-
-    private handleEntityMoveInbox(et: EntityTraits) {
-        const mb = MutationBuilder
-            .updateEntity(et.id)
-            .putTrait(new exomind.base.v1.CollectionChild({
-                collection: new exocore.store.Reference({
-                    entityId: 'inbox',
-                }),
-                weight: new Date().getTime(),
-            }), 'child_inbox')
-            .build();
-        Exocore.store.mutate(mb);
+    private actionsForEntity = (et: EntityTraits): ListEntityActions => {
+        const actions = Actions.forEntity(et, { section: 'recent' });
+        return ListEntityActions.fromActions(actions);
     }
 }

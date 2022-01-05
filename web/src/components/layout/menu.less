@@ -1,0 +1,52 @@
+@import (reference) "../../style/mixins.less";
+@import (reference) "../../style/variables.less";
+
+.contextual-menu {
+  z-index: @z-index-contextual-menu;
+
+  position: absolute;
+  top: 0;
+  min-width: 150px;
+  min-height: 70px;
+
+  background-color: var(--contextual-menu-bg);
+  color: var(--contextual-menu-fg);
+  border: var(--contextual-menu-border);
+  border-radius: 5px;
+
+  .shadow-z-3();
+
+  &[data-popper-reference-hidden] {
+    // see https://popper.js.org/docs/v2/modifiers/hide/
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  &:not([data-popper-placement]) {
+    // hide until it's properly positioned
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  ul {
+    .make-list();
+    padding: 5px;
+
+    li {
+      .make-list-item();
+      padding: 3px 7px;
+      border-radius: 5px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: var(--contextual-menu-bg-hover);
+      }
+
+      .icon {
+        margin-right: 5px;
+        display: inline-block;
+        width: 15px;
+      }
+    }
+  }
+}

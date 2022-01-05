@@ -12,10 +12,9 @@
 @body-fg: #000000;
 @body-fg-dark: #e1e1e1;
 
-@tools-popup-bg: #404040;
-
 @z-index-modal: 1100; // z-index of header in bootstrap is 1030
 @z-index-modal-background: 1099;
+@z-index-contextual-menu: 1200;
 
 @entity-component-border: 1px solid #D3D3D3;
 @entity-component-border-dark: 1px solid #505050;
@@ -30,7 +29,7 @@
 @entity-component-bg-selected-dark: #434c54;
 @entity-component-bg-done: #5CB296;
 @entity-component-bg-hover: #F0F0F0;
-@entity-component-bg-hover-dark: #1d2124;
+@entity-component-bg-hover-dark: #30353a;
 @entity-component-bg-disabled: #F3F3F3;
 @entity-component-bg-disabled-dark: #30373c;
 @entity-component-drag-placeholder-bg: #D3D3D3;
@@ -42,7 +41,7 @@
 @entity-component-header-actions-fg: #7e7e7e;
 @entity-component-header-actions-fg-dark: #e1e1e1;
 @entity-component-header-actions-hover-fg: @exomind-secondary;
-@entity-component-header-fg-active: #767676;
+@entity-component-header-fg-active: #6d6d6d;
 @entity-component-header-fg-active-dark: #e1e1e1;
 @entity-component-header-height: 35px;
 @entity-component-header-border: 1px solid #E0E0E0;
@@ -88,6 +87,14 @@
 @hamburger-items-separator: 1px solid #D5D5D5;
 @hamburger-items-separator-dark: 1px solid #505050;
 
+@contextual-menu-bg: #dfdfdf;
+@contextual-menu-bg-hover: darken(@contextual-menu-bg, 15%);
+@contextual-menu-fg: #000;
+@contextual-menu-border:  1px solid darken(@contextual-menu-bg, 10%);
+@contextual-menu-bg-dark: #575757;
+@contextual-menu-bg-dark-hover: darken(@contextual-menu-bg-dark, 15%);
+@contextual-menu-fg-dark: #fff;
+@contextual-menu-border-dark:  1px solid darken(@contextual-menu-bg-dark, 10%);
 
 :root {
     --body-bg: @body-bg;
@@ -118,6 +125,11 @@
     --hamburger-active-bg-hover: @hamburger-active-bg-hover;
     --hamburger-items-text-color: @hamburger-items-text-color;
     --hamburger-items-separator: @hamburger-items-separator;
+
+    --contextual-menu-bg: @contextual-menu-bg;
+    --contextual-menu-fg: @contextual-menu-fg;
+    --contextual-menu-bg-hover: @contextual-menu-bg-hover;
+    --contextual-menu-border: @contextual-menu-border;
 }
 
 :root[data-theme="theme-dark"] {
@@ -149,4 +161,9 @@
     --hamburger-active-bg-hover: @hamburger-active-bg-hover-dark;
     --hamburger-items-text-color: @hamburger-items-text-color-dark;
     --hamburger-items-separator: @hamburger-items-separator-dark;
+
+    --contextual-menu-bg: @contextual-menu-bg-dark;
+    --contextual-menu-fg: @contextual-menu-fg-dark;
+    --contextual-menu-bg-hover: @contextual-menu-bg-dark-hover;
+    --contextual-menu-border: @contextual-menu-border-dark;
 }

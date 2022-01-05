@@ -70,7 +70,7 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
             guard let this = self else {
                 return
             }
-
+            
             if let url = json?["link"].string {
                 if url.starts(with: "entity://") {
                     let entityId = url.replacingOccurrences(of: "entity://", with: "")

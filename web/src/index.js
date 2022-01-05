@@ -6,14 +6,17 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { initNode } from './exocore';
 import Navigation, { BrowserHistory, setupLinkClickNavigation } from "./navigation";
-import Constants from "./constants";
 
 Navigation.initialize({
     history: new BrowserHistory(),
 
     openPopup: (path) => {
-        let url = Constants.webUrl + Constants.basePath + path.toString();
+        let url = `${window.location.origin}/${path.toString()}`;
         window.open(url, '_blank', 'menubar=no,location=no,status=no,titlebar=no,toolbar=no');
+    },
+
+    closeWindow: () => {
+        window.close('','_parent','');
     },
 
     openExternal: (url) => {

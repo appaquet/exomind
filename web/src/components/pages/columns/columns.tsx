@@ -86,7 +86,11 @@ export default class Columns extends React.Component<IProps, IState> {
                     selectionItems = [this.configToSelection(nextColumnConfig)];
                 }
             }
+
             const selection = new Selection(Array.from(selectionItems.filter((col => !!col))));
+            if (nextColumnConfig?.isMultiple ?? false) {
+                selection.withForceMulti();
+            }
 
             const colClass = `column-container-${colId}`;
             const classes = classNames({
@@ -95,6 +99,7 @@ export default class Columns extends React.Component<IProps, IState> {
             });
             const colKey = this.columnKey(columnConfig);
             const active = this.state.activeColumn == colId;
+            const canClose = this.canCloseColumn(config, colId);
 
             return [(
                 <div
@@ -108,7 +113,7 @@ export default class Columns extends React.Component<IProps, IState> {
                         columnId={colId}
                         columnConfig={columnConfig}
                         active={active}
-                        onClose={() => this.handleColumnClose(colId)}
+                        onClose={canClose ? () => this.handleColumnClose(colId) : undefined}
                         selection={selection}
                         onSelectionChange={(selection) => this.handleColumnItemSelect(colId, selection)}
                     />
@@ -149,7 +154,7 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     private onColumnHovered(columnId: number): void {
-        if (Shortcuts.usedRecently) {
+        if (Shortcuts.usedRecently || this.state.activeColumn == columnId) {
             return;
         }
 
@@ -196,16 +201,15 @@ export default class Columns extends React.Component<IProps, IState> {
             }));
 
             let selectionConfig: ColumnConfig;
-            if (selectionConfigs.length == 1) {
-                selectionConfig = selectionConfigs[0];
-            } else if (selectionConfigs.length > 1) {
+            if (selection.isMulti) {
                 selectionConfig = ColumnConfig.forMultiple(selectionConfigs);
+            } else {
+                selectionConfig = selectionConfigs[0];
             }
 
             if (selectionConfig) {
                 columnsConfig = columnsConfig.set(colId + 1, selectionConfig);
             }
-
         } else {
             columnsConfig = columnsConfig.unset(colId + 1);
         }
@@ -217,8 +221,7 @@ export default class Columns extends React.Component<IProps, IState> {
         const config = this.getConfig();
 
         // we allow closing any columns, as long as it is not the last one
-        const canClose = colId > 0 || config.parts.length > 1;
-        if (!canClose) {
+        if (!this.canCloseColumn(config, colId)) {
             return;
         }
 
@@ -230,6 +233,10 @@ export default class Columns extends React.Component<IProps, IState> {
 
         const columnsConfig = config.pop(colId);
         this.props.onConfigChange(columnsConfig);
+    }
+
+    private canCloseColumn(config: ColumnConfigs, colId: number): boolean {
+        return colId > 0 || config.parts.length > 1;
     }
 }
 

@@ -57,7 +57,6 @@ function addBookmark(e) {
   });
 
   const endpointURL = _endpoint + '/store/mutate?token=' + _auth_token;
-  console.log(endpointURL);
 
   let xhr = new XMLHttpRequest();
   xhr.open('POST', endpointURL, true);

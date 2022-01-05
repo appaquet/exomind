@@ -8,6 +8,8 @@ import './task.less';
 import { ContainerState } from '../container-state';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { observer } from 'mobx-react';
+import classNames from 'classnames';
+import _ from 'lodash';
 
 interface IProps {
     entity: EntityTraits;
@@ -21,6 +23,7 @@ interface IProps {
 
 interface IState {
     currentTask: exomind.base.v1.ITask
+    focused: boolean;
 }
 
 @observer
@@ -33,6 +36,7 @@ export default class Task extends React.Component<IProps, IState> {
 
         this.state = {
             currentTask: new exomind.base.v1.Task(props.taskTrait.message),
+            focused: false,
         }
 
         this.shortcutToken = Shortcuts.register([
@@ -48,11 +52,28 @@ export default class Task extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
-    render(): React.ReactNode {
+    componentDidUpdate(prevProps: IProps) {
+        // allow incoming changes if we're not focused on task
+        const prevTask = new exomind.base.v1.Task(prevProps.taskTrait.message);
+        const newTask = new exomind.base.v1.Task(this.props.taskTrait.message);
+        if (!this.state.focused && !_.isEqual(prevTask, newTask)) {
+            this.setState({
+                currentTask: newTask,
+            });
+        }
+
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
+    }
+
+    render(): React.ReactNode {
+        const classes = classNames({
+            'entity-component': true,
+            'task': true,
+            'active': this.props.containerState?.active ?? false,
+        });
 
         return (
-            <div className="entity-component task">
+            <div className={classes}>
                 <div className="entity-details">
                     <div className="name field">
                         <span className="field-label">Name</span>
@@ -60,13 +81,17 @@ export default class Task extends React.Component<IProps, IState> {
                             <EditableText
                                 text={this.state.currentTask.title}
                                 onChange={this.handleNameChange}
-                                onBound={this.handleInputBound} />
+                                onBound={this.handleInputBound}
+                                onFocus={this.handleFocus}
+                                onBlur={this.handleBlur}
+                            />
                         </span>
                     </div>
                 </div>
             </div>
         );
     }
+
 
     private handleNameChange = (newTitle: string): void => {
         const task = this.state.currentTask;
@@ -96,6 +121,22 @@ export default class Task extends React.Component<IProps, IState> {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private handleFocus = (): void => {
+        if (!this.state.focused) {
+            this.setState({
+                focused: true,
+            });
+        }
+    }
+
+    private handleBlur = (): void => {
+        if (this.state.focused) {
+            this.setState({
+                focused: false,
+            });
         }
     }
 }

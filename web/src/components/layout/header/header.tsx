@@ -40,8 +40,13 @@ export class Header extends React.Component<IProps, IState> {
 
         this.shortcutToken = Shortcuts.register([
             {
-                key: 'Mod-p',
+                key: ['Mod-p'],
                 callback: this.handleFocusInput,
+            },
+            {
+                key: ['/'],
+                callback: this.handleFocusInput,
+                disabledContexts: ['input', 'modal', 'text-editor'],
             },
             {
                 key: ['ArrowDown'],

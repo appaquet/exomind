@@ -12,6 +12,7 @@ interface IProps {
 
 interface IState {
     picker: boolean;
+    pickerOpen: boolean;
     date: Date;
     selected?: number;
 }
@@ -28,6 +29,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
 
         this.state = {
             picker: false,
+            pickerOpen: false,
             date: new Date(),
         };
 
@@ -93,7 +95,12 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                     selected
                 });
                 return (
-                    <li className={classes} onClick={() => this.handleTimeClick(choice.key)} key={choice.key}>
+                    <li className={classes}
+                        key={choice.key}
+                        onMouseOver={() => this.handleMouseOver(i)}
+                        onMouseOut={() => this.handleMouseOut(i)}
+                        onClick={() => this.handleTimeClick(choice.key)}
+                    >
                         <span>{choice.copy}</span>
                     </li>
                 )
@@ -109,6 +116,8 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                         data-enable-time
                         value={this.state.date}
                         onChange={this.handlePickerChange}
+                        onOpen={this.handlePickerOpen}
+                        onClose={this.handlePickerClose}
                     />
                 </div>
                 <div className="button">
@@ -118,6 +127,17 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                 </div>
             </div>
         );
+    }
+
+    private handlePickerOpen = (): void => {
+        this.setState({ pickerOpen: true });
+    }
+
+    private handlePickerClose = (): void => {
+        setTimeout(() => {
+            // in timeout to prevent enter key from triggering
+            this.setState({ pickerOpen: false });
+        }, 100);
     }
 
     private handlePickerChange = (dates: Date[]): void => {
@@ -143,6 +163,16 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         }
     }
 
+    private handleMouseOver(choiceOrd: number): void {
+        this.setState({ selected: choiceOrd });
+    }
+
+    private handleMouseOut(choiceOrd: number): void {
+        if (this.state.selected === choiceOrd) {
+            this.setState({ selected: undefined });
+        }
+    }
+
     private handleShortcutMove(moveCount: number): boolean {
         const nbChoices = this.choices.length;
 
@@ -165,6 +195,10 @@ export default class TimeSelector extends React.Component<IProps, IState> {
     }
 
     private handleShortcutSelect = (): boolean => {
+        if (this.state.picker && this.state.pickerOpen) {
+            return false;
+        }
+
         if (this.state.picker && this.state.date) {
             this.props.onSelectionDone(this.state.date);
             return true;

@@ -1,17 +1,18 @@
 import classNames from 'classnames';
-import { Exocore, exocore, fromProtoTimestamp, MutationBuilder, QueryBuilder } from 'exocore';
+import { exocore, fromProtoTimestamp, QueryBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { ExpandableQuery } from '../../../stores/queries';
 import { ContainerState } from '../container-state';
-import { ButtonAction, EntityActions } from '../entity-list/entity-action';
+import { ListEntityActions } from '../entity-list/actions';
 import { EntityList } from '../entity-list/entity-list';
 import { Selection } from '../entity-list/selection';
 import { Message } from '../message';
-import './snoozed.less';
 import DateUtil from '../../../utils/dates';
 import { runInAction } from 'mobx';
+import './snoozed.less';
+import { Actions } from '../../../utils/actions';
 
 interface IProps {
     selection?: Selection;
@@ -91,6 +92,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
                         droppable={false}
 
                         renderEntityDate={this.renderEntityDate}
+                        containerState={this.props.containerState}
                     />
                 </div>
             );
@@ -121,28 +123,8 @@ export default class Snoozed extends React.Component<IProps, IState> {
         this.entityQuery.expand();
     }
 
-    private actionsForEntity = (et: EntityTraits): EntityActions => {
-        return new EntityActions([
-            new ButtonAction('inbox', () => this.handleEntityMoveInbox(et)),
-        ]);
-    }
-
-    private handleEntityMoveInbox(et: EntityTraits) {
-        const snoozedTrait = et.traitOfType<exomind.base.v1.ISnoozed>(exomind.base.v1.Snoozed);
-        if (!snoozedTrait) {
-            return;
-        }
-
-        const mb = MutationBuilder
-            .updateEntity(et.id)
-            .putTrait(new exomind.base.v1.CollectionChild({
-                collection: new exocore.store.Reference({
-                    entityId: 'inbox',
-                }),
-                weight: new Date().getTime(),
-            }), 'child_inbox')
-            .deleteTrait(snoozedTrait.id)
-            .build();
-        Exocore.store.mutate(mb);
+    private actionsForEntity = (et: EntityTraits): ListEntityActions => {
+        const actions = Actions.forEntity(et, { section: 'snoozed' });
+        return ListEntityActions.fromActions(actions);
     }
 }

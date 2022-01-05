@@ -33,7 +33,6 @@ export default class Email extends React.Component<IProps, IState> {
 
     render(): React.ReactNode {
         const email = this.props.emailTrait;
-        const emailControls = (this.state.hovered) ? this.renderEmailControls() : null;
 
         return (
             <div className="entity-component email"
@@ -54,8 +53,6 @@ export default class Email extends React.Component<IProps, IState> {
 
                     <EmailAttachments entity={this.props.entity} email={email} />
                 </div>
-
-                {emailControls}
             </div>
         );
     }
@@ -99,42 +96,5 @@ export default class Email extends React.Component<IProps, IState> {
         } else if (email.message.parts.length > 0) {
             return <pre>{email.message.parts[0].body}</pre>;
         }
-    }
-
-    private renderEmailControls(): React.ReactNode {
-        return <div className="column-bottom-actions">
-            <ul>
-                <li onClick={this.handleReplyAllEmail}><i className="reply-all" /></li>
-                <li onClick={this.handleReplyEmail}><i className="reply" /></li>
-                <li onClick={this.handleForwardEmail}><i className="forward" /></li>
-            </ul>
-        </div>
-    }
-
-    private handleReplyEmail = (): void => {
-        // TODO: Reply
-        // EmailsLogic.createReplyEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
-        //     if (obj) {
-        //         this.props.onSelectionChange([obj]);
-        //     }
-        // });
-    }
-
-    private handleReplyAllEmail = (): void => {
-        // TODO: Reply all
-        // EmailsLogic.createReplyAllEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
-        //     if (obj) {
-        //         this.props.onSelectionChange([obj]);
-        //     }
-        // });
-    }
-
-    private handleForwardEmail = (): void => {
-        // TODO: Forward
-        // EmailsLogic.createForwardEmail(this.props.entity, this.props.emailTrait).onProcessed((cmd, obj) => {
-        //     if (obj) {
-        //         this.props.onSelectionChange([obj]);
-        //     }
-        // });
     }
 }

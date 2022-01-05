@@ -7,12 +7,9 @@ import EmailUtil from '../../../utils/emails';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import { SelectedItem, Selection } from '../entity-list/selection';
 import { EmailAttachments } from './email-attachments';
-import './email-thread.less';
 import { ContainerState } from '../container-state';
-import { runInAction } from 'mobx';
-import { ListenerToken, Shortcuts } from '../../../shortcuts';
 import { observer } from 'mobx-react';
-
+import './email-thread.less';
 
 interface IProps {
     entity?: EntityTraits;
@@ -41,7 +38,6 @@ interface EmailState {
 @observer
 export default class EmailThread extends React.Component<IProps, IState> {
     private mounted = false;
-    private shortcutToken: ListenerToken;
     private draftTrait?: EntityTrait<exomind.base.v1.DraftEmail>;
     private threadElement: React.RefObject<HTMLUListElement> = React.createRef();
 
@@ -78,14 +74,6 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
         this.trackMarkAsRead();
 
-        this.shortcutToken = Shortcuts.register([
-            {
-                key: 'e',
-                callback: this.handleShortcutDone,
-                disabledContexts: ['input', 'modal'],
-            },
-        ]);
-
         this.state = {
             collapsed: true,
             emailStates: emailStates,
@@ -95,30 +83,35 @@ export default class EmailThread extends React.Component<IProps, IState> {
 
     componentDidMount(): void {
         this.mounted = true;
+
+        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
+            this.threadElement.current.focus();
+        }
     }
 
     componentWillUnmount(): void {
         this.mounted = false;
-        Shortcuts.unregister(this.shortcutToken);
+    }
+
+    componentDidUpdate(): void {
+        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
+            this.threadElement.current.focus();
+        }
     }
 
     render(): React.ReactNode {
-        Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
-
-        if ((this.props.containerState?.active ?? false) && this.threadElement.current) {
-            console.log('focusing');
-            this.threadElement.current.focus();
-            console.log(this.threadElement.current, document.activeElement);
-        }
+        const classes = classNames({
+            'email-thread': true,
+            'entity-component': true,
+            'active': this.props.containerState?.active ?? false,
+        });
 
         const emails = this.renderEmails();
-        const emailControls = (this.state.controlledEmailId && (this.props.containerState?.active ?? true)) ? this.renderEmailControls() : null;
         return (
-            <div className="entity-component email-thread" onMouseLeave={this.handleThreadMouseLeave}>
+            <div className={classes} onMouseLeave={this.handleThreadMouseLeave}>
                 <ul className="thread" tabIndex={0} ref={this.threadElement}>
                     {emails}
                 </ul>
-                {emailControls}
             </div>
         );
     }
@@ -337,86 +330,6 @@ export default class EmailThread extends React.Component<IProps, IState> {
             const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, draft.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
         }
-    }
-
-    private renderEmailControls(): React.ReactNode {
-        let doneAction = null;
-        const inboxChild = this.props.entity
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .find((trt) => trt.message.collection.entityId == 'inbox');
-        if (inboxChild) {
-            doneAction = <>
-                <li onClick={() => this.handleDoneEmail(inboxChild)}><i className="done" /></li>
-            </>;
-        }
-
-        return (
-            <div className="column-bottom-actions">
-                <ul>
-                    {doneAction}
-                    <li onClick={this.handleReplyAllEmail}><i className="reply-all" /></li>
-                    <li onClick={this.handleReplyEmail}><i className="reply" /></li>
-                    <li onClick={this.handleForwardEmail}><i className="forward" /></li>
-                </ul>
-            </div>
-        );
-    }
-
-    private handleShortcutDone = (): boolean => {
-        const inboxChild = this.props.entity
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .find((trt) => trt.message.collection.entityId == 'inbox');
-
-        if (inboxChild) {
-            this.handleDoneEmail(inboxChild);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private handleDoneEmail(child: EntityTrait<exomind.base.v1.ICollectionChild>): void {
-        const mutation = MutationBuilder
-            .updateEntity(this.props.entity.id)
-            .deleteTrait(child.id)
-            .build();
-        Exocore.store.mutate(mutation);
-
-        if (this.props.containerState) {
-            runInAction(() => {
-                this.props.containerState.closed = true;
-            });
-        }
-    }
-
-    private handleReplyEmail = (): void => {
-        // TODO: Reply
-        // EmailsLogicXYZ.createReplyEmail(this.props.entity, email).onProcessed((cmd, obj) => {
-        //     if (obj) {
-        //         let entityTrait = new EntityTrait(this.props.entity, 'exomind.draft_email');
-        //         this.props.onSelectionChange([entityTrait]);
-        //     }
-        // });
-    }
-
-    private handleReplyAllEmail = (): void => {
-        // TODO: Reply all
-        // EmailsLogicXYZ.createReplyAllEmail(this.props.entity, email).onProcessed((cmd, obj) => {
-        //     if (obj) {
-        //         let entityTrait = new EntityTrait(this.props.entity.id, 'exomind.draft_email');
-        //         this.props.onSelectionChange([entityTrait]);
-        //     }
-        // });
-    }
-
-    private handleForwardEmail = (): void => {
-        // TODO: Forward
-        // EmailsLogicXYZ.createForwardEmail(this.props.entity, email).onProcessed((cmd, obj) => {
-        //     if (obj) {
-        //         let entityTrait = new EntityTrait(this.props.entity.id, 'exomind.draft_email');
-        //         this.props.onSelectionChange([entityTrait]);
-        //     }
-        // });
     }
 
     private trackMarkAsRead(): void {

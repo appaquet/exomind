@@ -11,6 +11,8 @@ interface IProps {
   onChange?: (value: string) => void;
   initializeEditing?: boolean;
   onBound?: (ed: EditableText) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 interface IState {
@@ -37,7 +39,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     };
   }
 
-  componentDidUpdate(): void {
+  componentDidUpdate(prevProps: IProps): void {
     if (this.state.editing) {
       this.ensureFocus();
       return;
@@ -47,6 +49,10 @@ export default class EditableText extends React.Component<IProps, IState> {
       this.setState({
         value: this.props.text
       });
+    }
+
+    if (this.props.initializeEditing && this.props.initializeEditing != prevProps.initializeEditing) {
+      this.focus();
     }
   }
 
@@ -138,6 +144,7 @@ export default class EditableText extends React.Component<IProps, IState> {
 
   private handleEditKeyPress = (event: React.KeyboardEvent) => {
     if (event.key == 'Escape' || (!this.props.multiline && event.key == 'Enter')) {
+      event.stopPropagation();
       this.editFinish();
     }
   }
@@ -155,9 +162,12 @@ export default class EditableText extends React.Component<IProps, IState> {
     this.setState({
       editing: false
     });
+
     if (this.props.onChange) {
       this.props.onChange(this.state.value);
     }
+
+    this.props.onBlur?.();
   }
 
   private ensureFocus() {
@@ -170,5 +180,7 @@ export default class EditableText extends React.Component<IProps, IState> {
       element.focus();
       element.select();
     }
+
+    this.props.onFocus?.();
   }
 }

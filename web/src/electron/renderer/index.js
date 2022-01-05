@@ -21,6 +21,10 @@ Navigation.initialize({
     window.exoElectron.openPopup(path.toString());
   },
 
+  closeWindow: () => {
+    window.exoElectron.closeWindow();
+  },
+
   openExternal: (url) => {
     window.exoElectron.openExternal(url);
   },
@@ -46,6 +50,8 @@ Shortcuts.register([
 ]);
 
 window.exoElectron.onNavigate((_event, path) => {
+  // add hash to popup window url hash to prevent them from sharing zoom level
+  window.location.hash = path;
   Navigation.navigate(path);
 });
 

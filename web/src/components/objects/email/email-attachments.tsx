@@ -16,7 +16,7 @@ export class EmailAttachments extends React.Component<IProps> {
         if (attachments.length > 0) {
             return (
                 <ul className="email-attachments">
-                    {attachments.map(attach => this.renderAttachment(attach))}
+                    {attachments.map(this.renderAttachment)}
                 </ul>
             );
         } else {
@@ -24,9 +24,9 @@ export class EmailAttachments extends React.Component<IProps> {
         }
     }
 
-    private renderAttachment(attach: exomind.base.v1.IEmailAttachment): React.ReactNode {
+    private renderAttachment = (attach: exomind.base.v1.IEmailAttachment, index: number): React.ReactNode => {
         return (
-            <li key={attach.key}>
+            <li key={`${attach.key}${index}`}>
                 <a href={EmailUtil.attachmentUrl(this.props.entity, this.props.email, attach)} target="_blank" rel="noreferrer">
                 <span className="icon"/>
                 <span className="text">{attach.name ?? 'Unnamed'}</span></a>

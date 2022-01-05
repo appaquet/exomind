@@ -16,6 +16,10 @@ electron.contextBridge.exposeInMainWorld("exoElectron", {
     electron.shell.openExternal(url);
   },
 
+  closeWindow: () => {
+    electron.ipcRenderer.send("close-window");
+  },
+
   onNavigate: (callback) => {
     electron.ipcRenderer.on("navigate", callback);
   },

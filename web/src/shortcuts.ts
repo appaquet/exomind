@@ -2,24 +2,25 @@
 export type Context =
     'text-editor' |
     'input' | // automatically inferred if focused on an input element
-    'modal';
+    'modal' | 
+    'contextual-menu';
 export type ListenerToken = number;
 
-interface Mapping {
+export interface IMapping {
     key: string | string[];
-    callback: (event: KeyboardEvent) => boolean;
+    callback: (event: KeyboardEvent) => boolean; // TODO: rename to handler
     disabledContexts?: Context[];
     token?: ListenerToken;
     disabled?: boolean;
 }
 
 interface Listener {
-    mappings: Mapping[];
+    mappings: IMapping[];
     disabled: boolean;
 }
 
 export class Shortcuts {
-    private static mappings: { [key: string]: Mapping[] } = {};
+    private static mappings: { [key: string]: IMapping[] } = {};
     private static listeners: { [token: ListenerToken]: Listener } = {};
     private static nextListener = 0;
 
@@ -27,9 +28,10 @@ export class Shortcuts {
 
     private static lastKeyEvent?: KeyboardEvent;
     private static lastKeyTime?: Date;
+    private static lastHandledKeyTime?: Date;
 
     static get lastShortcutTime(): Date | null {
-        return this.lastKeyTime;
+        return this.lastHandledKeyTime;
     }
 
     static get usedRecently(): boolean {
@@ -40,7 +42,7 @@ export class Shortcuts {
         return new Date().getTime() - this.lastShortcutTime.getTime() < 1000;
     }
 
-    static register(mapping: Mapping | Mapping[], enabled = true): ListenerToken {
+    static register(mapping: IMapping | IMapping[], enabled = true): ListenerToken {
         if (!Array.isArray(mapping)) {
             mapping = [mapping];
         }
@@ -107,22 +109,20 @@ export class Shortcuts {
             return;
         }
 
-        if (this.lastKeyEvent && this.lastKeyTime && new Date().getTime() - this.lastKeyTime.getTime() < 500) {
-            if (this.checkKey(this.lastKeyEvent, event)) {
-                this.lastKeyEvent = event;
-                this.lastKeyTime = new Date();
+        const lastKeyEvent = this.lastKeyEvent;
+        const lastKeyTime = this.lastKeyTime;
+        this.lastKeyEvent = event;
+        this.lastKeyTime = new Date();
+
+        if (lastKeyEvent && lastKeyTime && new Date().getTime() - lastKeyTime.getTime() < 500) {
+            if (this.checkKey(lastKeyEvent, event)) {
                 return;
             }
         }
 
         if (this.checkKey(event, null)) {
-            this.lastKeyEvent = event;
-            this.lastKeyTime = new Date();
             return;
         }
-
-        this.lastKeyEvent = event;
-        this.lastKeyTime = new Date();
     }
 
     private static checkKey(firstEvent: KeyboardEvent, secondEvent: KeyboardEvent | null): boolean {
@@ -172,6 +172,9 @@ export class Shortcuts {
 
             event.stopPropagation();
             event.preventDefault();
+
+            this.lastHandledKeyTime = new Date();
+
             return true;
         }
 
