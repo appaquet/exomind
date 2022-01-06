@@ -3,7 +3,7 @@ import _ from 'lodash';
 export class ColumnConfigs {
     parts: Array<ColumnConfig> = [];
 
-    constructor(parts: Array<ColumnConfig>) {
+    constructor(parts: ColumnConfig[] = []) {
         this.parts = parts;
     }
 
@@ -66,6 +66,10 @@ export class ColumnConfigs {
         return new ColumnConfigs(ret);
     }
 
+    get last(): ColumnConfig | null {
+        return this.parts.length > 0 ? this.parts[this.parts.length - 1] : null;
+    }
+
     toString(): string {
         return _(this.parts).map((s: ColumnConfig) => ColumnConfigs.encodePart(s.toString())).value().join('-');
     }
@@ -76,6 +80,10 @@ export class ColumnConfigs {
 
     static decodePart(string: string): string {
         return decodeURIComponent(string).replace(/%1%/g, '-');
+    }
+
+    equals(other: ColumnConfigs): boolean {
+        return this.toString() === other.toString();
     }
 }
 
