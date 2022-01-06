@@ -14,6 +14,7 @@ interface IProps {
 
 interface IState {
     activeColumn: number;
+    config: ColumnConfigs;
 }
 
 @observer
@@ -25,6 +26,7 @@ export default class Columns extends React.Component<IProps, IState> {
 
         this.state = {
             activeColumn: 0,
+            config: this.makeConfig(props),
         };
 
         this.shortcutToken = Shortcuts.register([
@@ -59,6 +61,25 @@ export default class Columns extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
+    componentDidUpdate(): void {
+        const prevConfig = this.state.config;
+        const newConfig = this.makeConfig(this.props);
+
+        if (!prevConfig.equals(newConfig)) {
+            let activeColumn = this.state.activeColumn;
+
+            if (this.state.activeColumn >= this.state.config.parts.length) {
+                // we can't go beyond the last column
+                activeColumn = this.state.config.parts.length - 1;
+            }
+
+            this.setState({
+                config: newConfig,
+                activeColumn: activeColumn
+            });
+        }
+    }
+
     render(): React.ReactNode {
         const renderedColumns = this.renderColumns();
         const nbColumns = renderedColumns.length;
@@ -71,14 +92,13 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     private renderColumns() {
-        const config = this.getConfig();
-        return config.parts.flatMap((columnConfig, colId) => {
+        return this.state.config.parts.flatMap((columnConfig, colId) => {
             if (columnConfig.isMultiple) {
                 return [];
             }
 
             let selectionItems: SelectedItem[] = [];
-            const nextColumnConfig = config.parts[colId + 1];
+            const nextColumnConfig = this.state.config.parts[colId + 1];
             if (nextColumnConfig) {
                 if (nextColumnConfig.isMultiple) {
                     selectionItems = Array.from(nextColumnConfig.values.map((col) => this.configToSelection(col)));
@@ -99,7 +119,7 @@ export default class Columns extends React.Component<IProps, IState> {
             });
             const colKey = this.columnKey(columnConfig);
             const active = this.state.activeColumn == colId;
-            const canClose = this.canCloseColumn(config, colId);
+            const canClose = this.canCloseColumn(this.state.config, colId);
 
             return [(
                 <div
@@ -126,8 +146,8 @@ export default class Columns extends React.Component<IProps, IState> {
         let activeColumn = this.state.activeColumn;
         activeColumn++;
 
-        if (activeColumn >= this.getConfig().parts.length) {
-            activeColumn = this.getConfig().parts.length - 1;
+        if (activeColumn >= this.state.config.parts.length) {
+            activeColumn = this.state.config.parts.length - 1;
         }
 
         this.setState({ activeColumn });
@@ -163,6 +183,15 @@ export default class Columns extends React.Component<IProps, IState> {
         })
     }
 
+    private makeConfig(props: IProps): ColumnConfigs {
+        props = props || this.props;
+        let config = ColumnConfigs.fromString(props.config);
+        if (config.empty) {
+            config = ColumnConfigs.forInbox();
+        }
+        return config;
+    }
+
     private columnKey(config: ColumnConfig): string {
         if (config.isSearch) {
             // prevent recreating component for every keystroke
@@ -180,17 +209,8 @@ export default class Columns extends React.Component<IProps, IState> {
         }
     }
 
-    private getConfig(props?: IProps): ColumnConfigs {
-        props = props || this.props;
-        let config = ColumnConfigs.fromString(props.config);
-        if (config.empty) {
-            config = ColumnConfigs.forInbox();
-        }
-        return config;
-    }
-
     private handleColumnItemSelect(colId: number, selection: Selection) {
-        let columnsConfig = this.getConfig();
+        let columnsConfig = this.state.config;
         if (selection && !selection.isEmpty) {
             const selectionConfigs = Array.from(selection.items.map((item) => {
                 if (item.traitId) {
@@ -218,20 +238,18 @@ export default class Columns extends React.Component<IProps, IState> {
     }
 
     private handleColumnClose(colId: number) {
-        const config = this.getConfig();
-
         // we allow closing any columns, as long as it is not the last one
-        if (!this.canCloseColumn(config, colId)) {
+        if (!this.canCloseColumn(this.state.config, colId)) {
             return;
         }
 
         if (this.state.activeColumn == colId) {
             this.setState({
-                activeColumn: 0,
+                activeColumn: Math.max(this.state.activeColumn - 1, 0),
             });
         }
 
-        const columnsConfig = config.pop(colId);
+        const columnsConfig = this.state.config.pop(colId);
         this.props.onConfigChange(columnsConfig);
     }
 
