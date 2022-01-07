@@ -1191,13 +1191,13 @@
     "@bangle.dev/pm-commands" "0.28.4"
     "@bangle.dev/utils" "0.28.4"
 
-"@bangle.dev/core@^0.28.3":
-  version "0.28.4"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/core/-/core-0.28.4.tgz#1690d1d61639c0c1fb3db3eeb950335f4f3a104d"
-  integrity sha512-WlAQcBOAkOAjVmu7rsk+7EqySRJglBoTbjRvh/r9XY8nBYT47EhujHk6AbtBZMsBw4ToU/ED38vB9bnH0KwqSQ==
+"@bangle.dev/core@^0.28.5":
+  version "0.28.5"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/core/-/core-0.28.5.tgz#eaa9443f5e686ed3a398c629668c99bdcc0512f1"
+  integrity sha512-4+iyAwRHOPO7zbtbgbEqSLMrPiAX9L0GEWRcV3IvJy8/s0zSTe42E5m+Q33L0h3jgaGsaeFDGnxlExJCi43XgA==
   dependencies:
-    "@bangle.dev/pm-commands" "0.28.4"
-    "@bangle.dev/utils" "0.28.4"
+    "@bangle.dev/pm-commands" "0.28.5"
+    "@bangle.dev/utils" "0.28.5"
 
 "@bangle.dev/pm-commands@0.28.4":
   version "0.28.4"
@@ -1205,6 +1205,13 @@
   integrity sha512-f2HeZBTqZjCvAfZjWGy8TVJxzIcGjSk/Snfs55MVn7xZrUdvenhLGpKrtejGpGFsbdcSN8z1RXFRPYkGjszaWw==
   dependencies:
     "@bangle.dev/utils" "0.28.4"
+
+"@bangle.dev/pm-commands@0.28.5":
+  version "0.28.5"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/pm-commands/-/pm-commands-0.28.5.tgz#f4bc84677a484fd34f4521fe601080704a924f71"
+  integrity sha512-mJ7CJ4SRm/KCxg/hnANWYUEgxs01TyhnjW8fHlXEA6/i3VhQXxb3yXuTjaAXLp0M/shRQLPTdoYrqcOBSSSmtA==
+  dependencies:
+    "@bangle.dev/utils" "0.28.5"
 
 "@bangle.dev/pm@^0.28.3":
   version "0.28.4"
@@ -1248,6 +1255,15 @@
   version "0.28.4"
   resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.4.tgz#87dfcf50d823477eff232363e5aeb868c194502f"
   integrity sha512-XrthH8XYSZEKYCaGnZ0Rl3fXB8ipfGQuC84hRxubpgyvuNfOj9kyqq2sitc2LANVm9fY3p/YoGPqKrYt/vXe7w==
+  dependencies:
+    prosemirror-model "^1.1.0"
+    prosemirror-state "^1.0.1"
+    prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@0.28.5":
+  version "0.28.5"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.5.tgz#a240812315bccb1f231ac4aa0582dd818f388784"
+  integrity sha512-PIhPjjpGXNrCoRRtrBTugzYobxPtkk8A2S1NI14owtx+yl52tf9pG+TDjix8RL7jDrwTZ1vbWU95ybpU0A/yRg==
   dependencies:
     prosemirror-model "^1.1.0"
     prosemirror-state "^1.0.1"
