@@ -84,7 +84,7 @@
   "dependencies": {
     "@bangle.dev/base-components": "^0.28.3",
     "@bangle.dev/core": "^0.28.3",
-    "@bangle.dev/pm": "^0.28.3",
+    "@bangle.dev/pm": "^0.28.5",
     "@bangle.dev/react": "^0.28.3",
     "@popperjs/core": "^2.11.0",
     "bootstrap": "^3.3.5",
