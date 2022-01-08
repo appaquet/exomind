@@ -103,6 +103,8 @@ export class Actions {
 
         push(20, this.snooze(entities, parentId, parentId === 'inbox'));
 
+        push(30, this.selectEntityCollections(entities));
+
         return _.sortBy(actions, (a) => a.priority);
     }
 
@@ -137,14 +139,14 @@ export class Actions {
         };
     }
 
-    static selectEntityCollections(et: EntityTraits): IAction {
+    static selectEntityCollections(et: EntityTraits | EntityTraits[]): IAction {
         return {
             key: 'select-entity-collections',
             label: 'Add to collections...',
             icon: 'folder-open-o',
             execute: async () => {
                 Stores.session.showModal(() => {
-                    return <CollectionSelector entity={et} />;
+                    return <CollectionSelector entities={et} />;
                 });
                 return {};
             },

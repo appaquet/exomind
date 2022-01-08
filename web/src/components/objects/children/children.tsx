@@ -175,6 +175,11 @@ export class Children extends React.Component<IProps, IState> {
                     disabledContexts: ['input', 'modal'],
                     actionKey: 'snooze',
                 },
+                {
+                    shortcutKey: 'c',
+                    disabledContexts: ['input', 'modal'],
+                    actionKey: 'select-entity-collections',
+                },
             ];
 
             items.push('divider');

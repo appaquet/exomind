@@ -1,5 +1,4 @@
-import { Exocore, exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
-import { memoize } from 'lodash';
+import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React, { KeyboardEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
@@ -12,13 +11,14 @@ import { Commands } from '../../../utils/commands';
 import './collection-selector.less';
 
 interface IProps {
-    entity: EntityTraits;
+    entities: EntityTraits | EntityTraits[];
 }
 
 interface IState {
-    entity?: EntityTraits;
+    entities?: EntityTraits[];
     entityParentsIds?: string[],
-    entityParents?: exocore.store.IEntityResult[],
+    entityParents?: EntityTraits[],
+    collectionEntities?: EntityTraits[],
     keywords: string;
     debouncedKeywords?: string;
 }
@@ -28,30 +28,22 @@ export class CollectionSelector extends React.Component<IProps, IState> {
 
     private entityQuery: WatchedQueryWrapper;
     private entityParentsQuery: WatchedQueryWrapper;
-    private entityParentsQueryIds?: string[];
     private collectionsQuery?: ExpandableQuery;
-    private collectionsQueryKeywords?: string;
     private filterInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
     constructor(props: IProps) {
         super(props);
 
         this.searchDebouncer = new Debouncer(200);
-
-        const entityQuery = QueryBuilder.withIds(props.entity.id).build();
-        this.entityQuery = Exocore.store
-            .watchedQuery(entityQuery)
-            .onChange((res) => {
-                const entity = new EntityTraits(res.entities[0].entity);
-                this.setState({
-                    entity: entity,
-                    entityParentsIds: this.entityParents(entity),
-                });
-            });
-
         this.state = {
             keywords: '',
         };
+    }
+
+    componentDidMount(): void {
+        this.queryEntities(this.props);
+        this.queryCollections();
+        this.filterInputRef.current.focus();
     }
 
     componentWillUnmount(): void {
@@ -60,16 +52,14 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         this.entityParentsQuery?.free();
     }
 
-    componentDidMount(): void {
-        this.maybeRefreshQueries();
-        this.filterInputRef.current.focus();
+    componentDidUpdate(prevProps: Readonly<IProps>, prevState: Readonly<IState>, snapshot?: any): void {
+        if (this.state.debouncedKeywords !== prevState.debouncedKeywords || this.state.entityParentsIds !== prevState.entityParentsIds) {
+            this.queryCollections();
+        }
     }
 
     render(): React.ReactNode {
-        this.maybeRefreshQueries();
-
-        const loading = !(this.collectionsQuery?.hasResults ?? false) || !this.state.entity;
-
+        const loading = this.state.entities === undefined || this.state.entityParents === undefined || this.state.collectionEntities === undefined;
         const entities: EntityTraits[] = [];
         const entityIds = new Set<string>();
         if (!loading) {
@@ -77,15 +67,15 @@ export class CollectionSelector extends React.Component<IProps, IState> {
                 if (entityIds.has(entity.entity.id)) {
                     continue;
                 }
-                entities.push(this.wrapEntityTraits(entity.entity));
+                entities.push(entity);
                 entityIds.add(entity.entity.id);
             }
 
-            for (const entity of this.collectionsQuery?.results() ?? []) {
+            for (const entity of this.state.collectionEntities ?? []) {
                 if (entityIds.has(entity.entity.id)) {
                     continue;
                 }
-                entities.push(this.wrapEntityTraits(entity.entity));
+                entities.push(entity);
                 entityIds.add(entity.entity.id);
             }
         }
@@ -117,57 +107,79 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         );
     }
 
-    private wrapEntityTraits = memoize((entity: exocore.store.IEntity) => new EntityTraits(entity));
-
-    private entityParents(entity: EntityTraits): string[] {
-        return entity
-            .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .flatMap((cc) => cc.message.collection.entityId);
-    }
-
-    private maybeRefreshQueries(): void {
-        // Get collections
-        if (this.collectionsQueryKeywords != this.state.debouncedKeywords || !this.collectionsQuery) {
-            this.collectionsQuery?.free();
-
-            const traitQuery = (this.state.debouncedKeywords) ? TraitQueryBuilder.matches(this.state.debouncedKeywords).build() : null;
-            const query = QueryBuilder
-                .withTrait(exomind.base.v1.Collection, traitQuery)
-                .count(30)
-                .build();
-            this.collectionsQuery = new ExpandableQuery(query, () => {
-                this.setState({});
-            });
-            this.collectionsQueryKeywords = this.state.debouncedKeywords;
+    private queryEntities(props: IProps) {
+        let entities = props.entities;
+        if (!Array.isArray(entities)) {
+            entities = [entities];
         }
 
-        // Get entity current parents
-        if (this.state.entityParentsIds && this.entityParentsQueryIds != this.state.entityParentsIds) {
-            this.entityParentsQuery?.free();
+        const entityIds = new Set(entities.map((entity) => entity.id));
+        const entityQuery = QueryBuilder.withIds(Array.from(entityIds)).build();
+        this.entityQuery = Exocore.store
+            .watchedQuery(entityQuery)
+            .onChange((res) => {
+                const entities = res.entities.map((r) => new EntityTraits(r.entity));
+                const entityParentsIds = this.entityParentsIntersection(entities);
+                this.setState({ entities, entityParentsIds, });
+            });
+    }
 
-            const query = QueryBuilder
+    private entityParentsIntersection(entities: EntityTraits[]): string[] {
+        const parentCount: { [key: string]: number } = {};
+
+        for (const entity of entities) {
+            const parentIds = entity
+                .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
+                .flatMap((cc) => cc.message.collection.entityId);
+            for (const parentId of parentIds) {
+                if (parentCount[parentId] === undefined) {
+                    parentCount[parentId] = 0;
+                }
+                parentCount[parentId]++;
+            }
+        }
+
+        return Object.keys(parentCount).filter((id) => parentCount[id] === entities.length);
+    }
+
+    private queryCollections(): void {
+        // Get collections
+        const traitQuery = (this.state.debouncedKeywords) ? TraitQueryBuilder.matches(this.state.debouncedKeywords).build() : null;
+        const collectionQuery = QueryBuilder
+            .withTrait(exomind.base.v1.Collection, traitQuery)
+            .count(30)
+            .build();
+        this.collectionsQuery?.free();
+        this.collectionsQuery = new ExpandableQuery(collectionQuery, () => {
+            this.setState({
+                collectionEntities: Array.from(this.collectionsQuery.results()).map((r) => new EntityTraits(r.entity)),
+            });
+        });
+
+        // Get entities parents
+        if (this.state.entityParentsIds) {
+            const parentQuery = QueryBuilder
                 .withIds(this.state.entityParentsIds)
                 .count(this.state.entityParentsIds.length)
                 .build();
-            this.entityParentsQuery = Exocore.store.watchedQuery(query);
+            this.entityParentsQuery?.free();
+            this.entityParentsQuery = Exocore.store.watchedQuery(parentQuery);
             this.entityParentsQuery.onChange((res) => {
                 this.setState({
-                    entityParents: res.entities,
+                    entityParents: res.entities.map((r) => new EntityTraits(r.entity)),
                 });
             });
-            this.entityParentsQueryIds = this.state.entityParentsIds;
         }
     }
 
     private handleFilterChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-        const value = event.target.value;
         this.setState({
-            keywords: value
+            keywords: event.target.value
         });
 
         this.searchDebouncer.debounce(() => {
             this.setState({
-                debouncedKeywords: value
+                debouncedKeywords: this.state.keywords
             });
         });
     };
@@ -179,11 +191,11 @@ export class CollectionSelector extends React.Component<IProps, IState> {
     };
 
     private handleItemCheck = (collectionEntity: EntityTraits, event?: CancellableEvent): void => {
-        const parentRel = getEntityParentRelation(this.state.entity, collectionEntity.id);
+        const parentRel = getEntityParentRelation(this.state.entities[0], collectionEntity.id); // assumes all entities are the same
         if (!parentRel) {
-            Commands.addToParent(this.state.entity, collectionEntity.id);
+            Commands.addToParent(this.state.entities, collectionEntity.id);
         } else {
-            Commands.removeFromParent(this.state.entity, collectionEntity.id);
+            Commands.removeFromParent(this.state.entities, collectionEntity.id);
         }
 
         event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double

@@ -194,7 +194,7 @@ export class EntityComponent extends React.Component<Props, State> {
         if (this.state.results && this.state.results.entities.length > 0) {
             const entity = new EntityTraits(this.state.results.entities[0].entity);
             this.context.session.showModal(() => {
-                return <CollectionSelector entity={entity} />;
+                return <CollectionSelector entities={entity} />;
             });
         }
     };
