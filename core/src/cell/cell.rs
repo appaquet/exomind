@@ -112,7 +112,7 @@ impl Cell {
         nodes_map.insert(local_node.id().clone(), local_cell_node);
 
         let name = Some(config.name.clone())
-            .filter(String::is_empty)
+            .filter(|n| !String::is_empty(n))
             .unwrap_or_else(|| public_key.generate_name());
 
         let schemas = Arc::new(Registry::new_with_exocore_types());
