@@ -18,5 +18,6 @@ in libp2p's secio implementation only works over secure code. See [Exocore web c
 
 ### Electron client
 * Build an Electron client: `yarn electron`, watch output for path to created binary (depends on the platform).
+* Launch the created binary.
 * Note the discovery code shown in the Electron app.
 * On the main node, add the web node with `exo cell node add`, paste the discovery code. Restart your main node.
