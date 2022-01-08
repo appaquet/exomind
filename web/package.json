@@ -14,7 +14,6 @@
     "build_dev": "webpack --config webpack.dev.js",
     "build_ios": "webpack --config webpack.ios.js",
     "build_ios_watch": "webpack-dev-server --config webpack.ios.js --dev",
-    "electron_dev": "electron-webpack dev",
     "electron_build": "electron-webpack",
     "electron": "yarn electron_build && electron-builder --dir",
     "electron_dist": "yarn electron_build && electron-builder",

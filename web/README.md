@@ -17,6 +17,6 @@ When using the web client, connections can only be via localhost or https since 
 in libp2p's secio implementation only works over secure code. See [Exocore web client known issues](https://github.com/appaquet/exocore/tree/master/clients/web#notes).
 
 ### Electron client
-* Start an Electron client in developer mode: `yarn electron_dev`
+* Build an Electron client: `yarn electron`, watch output for path to created binary (depends on the platform).
 * Note the discovery code shown in the Electron app.
 * On the main node, add the web node with `exo cell node add`, paste the discovery code. Restart your main node.
