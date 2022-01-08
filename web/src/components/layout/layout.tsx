@@ -31,21 +31,21 @@ export default class Layout extends React.Component {
       {
         key: 'Mod-g i',
         callback: () => {
-          Navigation.navigate(Navigation.pathForInbox())
+          Navigation.navigate(Navigation.pathForInbox());
           return true;
         },
       },
       {
         key: 'Mod-g z',
         callback: () => {
-          Navigation.navigate(Navigation.pathForSnoozed())
+          Navigation.navigate(Navigation.pathForSnoozed());
           return true;
         },
       },
       {
         key: 'Mod-g r',
         callback: () => {
-          Navigation.navigate(Navigation.pathForRecent())
+          Navigation.navigate(Navigation.pathForRecent());
           return true;
         },
       },
@@ -126,7 +126,7 @@ export default class Layout extends React.Component {
         onConfigChange={this.handleColumnsChange} />;
 
     } else if (Navigation.isFullscreenPath(path)) {
-      return <Fullscreen entityId={path.drop(1).take(1).toString()} />
+      return <Fullscreen entityId={path.drop(1).take(1).toString()} />;
 
     } else if (Navigation.isSettingsPath(path)) {
       return <Settings />;
@@ -159,6 +159,6 @@ export default class Layout extends React.Component {
     });
 
     return true;
-  }
+  };
 }
 

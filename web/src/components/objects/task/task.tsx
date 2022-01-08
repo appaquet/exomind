@@ -37,7 +37,7 @@ export default class Task extends React.Component<IProps, IState> {
         this.state = {
             currentTask: new exomind.base.v1.Task(props.taskTrait.message),
             focused: false,
-        }
+        };
 
         this.shortcutToken = Shortcuts.register([
             {
@@ -109,11 +109,11 @@ export default class Task extends React.Component<IProps, IState> {
         this.setState({
             currentTask: task,
         });
-    }
+    };
 
     private handleInputBound = (editable: EditableText): void => {
         this.input = editable;
-    }
+    };
 
     private handleShortcutFocus = (): boolean => {
         if (this.input) {
@@ -122,7 +122,7 @@ export default class Task extends React.Component<IProps, IState> {
         } else {
             return false;
         }
-    }
+    };
 
     private handleFocus = (): void => {
         if (!this.state.focused) {
@@ -130,7 +130,7 @@ export default class Task extends React.Component<IProps, IState> {
                 focused: true,
             });
         }
-    }
+    };
 
     private handleBlur = (): void => {
         if (this.state.focused) {
@@ -138,6 +138,6 @@ export default class Task extends React.Component<IProps, IState> {
                 focused: false,
             });
         }
-    }
+    };
 }
 

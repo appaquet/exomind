@@ -25,7 +25,7 @@ export class ContainerState {
     @action addDetailsHeaderAction(): void {
         this.prependHeaderAction(new HeaderAction('Show details', 'info-circle', () => {
             this.toggleDetails();
-        }))
+        }));
     }
 
     @action toggleDetails(): void {

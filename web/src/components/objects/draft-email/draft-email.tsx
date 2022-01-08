@@ -41,7 +41,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         this.state = {
             savedDraft: props.draftTrait.message,
             currentDraft: new exomind.base.v1.DraftEmail(props.draftTrait.message),
-        }
+        };
     }
 
     componentWillUnmount(): void {
@@ -80,7 +80,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     }
 
     private async fetchAccounts(): Promise<void> {
-        const results = await Exocore.store.query(QueryBuilder.withTrait(exomind.base.v1.Account).build())
+        const results = await Exocore.store.query(QueryBuilder.withTrait(exomind.base.v1.Account).build());
 
         const accounts = results.entities
             .map((res) => {
@@ -90,7 +90,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                 const accounts = entity.traitsOfType<exomind.base.v1.IAccount>(exomind.base.v1.Account);
                 return accounts.map((account) => {
                     return { entity, account };
-                })
+                });
             });
 
         const accountsMap: AccountsMap = {};
@@ -103,9 +103,9 @@ export default class DraftEmail extends React.Component<IProps, IState> {
 
     private handleSubjectChange = (e: ChangeEvent<HTMLInputElement>): void => {
         const draft = this.state.currentDraft;
-        draft.subject = e.target.value
+        draft.subject = e.target.value;
         this.setState({ currentDraft: draft });
-    }
+    };
 
     private renderFromAccount(): React.ReactNode {
         const currentDraft = this.state.currentDraft;
@@ -121,7 +121,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                         selectedAccountKey = key;
                     }
 
-                    return <option value={key} key={key}>{account.message.name}</option>
+                    return <option value={key} key={key}>{account.message.name}</option>;
                 });
 
             inner = (
@@ -158,7 +158,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         this.setState({ currentDraft: draft });
 
         this.saveObject();
-    }
+    };
 
     private renderContactField(fieldName: string, displayName: string): React.ReactNode {
         const draftRecord = this.state.currentDraft as Record<string, exomind.base.v1.IContact[]>;
@@ -183,7 +183,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
     private handleContactFieldChange(fieldName: string, e: ChangeEvent<HTMLInputElement>): void {
         const contactsString = e.target.value;
 
-        const contacts = EmailUtil.parseContacts(contactsString)
+        const contacts = EmailUtil.parseContacts(contactsString);
 
         const lastChar = _.last(contactsString.trim());
         if (lastChar == ',') {
@@ -233,7 +233,7 @@ export default class DraftEmail extends React.Component<IProps, IState> {
         this.setState({
             editor: editor
         });
-    }
+    };
 
     private handleBodyChange(editPart: exomind.base.v1.IEmailPart, content: string): void {
         const newEditPart = new exomind.base.v1.EmailPart(editPart);
@@ -266,5 +266,5 @@ export default class DraftEmail extends React.Component<IProps, IState> {
                 });
             }
         }
-    }
+    };
 }

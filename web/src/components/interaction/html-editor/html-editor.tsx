@@ -140,7 +140,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 new Plugin({
                     view: () => ({
                         update: (view, prevState) => {
-                            this.handleChange(view.state, prevState)
+                            this.handleChange(view.state, prevState);
                         },
                     })
                 }),
@@ -196,7 +196,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     },
                 }
             },
-        })
+        });
     }
 
     render(): React.ReactNode {
@@ -350,7 +350,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         } else if (cursor.blockType == 'header-three') {
             this.toggleBlockType('header-four');
         } else if (cursor.blockType == 'header-four') {
-            // toggling with same block type will remove it 
+            // toggling with same block type will remove it
             this.toggleBlockType('header-four');
         } else {
             this.toggleBlockType('header-one');
@@ -395,7 +395,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         if (this.props.onCursorChange && editor.view.hasFocus()) {
             this.props.onCursorChange(this.getCursor());
         }
-    }
+    };
 
     private handleChange = (newState: EditorState, prevState: EditorState) => {
         this.debouncer.debounce(() => {
@@ -420,7 +420,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 this.setState({ cursor });
             }
         });
-    }
+    };
 
     private maybeHandleLinkClick = (view: EditorView, event: MouseEvent, double = false): boolean => {
         if (view.hasFocus() && !event.metaKey && !double) {
@@ -430,7 +430,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         }
 
         return this.tryOpenActiveLink(event.target as HTMLElement, event);
-    }
+    };
 
     private tryOpenActiveLink(target: HTMLElement | null, event: CancellableEvent | null): boolean {
         if (!target) {
@@ -528,7 +528,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             rect,
             domNode: rect.domNode,
             selection: rect.selection,
-        }
+        };
     }
 
     private handlePopperLinkEdit = (e: UIEvent) => {
@@ -536,7 +536,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         e.stopPropagation();
         e.preventDefault();
         return false;
-    }
+    };
 
     private handlePopperLinkOpen = (e: UIEvent) => {
         const cursor = this.getCursor();
@@ -546,21 +546,21 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         e.stopPropagation();
         e.preventDefault();
         return false;
-    }
+    };
 
     private handlePopperLinkRemove = (e: UIEvent) => {
         this.clearLink();
         e.stopPropagation();
         e.preventDefault();
         return false;
-    }
+    };
 
     private handlePopperPreventClick = (e: MouseEvent) => {
         // prevent onClick since we bind on mouse down
         e.stopPropagation();
         e.preventDefault();
         return false;
-    }
+    };
 
     // From https://github.com/bangle-io/bangle.dev/blob/b58ae1e6fd1e0b5577af04c8a74ea44e3944ad40/components/tooltip/selection-tooltip.ts#L167
     private getCursorRect(): CursorRect {
@@ -591,7 +591,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         const domNode = view.domAtPos(pos, 1).node as HTMLElement;
         return {
             left, width, right, top, bottom, height, selection, domNode,
-        }
+        };
     }
 
     private maybeCreateLinkPopper(): void {

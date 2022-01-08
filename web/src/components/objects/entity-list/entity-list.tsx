@@ -187,7 +187,7 @@ export class EntityList extends React.Component<IProps, IState> {
                 <DragAndDrop
                     parentObject={this.props.parentEntity}
                     onDropIn={(data: DragData) => {
-                        return this.handleDropIn(null, null, null, data)
+                        return this.handleDropIn(null, null, null, data);
                     }}
                     draggable={false}
                     droppable={this.props.droppable}>
@@ -233,7 +233,7 @@ export class EntityList extends React.Component<IProps, IState> {
         this.hoverEntityIndex(idx);
 
         return true;
-    }
+    };
 
     private handleShortcutNext = (): boolean => {
         let idx = this.state.activeEntityIndex ?? -1;
@@ -242,21 +242,21 @@ export class EntityList extends React.Component<IProps, IState> {
         if (idx > this.props.entities.length - 1) {
             idx = this.props.entities.length - 1;
         }
-        
+
         this.hoverEntityIndex(idx);
 
         return true;
-    }
+    };
 
     private handleShortcutTop = (): boolean => {
         this.hoverEntityIndex(0);
         return true;
-    }
+    };
 
     private handleShortcutBottom = (): boolean => {
         this.hoverEntityIndex(this.props.entities.length - 1);
         return true;
-    }
+    };
 
     private hoverEntityIndex(idx: number): void {
         const entity = this.props.entities[idx];
@@ -288,12 +288,12 @@ export class EntityList extends React.Component<IProps, IState> {
 
         this.selectEntity(entity, multi);
         return true;
-    }
+    };
 
     private handleShortcutClearSelect = (): boolean => {
         this.props.onSelectionChange(new Selection());
         return true;
-    }
+    };
 
     private handleDropIn(
         overEntity: EntityTraits,

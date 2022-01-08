@@ -128,7 +128,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         }
 
         const handleOnClick = () => {
-            this.setState({ inputValue: '' })
+            this.setState({ inputValue: '' });
             setTimeout(() => {
                 this.inputRef.current?.focus();
             });
@@ -159,7 +159,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
             url: `entity://${entity.id}`,
             title: entity.priorityTrait?.displayName
         });
-    }
+    };
 
     private onValueChange = (e: ChangeEvent<HTMLInputElement>): void => {
         this.searchDebouncer.debounce(() => {
@@ -180,14 +180,14 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                     this.setState({
                         entities
                     });
-                })
+                });
             }
         });
 
         this.setState({
             inputValue: e.target.value
         });
-    }
+    };
 
     private onKeyDown = (e: KeyboardEvent): void => {
         if (e.key == 'Enter') {
@@ -195,16 +195,16 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         } else if (e.key == 'ArrowUp' || e.key == 'ArrowDown') {
             this.inputRef.current?.blur();
         }
-    }
+    };
 
     private handleEntitySelectorBlur = (): void => {
         this.inputRef.current?.focus();
-    }
+    };
 
     private handleShortcutFocusInput = (): boolean => {
         this.inputRef.current?.focus();
         return true;
-    }
+    };
 
     private handleShortcutEnter = (): boolean => {
         if (this.inEntitySelectMode) {
@@ -213,20 +213,20 @@ export default class LinkSelector extends React.Component<IProps, IState> {
         }
         this.onDone();
         return true;
-    }
+    };
 
     private onCancel = (): void => {
         this.props.onCancel();
-    }
+    };
 
     private onClear = (): void => {
         this.props.onDone(null);
-    }
+    };
 
     private onDone = (): void => {
         this.props.onDone({
             url: this.state.inputValue,
             title: this.state.entity?.priorityTrait?.displayName,
         });
-    }
+    };
 }

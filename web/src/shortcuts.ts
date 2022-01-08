@@ -2,7 +2,7 @@
 export type Context =
     'text-editor' |
     'input' | // automatically inferred if focused on an input element
-    'modal' | 
+    'modal' |
     'contextual-menu';
 export type ListenerToken = number;
 
@@ -162,7 +162,7 @@ export class Shortcuts {
 
         for (const keyMapping of keyMappings) {
             if ((keyMapping.disabled || false) || this.anyActiveContexts(keyMapping.disabledContexts)) {
-                continue
+                continue;
             }
 
             const handled = keyMapping.callback(event);

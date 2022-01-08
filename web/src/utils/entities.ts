@@ -5,10 +5,10 @@ import { exomind } from '../protos';
 export class EntityTraits {
     public entity: exocore.store.IEntity;
 
-    private typeTraits: { [type: string]: exocore.store.ITrait[] } = {}
-    private idTraits: { [id: string]: exocore.store.ITrait } = {}
-    private idInstances: { [id: string]: EntityTrait<unknown> } = {}
-    private priorityTraitId?: string
+    private typeTraits: { [type: string]: exocore.store.ITrait[] } = {};
+    private idTraits: { [id: string]: exocore.store.ITrait } = {};
+    private idInstances: { [id: string]: EntityTrait<unknown> } = {};
+    private priorityTraitId?: string;
 
     constructor(entity: exocore.store.IEntity) {
         this.entity = entity;
@@ -261,7 +261,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'inbox': {
         key: 'inbox',
         name: 'Inbox',
-        icon: () => { return { fa: 'inbox' } },
+        icon: () => { return { fa: 'inbox' }; },
         collectionLike: true,
         color: 4,
         order: 0
@@ -269,7 +269,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
     'favorites': {
         key: 'favorites',
         name: 'Favorites',
-        icon: () => { return { fa: 'star' } },
+        icon: () => { return { fa: 'star' }; },
         collectionLike: true,
         color: 4,
         order: 1
@@ -278,7 +278,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         key: 'exomind.base.v1.EmailThread',
         nameField: 'subject',
         nameDefault: 'Untitled email',
-        icon: () => { return { fa: 'envelope-o' } },
+        icon: () => { return { fa: 'envelope-o' }; },
         color: 1,
         order: 2
     },
@@ -286,7 +286,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         key: 'exomind.base.v1.DraftEmail',
         nameField: 'subject',
         nameDefault: 'Untitled email',
-        icon: () => { return { fa: 'envelope-o' } },
+        icon: () => { return { fa: 'envelope-o' }; },
         color: 6,
         order: 3
     },
@@ -294,7 +294,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         key: 'exomind.base.v1.Email',
         nameField: 'subject',
         nameDefault: 'Untitled email',
-        icon: () => { return { fa: 'envelope-o' } },
+        icon: () => { return { fa: 'envelope-o' }; },
         color: 6,
         order: 4
     },
@@ -311,7 +311,6 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
                     return col.name;
                 }
             } else {
-                console.log(trait);
                 return 'Untitled collection';
             }
         },
@@ -321,7 +320,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
                 const [emoji] = Emojis.extractEmojiPrefix(col.name);
                 return { emoji };
             } else {
-                return { fa: 'folder-o' }
+                return { fa: 'folder-o' };
             }
         },
         color: 2,
@@ -340,7 +339,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         key: 'exomind.base.v1.Task',
         nameField: 'title',
         nameDefault: 'Untitled task',
-        icon: () => { return { fa: 'check-square-o' } },
+        icon: () => { return { fa: 'check-square-o' }; },
         color: 7,
         order: 6,
         rename: (entity: unknown, newName: string): void => {
@@ -352,7 +351,7 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         key: 'exomind.base.v1.Note',
         nameField: 'title',
         nameDefault: 'Untitled note',
-        icon: () => { return { fa: 'pencil' } },
+        icon: () => { return { fa: 'pencil' }; },
         color: 3,
         order: 7,
         rename: (entity: unknown, newName: string): void => {
@@ -364,14 +363,14 @@ export const TRAITS_CONSTANTS: { [type: string]: ITraitConstants } = {
         key: 'exomind.base.v1.Link',
         nameField: 'title',
         nameDefault: 'Untitled link',
-        icon: () => { return { fa: 'link' } },
+        icon: () => { return { fa: 'link' }; },
         color: 9,
         order: 8
     },
     'unknown': {
         key: 'unknown',
         nameField: '*UNKNOWN*',
-        icon: () => { return { fa: 'question' } },
+        icon: () => { return { fa: 'question' }; },
         color: 0,
         order: 9
     }

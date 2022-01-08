@@ -60,7 +60,7 @@ export class BottomMenu extends React.Component<IProps> {
                     }
                 })}
             </ul>
-        </div>
+        </div>;
     }
 
     private bindShortcut() {

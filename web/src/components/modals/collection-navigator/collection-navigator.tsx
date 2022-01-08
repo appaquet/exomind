@@ -86,7 +86,7 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
                 .build();
             this.collectionsQuery = new ExpandableQuery(query, () => {
                 this.setState({});
-            })
+            });
             this.collectionsQueryKeywords = this.state.debouncedKeywords;
         }
     }
@@ -103,25 +103,25 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
             });
             this.maybeRefreshQueries();
         });
-    }
+    };
 
     private handleFilterKeyDown = (event: KeyboardEvent): void => {
         if (event.key == 'ArrowUp' || event.key == 'ArrowDown') {
             this.filterInputRef.current?.blur();
         }
-    }
+    };
 
     private handleItemCheck = (entity: EntityTraits, event?: CancellableEvent): void => {
         this.props.onSelect(entity);
         event?.stopPropagation(); // since we are bound on click of the li too, we stop propagation to prevent double
-    }
+    };
 
     private handleLoadMore = (): void => {
         this.collectionsQuery?.expand();
-    }
+    };
 
     private handleSelectorBlur = (): void => {
         this.filterInputRef.current?.focus();
-    }
+    };
 }
 

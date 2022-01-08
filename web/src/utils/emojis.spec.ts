@@ -8,8 +8,8 @@ describe('Emojis', () => {
     });
 
     it('should allow extracting emoji from prefix', () => {
-        expect(Emojis.extractEmojiPrefix('😬')).toEqual(['😬', ''])
-        expect(Emojis.extractEmojiPrefix('😬 hello')).toEqual(['😬', 'hello'])
-        expect(Emojis.extractEmojiPrefix('hello 😬')).toEqual(['', 'hello 😬'])
+        expect(Emojis.extractEmojiPrefix('😬')).toEqual(['😬', '']);
+        expect(Emojis.extractEmojiPrefix('😬 hello')).toEqual(['😬', 'hello']);
+        expect(Emojis.extractEmojiPrefix('hello 😬')).toEqual(['', 'hello 😬']);
     });
 });

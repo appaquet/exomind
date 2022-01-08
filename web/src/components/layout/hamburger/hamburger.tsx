@@ -42,12 +42,12 @@ export default class Hamburger extends React.Component<IProps, IState> {
     this.favoritesQuery.onChange((res) => {
       this.setState({
         favorites: res.entities.map((entity) => new EntityTraits(entity.entity)),
-      })
+      });
     });
 
     this.state = {
       favorites: [],
-    }
+    };
   }
 
   componentWillUnmount(): void {
@@ -124,7 +124,7 @@ const HamburgerLink = (props: { path: Path, link: string, label: string, icon?: 
       </DragAndDrop>
     </li>
   );
-}
+};
 
 function handleDropIn(intoEntity: EntityTrait<unknown>, data: DragData) {
   const droppedEntity = data.object as EntityTraits;
@@ -151,5 +151,5 @@ function handleDropIn(intoEntity: EntityTrait<unknown>, data: DragData) {
     }
   }
 
-  Exocore.store.mutate(mb.build())
+  Exocore.store.mutate(mb.build());
 }

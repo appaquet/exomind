@@ -103,7 +103,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                     >
                         <span>{choice.copy}</span>
                     </li>
-                )
+                );
             });
     }
 
@@ -131,24 +131,24 @@ export default class TimeSelector extends React.Component<IProps, IState> {
 
     private handlePickerOpen = (): void => {
         this.setState({ pickerOpen: true });
-    }
+    };
 
     private handlePickerClose = (): void => {
         setTimeout(() => {
             // in timeout to prevent enter key from triggering
             this.setState({ pickerOpen: false });
         }, 100);
-    }
+    };
 
     private handlePickerChange = (dates: Date[]): void => {
         this.setState({ date: dates[0] });
-    }
+    };
 
     private handlePickerDone = (): void => {
         if (this.state.date) {
             this.props.onSelectionDone(this.state.date);
         }
-    }
+    };
 
     private handleTimeClick(key: SnoozeKey): void {
         if (key === 'pick') {
@@ -218,6 +218,6 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         }
 
         return false;
-    }
+    };
 }
 

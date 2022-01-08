@@ -32,6 +32,6 @@ export class EmailAttachments extends React.Component<IProps> {
                 <span className="text">{attach.name ?? 'Unnamed'}</span></a>
             </li>
         );
-    }
+    };
 }
 

@@ -130,7 +130,7 @@ export class EntityComponent extends React.Component<Props, State> {
             });
 
             const loading = <Message key={'loading'} text="Loading..." showAfterMs={200} />;
-            return <React.Suspense fallback={loading}>{inner}</React.Suspense>
+            return <React.Suspense fallback={loading}>{inner}</React.Suspense>;
 
         } else if (this.state.results) {
             return <Message key={'notfound'} text="Not found" />;
@@ -142,7 +142,7 @@ export class EntityComponent extends React.Component<Props, State> {
 
     private handleNewResults = (results: exocore.store.EntityResults): void => {
         if (results && results.entities.length > 0) {
-            const et = new EntityTraits(results.entities[0].entity)
+            const et = new EntityTraits(results.entities[0].entity);
 
             let trait: EntityTrait<unknown>;
             if (this.props.traitId) {
@@ -187,23 +187,23 @@ export class EntityComponent extends React.Component<Props, State> {
         }
 
         this.setState({ results });
-    }
+    };
 
 
     private handleShowCollectionSelector = (): void => {
         if (this.state.results && this.state.results.entities.length > 0) {
             const entity = new EntityTraits(this.state.results.entities[0].entity);
             this.context.session.showModal(() => {
-                return <CollectionSelector entity={entity} />;
+                return <CollectionSelector entities={entity} />;
             });
         }
-    }
+    };
 
     private handleShowTimeSelector = (): void => {
         this.context.session.showModal(() => {
             return <TimeSelector onSelectionDone={(date) => this.handleCloseTimeSelector(date)} />;
         });
-    }
+    };
 
     private handleCloseTimeSelector(date: Date): void {
         this.context.session.hideModal();
@@ -217,7 +217,7 @@ export class EntityComponent extends React.Component<Props, State> {
 
         const parentRelation = this.state.entityTraits
             .traitsOfType<exomind.base.v1.ICollectionChild>(exomind.base.v1.CollectionChild)
-            .find((trt) => trt.message.collection.entityId == 'inbox')
+            .find((trt) => trt.message.collection.entityId == 'inbox');
         if (parentRelation) {
             mb = mb.deleteTrait(parentRelation.id);
         }

@@ -80,7 +80,7 @@ export default class EmailUtil {
       const newPart = new exomind.base.v1.EmailPart({
         body: `<br/><br/><div class="gmail_extra">${dateLine}<br/><blockquote style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex;font-size:1em">${html}</blockquote></div>`,
         mimeType: "text/html",
-      })
+      });
 
       parts = [newPart];
 
@@ -109,7 +109,7 @@ export default class EmailUtil {
     const contacts: exomind.base.v1.IContact[] = [];
 
     let currentName = '';
-    let currentEmail = ''
+    let currentEmail = '';
     let inEmailBracket = false;
 
     function addCumul() {
@@ -273,7 +273,7 @@ export default class EmailUtil {
           originalEl.children = originalChildren;
           return [[currentEl], [originalEl]];
         } else {
-          return [[el], []]
+          return [[el], []];
         }
       }
     }

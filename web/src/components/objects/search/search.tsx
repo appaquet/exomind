@@ -98,7 +98,7 @@ export class Search extends React.Component<IProps, IState> {
       });
 
       this.setState({ entities });
-    })
+    });
   }
 
   private updateContainerTitle(props: IProps): void {
@@ -112,10 +112,10 @@ export class Search extends React.Component<IProps, IState> {
 
   private handleLoadMore = (): void => {
     this.entityQuery?.expand();
-  }
+  };
 
   private actionsForEntity = (et: EntityTraits): ListEntityActions => {
     const actions = Actions.forEntity(et, { section: 'search' });
     return ListEntityActions.fromActions(actions);
-  }
+  };
 }

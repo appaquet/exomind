@@ -69,7 +69,7 @@ export class Entity extends React.Component<IProps, IState> {
         });
 
         let actionsComponent = null;
-        let actions;
+        let actions: ListEntityActions | null = null;
         if (this.props.actionsForEntity) {
             actions = this.props.actionsForEntity(this.props.entity);
             if (active && !actions.isEmpty) {
@@ -92,8 +92,9 @@ export class Entity extends React.Component<IProps, IState> {
                 className={classes}
                 onClick={this.handleItemClick}
                 onMouseOver={this.props.onMouseOver}
-                onMouseLeave={this.props.onMouseLeave}>
-
+                onMouseLeave={this.props.onMouseLeave}
+                onContextMenu={actions ? (e) => this.handleContextMenu(e, actions) : undefined}
+            >
                 <div className="swipe-container">
                     <DragAndDrop
                         object={this.props.entity}
@@ -205,9 +206,9 @@ export class Entity extends React.Component<IProps, IState> {
 
         let snippetMarkup;
         if (thread.snippet != null) {
-            snippetMarkup = <div className="text">{thread.snippet}</div>
+            snippetMarkup = <div className="text">{thread.snippet}</div>;
         }
-        
+
         const indicators = this.renderIndicators();
         const classes = classNames({
             'item-container': true,
@@ -451,6 +452,15 @@ export class Entity extends React.Component<IProps, IState> {
         if (this.props.onClick) {
             this.props.onClick(e);
         }
+    };
+
+    private handleContextMenu(e: React.MouseEvent, actions: ListEntityActions): void {
+        this.context.session.showMenu({
+            items: actions.toMenuItems(),
+            mouseEvent: e,
+        });
+        e.preventDefault();
+        e.stopPropagation();
     }
 
     private handleTaskChange(task: EntityTrait<exomind.base.v1.ITask>, actions: ListEntityActions, newTitle: string): void {
@@ -467,7 +477,7 @@ export class Entity extends React.Component<IProps, IState> {
         }
 
         const weight = getEntityParentWeight(this.props.entity, this.props.parentEntity.id);
-        return weight >= PINNED_WEIGHT
+        return weight >= PINNED_WEIGHT;
     }
 
     private get isSnoozed(): boolean {
@@ -495,7 +505,7 @@ class EntityParents extends React.Component<EntityParentsProps> {
 
         const collections = parents.get().filter((col) => {
             return col.entityId != this.props.parentEntity?.id;
-        })
+        });
 
         const onClick = (e: React.MouseEvent, col: EntityParent) => {
             if (this.props.onSelectionChange) {

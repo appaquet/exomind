@@ -55,7 +55,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         let count = 0;
         const emailStates = _.chain(props.entity.traitsOfType<exomind.base.v1.Email>(exomind.base.v1.Email))
             .sortBy((a) => {
-                return fromProtoTimestamp(a.message.receivedDate).getTime()
+                return fromProtoTimestamp(a.message.receivedDate).getTime();
             })
             .map((trait) => {
                 const unread = trait.id in unreadFlags;
@@ -282,7 +282,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         this.setState({
             collapsed: false
         });
-    }
+    };
 
     private handleOpenEmailClick(email: EntityTrait<exomind.base.v1.IEmail>): void {
         if (this.props.onSelectionChange) {
@@ -295,7 +295,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         this.setState({
             controlledEmailId: null
         });
-    }
+    };
 
     private handleEmailMouseEnter(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): void {
         this.setState({
@@ -308,7 +308,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
         this.setState({
             hoveredEmailId: null,
         });
-    }
+    };
 
     private handleEmailClick(emailState: EmailState, email: EntityTrait<exomind.base.v1.IEmail>): void {
         emailState.isOpen = !emailState.isOpen;
@@ -330,7 +330,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
             const item = SelectedItem.fromEntityTraitId(this.props.entity.entity.id, draft.id);
             this.props.onSelectionChange(this.props.selection.withItem(item));
         }
-    }
+    };
 
     private trackMarkAsRead(): void {
         const entity = this.props.entity;

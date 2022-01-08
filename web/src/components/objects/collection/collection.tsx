@@ -72,7 +72,7 @@ export default class Collection extends React.Component<IProps> {
             .build();
 
         Exocore.store.mutate(mutation);
-    }
+    };
 
     private handleChangeDescription = (text: string) => {
         const newCollection = new exomind.base.v1.Collection(this.props.collection.message);
@@ -84,5 +84,5 @@ export default class Collection extends React.Component<IProps> {
             .build();
 
         Exocore.store.mutate(mutation);
-    }
+    };
 }

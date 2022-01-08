@@ -56,19 +56,19 @@ export default class InputModal extends React.Component<IProps, IState> {
         this.setState({
             value: e.target.value
         });
-    }
+    };
 
     private onKeyDown = (e: KeyboardEvent): void => {
         if (e.key == 'Enter') {
             this.props.onDone(this.state.value, false);
         }
-    }
+    };
 
     private onCancel = (): void => {
         this.props.onDone(null, true);
-    }
+    };
 
     private onDone = (): void => {
         this.props.onDone(this.state.value, false);
-    }
+    };
 }

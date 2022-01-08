@@ -1,12 +1,14 @@
-import { Instance, createPopper, Modifier } from "@popperjs/core";
+import { Instance, createPopper, Modifier, VirtualElement, Placement } from "@popperjs/core";
 import classNames from "classnames";
 import React, { MouseEvent as ReactMouseEvent } from "react";
 import { ListenerToken, Shortcuts } from "../../shortcuts";
 import './menu.less';
 
 export interface IMenu {
-    reference?: HTMLElement;
     items: IMenuItem[];
+    reference?: HTMLElement;
+    mouseEvent?: React.MouseEvent;
+    placement?: Placement;
 }
 
 export interface IMenuItem {
@@ -46,18 +48,20 @@ export class ContextualMenu extends React.Component<IProps> {
     componentDidMount(): void {
         this.createPopper();
         document.addEventListener('click', this.handleClick);
+        document.addEventListener('wheel', this.handleClick);
         Shortcuts.activateContext('contextual-menu');
     }
 
     componentWillUnmount(): void {
         this.popper?.destroy();
         document.removeEventListener('click', this.handleClick);
+        document.removeEventListener('wheel', this.handleClick);
         Shortcuts.unregister(this.shortcutToken);
         Shortcuts.deactivateContext('contextual-menu');
     }
 
     componentDidUpdate(prevProps: Readonly<IProps>): void {
-        if (this.props.menu.reference != prevProps.menu.reference) {
+        if (this.props.menu.reference != prevProps.menu.reference || this.props.menu.mouseEvent != prevProps.menu.mouseEvent) {
             this.createPopper();
         }
     }
@@ -81,7 +85,7 @@ export class ContextualMenu extends React.Component<IProps> {
                         }
 
                         const onClick = (e: ReactMouseEvent) => {
-                            item.onClick(e)
+                            item.onClick(e);
                             this.props.onClose?.();
                         };
 
@@ -113,8 +117,34 @@ export class ContextualMenu extends React.Component<IProps> {
             },
         };
 
-        this.popper = createPopper(this.props.menu.reference, this.menuDiv.current, {
-            placement: 'left-start',
+        let placement: Placement;
+        let reference: Element | VirtualElement;
+        if (this.props.menu.mouseEvent) {
+            const event = this.props.menu.mouseEvent;
+            reference = {
+                getBoundingClientRect(): DOMRect {
+                    return {
+                        top: event.clientY,
+                        bottom: event.clientY,
+                        left: event.clientX,
+                        right: event.clientX,
+                        width: 0,
+                        height: 0,
+                    } as unknown as DOMRect;
+                },
+                contextElement: this.props.menu.reference || document.body,
+            };
+
+            placement = this.props.menu.placement || 'right-start';
+        } else if (this.props.menu.reference) {
+            reference = this.props.menu.reference;
+            placement = this.props.menu.placement ?? 'left-start';
+        } else {
+            throw new Error('no reference element or mouse event provided');
+        }
+
+        this.popper = createPopper(reference, this.menuDiv.current, {
+            placement: placement,
             modifiers: [hideWatcher],
         });
     }
@@ -140,5 +170,5 @@ export class ContextualMenu extends React.Component<IProps> {
         } else {
             this.props.onClose?.();
         }
-    }
+    };
 }

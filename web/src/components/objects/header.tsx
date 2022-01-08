@@ -61,7 +61,7 @@ export class Header extends React.Component<IProps> {
 
     private handleTitleRename = (newTitle: string) => {
         this.props.onTitleRename(newTitle);
-    }
+    };
 
     private renderActions() {
         const visibleActions = this.props.actions.filter(action => !action.overflow);

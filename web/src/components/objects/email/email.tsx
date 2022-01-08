@@ -63,13 +63,13 @@ export default class Email extends React.Component<IProps, IState> {
                 hovered: true
             });
         }
-    }
+    };
 
     private handleMouseLeave = (): void => {
         this.setState({
             hovered: false
         });
-    }
+    };
 
     private renderContactField(key: string, label: string, contacts: exomind.base.v1.IContact[]): React.ReactNode {
         if (contacts.length > 0) {
@@ -78,9 +78,9 @@ export default class Email extends React.Component<IProps, IState> {
                 [key]: true
             });
             const pills = contacts.map(contact => {
-                return <span className="pill" key={contact.email}>{EmailUtil.formatContact(contact)}</span>
+                return <span className="pill" key={contact.email}>{EmailUtil.formatContact(contact)}</span>;
             });
-            return <div className={classes}><span className="field-label">{label}</span> {pills}</div>
+            return <div className={classes}><span className="field-label">{label}</span> {pills}</div>;
         }
     }
 

@@ -64,7 +64,7 @@ export default class NodeConfig extends React.Component<IProps, IState> {
     if (this.state.error) {
       return (
         <span className="error">{this.state.error}</span>
-      )
+      );
     }
   }
 
@@ -90,11 +90,11 @@ export default class NodeConfig extends React.Component<IProps, IState> {
 
       Navigation.navigate(Navigation.pathForInbox());
     }).catch((err) => {
-      console.log('Error in discovery', err);
+      console.error('Error in discovery', err);
       if (this.mounted) {
         this.setState({
           error: err.message,
-        })
+        });
       }
     });
   }
@@ -105,18 +105,18 @@ export default class NodeConfig extends React.Component<IProps, IState> {
     this.setState({
       config: window.localStorage.node_config,
     });
-  }
+  };
 
   private handleConfigSave = (): void => {
     window.localStorage.node_config = this.state.config;
     initNode();
-  }
+  };
 
   private handleConfigChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     this.setState({
       config: e.target.value,
     });
-  }
+  };
 
   componentWillUnmount(): void {
     this.mounted = false;
