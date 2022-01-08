@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-env node */
 
-import path from 'path';
-import express from 'express';
-import cookieParser from 'cookie-parser';
+const path = require('path');
+const express = require('express');
+const cookieParser = require('cookie-parser');
 
 var server = express();
 server.set('port', (process.env.PORT || 8080));

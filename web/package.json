@@ -14,7 +14,6 @@
     "build_dev": "webpack --config webpack.dev.js",
     "build_ios": "webpack --config webpack.ios.js",
     "build_ios_watch": "webpack-dev-server --config webpack.ios.js --dev",
-    "electron_dev": "electron-webpack dev",
     "electron_build": "electron-webpack",
     "electron": "yarn electron_build && electron-builder --dir",
     "electron_dist": "yarn electron_build && electron-builder",
@@ -82,10 +81,10 @@
     }
   },
   "dependencies": {
-    "@bangle.dev/base-components": "^0.28.3",
-    "@bangle.dev/core": "^0.28.3",
-    "@bangle.dev/pm": "^0.28.3",
-    "@bangle.dev/react": "^0.28.3",
+    "@bangle.dev/base-components": "^0.28.5",
+    "@bangle.dev/core": "^0.28.5",
+    "@bangle.dev/pm": "^0.28.5",
+    "@bangle.dev/react": "^0.28.5",
     "@popperjs/core": "^2.11.0",
     "bootstrap": "^3.3.5",
     "classnames": "^2.3.1",
