@@ -42,15 +42,15 @@ export default class Modal extends React.Component<IProps> {
   private preventMouseDefault = (e: CancellableEvent) => {
     // prevent clicking under modal
     e.stopPropagation();
-  }
+  };
 
   private handleBackgroundClick = () => {
     this.context.session.hideModal(true);
-  }
+  };
 
   private handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === 'Escape') {
       this.context.session.hideModal(true);
     }
-  }
+  };
 }

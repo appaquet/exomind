@@ -8,7 +8,7 @@ interface IProps {
   parentObject?: unknown;
   draggable: boolean;
   droppable: boolean;
-  dropPositions?: DropPosition[]; // needs to be sorted 
+  dropPositions?: DropPosition[]; // needs to be sorted
   onDropOut?: (data: DragData) => void;
   onDropIn?: (data: DragData) => void;
 }
@@ -107,7 +107,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     this.setState({
       isDragged: true
     });
-  }
+  };
 
   private handleDropIn = (event: React.DragEvent): void => {
     if (this.state.isDragged) {
@@ -128,7 +128,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
         ...data
       });
     }
-  }
+  };
 
   private handleDragOver = (event: React.DragEvent): void => {
     event.preventDefault();
@@ -151,10 +151,10 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
       if (newPos != this.state.dropPosition) {
         this.setState({
           dropPosition: newPos,
-        })
+        });
       }
     }
-  }
+  };
 
   private handleDragOverIndicator = () => {
     this.isIndicatorHovered = true;
@@ -172,7 +172,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
 
     this.isHovered = false;
     this.checkFullyOut();
-  }
+  };
 
   // this is needed to debounce since we get leave event as soon as mouse pass from element inside the li element
   private checkFullyOut() {
@@ -182,7 +182,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
           isHovered: false
         });
       }
-    }, 10)
+    }, 10);
   }
 
   private handleDragEnd = (event: React.DragEvent): void => {
@@ -200,5 +200,5 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     this.setState({
       isDragged: false
     });
-  }
+  };
 }

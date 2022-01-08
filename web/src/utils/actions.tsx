@@ -134,7 +134,7 @@ export class Actions {
                     remove: true,
                 };
             }
-        }
+        };
     }
 
     static selectEntityCollections(et: EntityTraits): IAction {
@@ -148,7 +148,7 @@ export class Actions {
                 });
                 return {};
             },
-        }
+        };
     }
 
     static pinInParent(et: EntityTraits, parent: EntityTraits | string): IAction {
@@ -160,7 +160,7 @@ export class Actions {
                 await Commands.pinEntityInParent(et, parent);
                 return {};
             }
-        }
+        };
     }
 
     static unpinInParent(et: EntityTraits, parent: EntityTraits | string): IAction {
@@ -172,7 +172,7 @@ export class Actions {
                 await Commands.unpinEntityInParent(et, parent);
                 return {};
             }
-        }
+        };
     }
 
     static moveTopParent(et: EntityTraits | EntityTraits[], parent: EntityTraits | string): IAction {
@@ -186,7 +186,7 @@ export class Actions {
                     remove: true,
                 };
             }
-        }
+        };
     }
 
     static addToInbox(et: EntityTraits): IAction {
@@ -198,7 +198,7 @@ export class Actions {
                 await Commands.addToParent(et, 'inbox');
                 return {};
             }
-        }
+        };
     }
 
     static copyLink(et: EntityTraits): IAction {
@@ -210,7 +210,7 @@ export class Actions {
                 copy(`entity://${et.id}`);
                 return {};
             }
-        }
+        };
     }
 
     static snooze(et: EntityTraits | EntityTraits[], parent: EntityTraits | string | null = null, removeFromParent = false): IAction {
@@ -226,14 +226,14 @@ export class Actions {
                         resolve({
                             remove: removeFromParent,
                         });
-                    }
+                    };
 
                     Stores.session.showModal(() => {
                         return <TimeSelector onSelectionDone={handleSnooze} />;
                     });
-                })
+                });
             }
-        }
+        };
     }
 
     static removeSnooze(et: EntityTraits): IAction {
@@ -245,7 +245,7 @@ export class Actions {
                 await Commands.removeSnooze(et);
                 return {};
             }
-        }
+        };
     }
 
     static delete(et: EntityTraits): IAction {
@@ -259,7 +259,7 @@ export class Actions {
                 }
                 return {};
             }
-        }
+        };
     }
 
     static createNote(parent: EntityTraits | string): IAction {
@@ -269,9 +269,9 @@ export class Actions {
             icon: 'pencil',
             execute: async () => {
                 const createResult = await Commands.createNote(parent);
-                return { createResult }
+                return { createResult };
             }
-        }
+        };
     }
 
     static createTask(parent: EntityTraits | string): IAction {
@@ -281,9 +281,9 @@ export class Actions {
             icon: 'check-square-o',
             execute: async () => {
                 const createResult = await Commands.createTask(parent);
-                return { createResult }
+                return { createResult };
             }
-        }
+        };
     }
 
     static createCollection(parent: EntityTraits | string): IAction {
@@ -293,9 +293,9 @@ export class Actions {
             icon: 'folder-o',
             execute: async () => {
                 const createResult = await Commands.createCollection(parent);
-                return { createResult }
+                return { createResult };
             }
-        }
+        };
     }
 
     static createLink(parent: EntityTraits | string): IAction {
@@ -323,7 +323,7 @@ export class Actions {
                     });
                 });
             }
-        }
+        };
     }
 
     static popOutToWindow(et: EntityTraits): IAction {
@@ -335,7 +335,7 @@ export class Actions {
                 Navigation.navigatePopup(Navigation.pathForFullscreen(et.id));
                 return {};
             }
-        }
+        };
     }
 
     private static isSpecialEntity(entityId: string): boolean {

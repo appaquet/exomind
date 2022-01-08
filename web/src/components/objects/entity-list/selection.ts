@@ -10,7 +10,7 @@ export class Selection {
         if (!items) {
             items = [];
         } else if (!Array.isArray(items)) {
-            items = [items]
+            items = [items];
         }
 
         this.items = items;

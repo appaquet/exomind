@@ -50,7 +50,7 @@ export default class Recent extends React.Component<IProps, IState> {
             });
 
             this.setState({ entities });
-        })
+        });
 
         if (props.containerState) {
             runInAction(() => {
@@ -99,10 +99,10 @@ export default class Recent extends React.Component<IProps, IState> {
 
     private handleLoadMore = () => {
         this.entityQuery.expand();
-    }
+    };
 
     private actionsForEntity = (et: EntityTraits): ListEntityActions => {
         const actions = Actions.forEntity(et, { section: 'recent' });
         return ListEntityActions.fromActions(actions);
-    }
+    };
 }

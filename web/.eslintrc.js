@@ -16,6 +16,7 @@ module.exports = {
     },
     ecmaVersion: 11,
     sourceType: 'module',
+    project: "./tsconfig.json",
   },
   settings: {
     react: {
@@ -25,12 +26,13 @@ module.exports = {
   plugins: [
     'react',
     '@typescript-eslint',
+    'deprecation',
   ],
   rules: {
+    "deprecation/deprecation": "warn",
+    "semi": ["error", "always"],
+    "no-trailing-spaces": ["error"],
   },
-  ignorePatterns: [
-    'src/protos/**'
-  ],
   overrides: [
     {
       // enable the rule specifically for TypeScript files
@@ -40,5 +42,8 @@ module.exports = {
         "@typescript-eslint/explicit-module-boundary-types": "off",
       },
     }
+  ],
+  ignorePatterns: [
+    'src/protos/**'
   ]
 };

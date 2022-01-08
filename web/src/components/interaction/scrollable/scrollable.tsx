@@ -56,5 +56,5 @@ export default class Scrollable extends React.Component<IProps> {
                 }
             }
         }
-    }
+    };
 }

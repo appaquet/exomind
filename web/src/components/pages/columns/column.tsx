@@ -41,7 +41,7 @@ export default class Column extends React.Component<IProps, IState> {
 
         this.state = {
             value: props.columnConfig.first,
-        }
+        };
     }
 
     componentDidUpdate(): void {

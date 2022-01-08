@@ -134,29 +134,29 @@ export default class EditableText extends React.Component<IProps, IState> {
       value: this.props.editText || this.props.text,
     });
     e.stopPropagation();
-  }
+  };
 
   private handleEditChange = (event: React.ChangeEvent<InputElement>) => {
     this.setState({
       value: event.target.value
     });
-  }
+  };
 
   private handleEditKeyPress = (event: React.KeyboardEvent) => {
     if (event.key == 'Escape' || (!this.props.multiline && event.key == 'Enter')) {
       event.stopPropagation();
       this.editFinish();
     }
-  }
+  };
 
   private handleEditBlur = () => {
     this.editFinish();
-  }
+  };
 
   private handleEditClick = (event: MouseEvent) => {
     // necessary since we may be in the list of entity and don't want the event to go further
     event.stopPropagation();
-  }
+  };
 
   private editFinish() {
     this.setState({

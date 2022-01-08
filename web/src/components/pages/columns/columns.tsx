@@ -153,7 +153,7 @@ export default class Columns extends React.Component<IProps, IState> {
         this.setState({ activeColumn });
 
         return true;
-    }
+    };
 
     private handleShortcutPrev = () => {
         let activeColumn = this.state.activeColumn;
@@ -166,12 +166,12 @@ export default class Columns extends React.Component<IProps, IState> {
         this.setState({ activeColumn });
 
         return true;
-    }
+    };
 
     private handleShortcutClose = () => {
         this.handleColumnClose(this.state.activeColumn);
         return true;
-    }
+    };
 
     private onColumnHovered(columnId: number): void {
         if (Shortcuts.usedRecently || this.state.activeColumn == columnId) {
@@ -180,7 +180,7 @@ export default class Columns extends React.Component<IProps, IState> {
 
         this.setState({
             activeColumn: columnId
-        })
+        });
     }
 
     private makeConfig(props: IProps): ColumnConfigs {

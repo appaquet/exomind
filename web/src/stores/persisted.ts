@@ -18,7 +18,7 @@ export class PersistedStore implements ISettingsStore {
     @computed get asJson(): ISettingsStore {
         return {
             darkMode: this.darkMode,
-        }
+        };
     }
 
     @action updateFromJson(json: ISettingsStore): void {
@@ -39,7 +39,7 @@ export class PersistedStore implements ISettingsStore {
                 this.updateFromJson(JSON.parse(window.localStorage.settings) as ISettingsStore);
             }
             catch (e) {
-                console.log('Error parsing local storage app settings', e);
+                console.error('Error parsing local storage app settings', e);
             }
         }
 

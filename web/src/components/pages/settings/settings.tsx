@@ -20,7 +20,7 @@ export default class Settings extends React.Component {
   private buildTime: Date;
 
   constructor(props: unknown) {
-    super(props)
+    super(props);
     this.buildInfo = Exocore.buildInfo();
     this.buildTime = fromProtoTimestamp(this.buildInfo.buildTime);
   }
@@ -46,5 +46,5 @@ export default class Settings extends React.Component {
     e.preventDefault();
     this.context.settings.toggleDarkMode();
     return false;
-  }
+  };
 }

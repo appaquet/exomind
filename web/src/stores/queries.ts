@@ -29,7 +29,7 @@ export class ExpandableQuery {
             for (const entity of query_results.entities) {
                 // they may be same results at boundaries
                 if (lastEntity?.entity.id == entity.entity.id) {
-                    continue
+                    continue;
                 }
 
                 lastEntity = entity;
@@ -67,7 +67,7 @@ export class ExpandableQuery {
         this.pushQuery(nextQuery);
 
         // replace last query to fix its page boundary so that it doesn't return
-        // results that would be in next page and max out count so that any new 
+        // results that would be in next page and max out count so that any new
         // results within it are included
         this.watched_queries[lastIndex].free();
         const query = this.queries[lastIndex];

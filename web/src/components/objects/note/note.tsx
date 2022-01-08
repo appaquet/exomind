@@ -49,7 +49,7 @@ export default class Note extends React.Component<IProps, IState> {
             focused: false,
             savedNote: props.noteTrait.message,
             currentNote: new exomind.base.v1.Note(props.noteTrait.message),
-        }
+        };
 
         this.shortcutToken = Shortcuts.register([
             {
@@ -129,14 +129,14 @@ export default class Note extends React.Component<IProps, IState> {
         this.setState({
             focused: true,
         });
-    }
+    };
 
     private handleOnBlur = (): void => {
         this.saveContent();
         this.setState({
             focused: false,
         });
-    }
+    };
 
     private linkSelector = (cursor: EditorCursor): Promise<SelectedLink | null> => {
         return new Promise((resolve) => {
@@ -165,18 +165,18 @@ export default class Note extends React.Component<IProps, IState> {
                 return <LinkSelector initialValue={cursor.link} onDone={handleDone} onCancel={handleCancel} />;
             }, handleCancel);
         });
-    }
+    };
 
     private handleContentBound = (editor: HtmlEditor): void => {
         this.setState({
             editor: editor
         });
-    }
+    };
 
     private handleShortcutFocus = (): boolean => {
         this.state.editor?.focus();
         return true;
-    }
+    };
 
     private handleTitleChange = (newTitle: string): void => {
         if (newTitle !== this.state.currentNote.title) {
@@ -189,7 +189,7 @@ export default class Note extends React.Component<IProps, IState> {
 
             this.saveContent(note);
         }
-    }
+    };
 
     private handleContentChange = (newBody: string): void => {
         if (newBody !== this.state.currentNote.body) {
@@ -202,13 +202,13 @@ export default class Note extends React.Component<IProps, IState> {
 
             this.saveContent(note);
         }
-    }
+    };
 
     private handleCursorChange = (cursor: EditorCursor) => {
         if (this.mounted) {
-            this.setState({ cursor })
+            this.setState({ cursor });
         }
-    }
+    };
 
     private handleLinkClick = (url: string, e: CancellableEvent) => {
         e.preventDefault();
@@ -222,7 +222,7 @@ export default class Note extends React.Component<IProps, IState> {
         } else {
             Navigation.navigateExternal(url);
         }
-    }
+    };
 
     private saveContent(note: exomind.base.v1.INote | null = null): void {
         if (!note) {

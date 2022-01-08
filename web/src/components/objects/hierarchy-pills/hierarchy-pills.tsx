@@ -11,7 +11,7 @@ export interface IProps {
 
 export class HierarchyPills extends React.Component<IProps> {
     constructor(props: IProps) {
-        super(props)
+        super(props);
     }
 
     render(): React.ReactNode {
@@ -58,7 +58,7 @@ function Pill(props: { hierarchy: EntityParent[], onClick?: (e: React.MouseEvent
     const classes = classNames({
         pill: true,
         clickable: !!props.onClick,
-    })
+    });
 
     return (
         <li className={classes}>

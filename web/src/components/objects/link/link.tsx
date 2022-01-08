@@ -34,7 +34,7 @@ export default class Link extends React.Component<IProps, IState> {
 
         this.state = {
             currentLink: new exomind.base.v1.Link(props.linkTrait.message),
-        }
+        };
 
         this.shortcutToken = Shortcuts.register({
             key: 'Enter',
@@ -94,11 +94,11 @@ export default class Link extends React.Component<IProps, IState> {
         this.setState({
             currentLink: this.state.currentLink,
         });
-    }
+    };
 
     private handleShortcutEnter = (): boolean => {
         Navigation.navigateExternal(this.state.currentLink.url);
         return true;
-    }
+    };
 }
 

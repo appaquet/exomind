@@ -72,7 +72,7 @@ export class Children extends React.Component<IProps, IState> {
             });
 
             this.setState({ entities });
-        })
+        });
 
         if (!props.parent) {
             if (!props.parentId) {
@@ -202,19 +202,19 @@ export class Children extends React.Component<IProps, IState> {
 
     private handleLoadMore = () => {
         this.entityQuery.expand();
-    }
+    };
 
     private handleMouseEnter = () => {
         this.setState({
             hovered: true
         });
-    }
+    };
 
     private handleMouseLeave = () => {
         this.setState({
             hovered: false
         });
-    }
+    };
 
     private actionsForEntity = (et: EntityTraits): ListEntityActions => {
         const actions = Actions.forEntity(et, { parent: this.props.parent || this.props.parentId });
@@ -230,7 +230,7 @@ export class Children extends React.Component<IProps, IState> {
         }
 
         return listActions;
-    }
+    };
 
     private handleDropInEntity = (droppedItem: IDroppedItem) => {
         const droppedEntity = droppedItem.droppedEntity;
@@ -306,7 +306,7 @@ export class Children extends React.Component<IProps, IState> {
         if (this.props.onEntityAction) {
             this.props.onEntityAction('drop', droppedEntity);
         }
-    }
+    };
 
     private handleEntityCreated(action: IAction, res: IEntityCreateResult) {
         if (!res.entity) {
@@ -334,7 +334,7 @@ export class Children extends React.Component<IProps, IState> {
         if (this.props.onSelectionChange) {
             this.props.onSelectionChange(new Selection());
         }
-    }
+    };
 
     private getSelectedEntities(): EntityTraits[] {
         const indexedEntities = this.state.entities.reduce((acc: { [key: string]: EntityTraits; }, entity) => {

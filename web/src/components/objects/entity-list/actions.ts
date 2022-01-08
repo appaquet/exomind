@@ -32,7 +32,7 @@ export class ListEntityActions {
                 onClick: (e: MouseEvent) => {
                     b.trigger(e);
                 }
-            }
+            };
         });
     }
 }

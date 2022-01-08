@@ -63,7 +63,7 @@ export default class IosHtmlEditor extends React.Component<IProps, IState> {
     handleContentChange = (newContent: string) => {
         this.setState({
             content: newContent,
-        })
+        });
 
         sendIos(
             JSON.stringify({
@@ -137,7 +137,7 @@ export default class IosHtmlEditor extends React.Component<IProps, IState> {
                 this.state.editor.outdent();
                 break;
             default:
-                console.log(`Unhandled action ${name}`);
+                console.error(`Unhandled action ${name}`);
         }
     }
 }

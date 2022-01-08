@@ -6,7 +6,7 @@ import { IStores, StoresContext } from "../../../stores/stores";
 import { observer } from "mobx-react";
 import EntityIcon from "../../objects/entity-icon";
 import { HierarchyPills } from "../../objects/hierarchy-pills/hierarchy-pills";
-import './entity-selector.less'
+import './entity-selector.less';
 import classNames from "classnames";
 import { CancellableEvent } from "../../../utils/events";
 import { ListenerToken, Shortcuts } from "../../../shortcuts";
@@ -81,7 +81,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
     render(): React.ReactNode {
         if (this.props.loading) {
-            return <Message text="Loading..." showAfterMs={200} />
+            return <Message text="Loading..." showAfterMs={200} />;
         }
 
         return (
@@ -130,13 +130,13 @@ export class EntitySelector extends React.Component<IProps, IState> {
                     {priorityTrait.displayName}
 
                     {parents && <HierarchyPills collections={parents.get()} onCollectionClick={(e, col) => handleClick(col.entity, e)} />}
-                </li>
+                </li>;
             });
     }
 
     private handleLoadMore = () => {
         this.props.onNeedMore?.();
-    }
+    };
 
     private handleShortcutNext = (): boolean => {
         let idx = this.state.hoveredIndex ?? -1;
@@ -148,7 +148,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
         this.hoverIndex(idx);
         return true;
-    }
+    };
 
     private handleShortcutPrevious = (): boolean => {
         let idx = this.state.hoveredIndex ?? 0;
@@ -168,17 +168,17 @@ export class EntitySelector extends React.Component<IProps, IState> {
 
         this.hoverIndex(idx);
         return true;
-    }
+    };
 
     private handleShortcutTop = (): boolean => {
         this.hoverIndex(0);
         return true;
-    }
+    };
 
     private handleShortcutBottom = (): boolean => {
         this.hoverIndex(this.props.entities.length - 1);
         return true;
-    }
+    };
 
     private hoverIndex(idx: number) {
         if (idx >= this.props.entities.length - 10) {
@@ -208,7 +208,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
         }
 
         return true;
-    }
+    };
 
     private handleShortcutBlur = (): boolean => {
         if (this.state.hoveredIndex == undefined || !this.props.onBlur) {
@@ -219,5 +219,5 @@ export class EntitySelector extends React.Component<IProps, IState> {
         });
         this.props.onBlur();
         return true;
-    }
+    };
 }

@@ -8,9 +8,9 @@ export async function initNode(): Promise<WasmModule> {
 
     let node: LocalNode;
     try {
-        node = Exocore.node.from_storage(localStorage)
+        node = Exocore.node.from_storage(localStorage);
     } catch (e) {
-        console.log('Couldn\'t load node from storage', e);
+        console.error('Couldn\'t load node from storage', e);
     }
 
     if (!node) {
@@ -24,7 +24,7 @@ export async function initNode(): Promise<WasmModule> {
     } else {
         runInAction(() => {
             Stores.session.showDiscovery = true;
-        })
+        });
     }
 
     return module;
@@ -67,7 +67,7 @@ export async function bootNode(): Promise<Exocore | null> {
         return instance;
 
     } catch (e) {
-        console.log('Couldn\'t initialize exocore', e);
+        console.error('Couldn\'t initialize exocore', e);
         runInAction(() => {
             sessionStore.cellInitialized = false;
             sessionStore.cellError = e;

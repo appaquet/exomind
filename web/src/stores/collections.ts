@@ -16,7 +16,7 @@ export class CollectionStore {
     getEntityParents(entity: EntityTraits): Parents | null {
         const cacheKey = this.uniqueEntityId(entity);
 
-        let parents = this.entityParents.get(cacheKey)
+        let parents = this.entityParents.get(cacheKey);
         if (parents) {
             return parents;
         }
@@ -250,7 +250,7 @@ export function getEntityParentRelation(entity: EntityTraits, parentId: string):
 }
 
 export function getEntityParentWeight(entity: EntityTraits, parentId: string): number {
-    const child = getEntityParentRelation(entity, parentId)
+    const child = getEntityParentRelation(entity, parentId);
     const weight = child.message.weight;
 
     if (Long.isLong(weight)) {
@@ -261,6 +261,6 @@ export function getEntityParentWeight(entity: EntityTraits, parentId: string): n
 }
 
 export function isPinnedInParent(entity: EntityTraits, parentId: string): boolean {
-    const child = getEntityParentRelation(entity, parentId)
+    const child = getEntityParentRelation(entity, parentId);
     return child.message.weight >= PINNED_WEIGHT;
 }

@@ -85,7 +85,7 @@ export class ContextualMenu extends React.Component<IProps> {
                         }
 
                         const onClick = (e: ReactMouseEvent) => {
-                            item.onClick(e)
+                            item.onClick(e);
                             this.props.onClose?.();
                         };
 
@@ -170,5 +170,5 @@ export class ContextualMenu extends React.Component<IProps> {
         } else {
             this.props.onClose?.();
         }
-    }
+    };
 }

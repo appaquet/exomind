@@ -13,6 +13,6 @@ export const Stores: IStores = {
     settings: new PersistedStore(),
     session: new SessionStore(),
     collections: new CollectionStore(),
-}
+};
 
 export const StoresContext = React.createContext<IStores | null>(null);

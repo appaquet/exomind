@@ -54,7 +54,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
             });
 
             this.setState({ entities });
-        })
+        });
 
         if (props.containerState) {
             runInAction(() => {
@@ -117,14 +117,14 @@ export default class Snoozed extends React.Component<IProps, IState> {
         }
 
         return 'Snoozed until ' + strDate;
-    }
+    };
 
     private handleLoadMore = () => {
         this.entityQuery.expand();
-    }
+    };
 
     private actionsForEntity = (et: EntityTraits): ListEntityActions => {
         const actions = Actions.forEntity(et, { section: 'snoozed' });
         return ListEntityActions.fromActions(actions);
-    }
+    };
 }

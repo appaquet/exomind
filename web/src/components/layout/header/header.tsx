@@ -140,7 +140,7 @@ export class Header extends React.Component<IProps, IState> {
             }
         }
 
-        return keyword
+        return keyword;
     }
 
     private handleFocusInput = (): boolean => {
@@ -150,7 +150,7 @@ export class Header extends React.Component<IProps, IState> {
         } else {
             return false;
         }
-    }
+    };
 
     private handleBlurInput = (): boolean => {
         if (document.activeElement === this.searchInputRef.current) {
@@ -159,7 +159,7 @@ export class Header extends React.Component<IProps, IState> {
         } else {
             return false;
         }
-    }
+    };
 
     private handleResetInput = (): boolean => {
         if (this.searchInputRef.current === document.activeElement) {
@@ -170,6 +170,6 @@ export class Header extends React.Component<IProps, IState> {
         } else {
             return false;
         }
-    }
+    };
 }
 
