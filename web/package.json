@@ -82,10 +82,10 @@
     }
   },
   "dependencies": {
-    "@bangle.dev/base-components": "^0.28.3",
-    "@bangle.dev/core": "^0.28.3",
-    "@bangle.dev/pm": "^0.28.3",
-    "@bangle.dev/react": "^0.28.3",
+    "@bangle.dev/base-components": "^0.28.5",
+    "@bangle.dev/core": "^0.28.5",
+    "@bangle.dev/pm": "^0.28.5",
+    "@bangle.dev/react": "^0.28.5",
     "@popperjs/core": "^2.11.0",
     "bootstrap": "^3.3.5",
     "classnames": "^2.3.1",

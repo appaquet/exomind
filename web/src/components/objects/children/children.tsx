@@ -9,7 +9,7 @@ import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { SelectedItem, Selection } from "../entity-list/selection";
 import { Message } from "../message";
 import { IStores, StoresContext } from "../../../stores/stores";
-import { getEntityParentRelation, getEntityParentWeight } from "../../../stores/collections";
+import { getEntityParentRelation, getEntityParentWeight, PINNED_WEIGHT } from "../../../stores/collections";
 import { ContainerState } from "../container-state";
 import { observer } from "mobx-react";
 import { Actions, IAction, IActionResult } from "../../../utils/actions";
@@ -234,6 +234,7 @@ export class Children extends React.Component<IProps, IState> {
 
     private handleDropInEntity = (droppedItem: IDroppedItem) => {
         const droppedEntity = droppedItem.droppedEntity;
+        const newTopWeight = new Date().getTime();
 
         // calculate weight by putting it in the middle of the hovered object and the previous object so
         // that the dropped object is inserted right before the hovered object
@@ -245,26 +246,40 @@ export class Children extends React.Component<IProps, IState> {
             if (droppedItem.data.position == 'before') {
                 if (droppedItem.previousEntity) {
                     const previousEntityWeight = getEntityParentWeight(droppedItem.previousEntity, parentId);
-                    weight = (previousEntityWeight + overEntityWeight) / 2;
+                    if (previousEntityWeight > PINNED_WEIGHT && overEntityWeight < PINNED_WEIGHT) {
+                        weight = newTopWeight;
+                    } else {
+                        weight = (previousEntityWeight + overEntityWeight) / 2;
+                    }
+                } else if (overEntityWeight > PINNED_WEIGHT) {
+                    weight = overEntityWeight + 100;
                 } else {
-                    weight = new Date().getTime();
+                    weight = newTopWeight;
                 }
 
             } else if (droppedItem.data.position == 'after') {
                 if (droppedItem.nextEntity) {
                     const nextEntityWeight = getEntityParentWeight(droppedItem.nextEntity, parentId);
-                    weight = (nextEntityWeight + overEntityWeight) / 2;
+                    if (nextEntityWeight < PINNED_WEIGHT && overEntityWeight > PINNED_WEIGHT) {
+                        weight = newTopWeight;
+                    } else {
+                        weight = (nextEntityWeight + overEntityWeight) / 2;
+                    }
 
                 } else {
-                    weight = overEntityWeight - 100;
+                    if (overEntityWeight > PINNED_WEIGHT) {
+                        weight = newTopWeight;
+                    } else {
+                        weight = overEntityWeight - 100;
+                    }
                 }
             } else if (droppedItem.data.position == 'into') {
                 parentId = droppedItem.overEntity.id;
-                weight = new Date().getTime();
+                weight = newTopWeight;
             }
 
         } else {
-            weight = new Date().getTime();
+            weight = newTopWeight;
         }
 
         const droppedEntityRelation = getEntityParentRelation(droppedEntity, parentId);

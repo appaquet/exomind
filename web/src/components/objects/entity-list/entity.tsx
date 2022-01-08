@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import * as React from 'react';
 import EmailFlows from '../../../utils/emails';
 import { exomind } from '../../../protos';
-import { EntityParent, Parents } from '../../../stores/collections';
+import { EntityParent, getEntityParentWeight, Parents, PINNED_WEIGHT } from '../../../stores/collections';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
 import DateUtil from '../../../utils/dates';
 import DragAndDrop, { DragData, DropPosition } from '../../interaction/drag-and-drop/drag-and-drop';
@@ -207,11 +207,13 @@ export class Entity extends React.Component<IProps, IState> {
         if (thread.snippet != null) {
             snippetMarkup = <div className="text">{thread.snippet}</div>
         }
-
+        
+        const indicators = this.renderIndicators();
         const classes = classNames({
             'item-container': true,
             'with-picture': true,
             'email-thread': true,
+            'with-indicators': !!indicators,
             unread: unreadFlags.length > 0,
         });
 
@@ -225,6 +227,7 @@ export class Entity extends React.Component<IProps, IState> {
                     {snippetMarkup}
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
@@ -232,9 +235,11 @@ export class Entity extends React.Component<IProps, IState> {
     private renderDraftEmailElement(entityTrait: EntityTrait<exomind.base.v1.IDraftEmail>): React.ReactNode {
         const draft = entityTrait.message;
 
+        const indicators = this.renderIndicators();
         const classes = classNames({
             'item-container': true,
             'with-picture': true,
+            'with-indicators': !!indicators,
             email: true,
             unread: false
         });
@@ -247,6 +252,7 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="title2">{draft.subject ?? '(No subject)'}</div>
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
@@ -254,9 +260,11 @@ export class Entity extends React.Component<IProps, IState> {
     private renderEmailElement(entityTrait: EntityTrait<exomind.base.v1.IEmail>): React.ReactNode {
         const email = entityTrait.message;
 
+        const indicators = this.renderIndicators();
         const classes = classNames({
             'item-container': true,
             'with-picture': true,
+            'with-indicators': !!indicators,
             email: true,
             unread: false,
         });
@@ -269,13 +277,22 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="title2">{email.subject ?? '(No subject)'}</div>
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
 
     private renderCollectionElement(entityTrait: EntityTrait<exomind.base.v1.ICollection>): React.ReactNode {
+        const indicators = this.renderIndicators();
+        const classes = classNames({
+            'item-container': true,
+            'with-picture': true,
+            'with-indicators': !!indicators,
+            collection: true,
+        });
+
         return (
-            <div className="item-container with-picture collection">
+            <div className={classes}>
                 {this.renderEntityImage(entityTrait)}
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
@@ -285,6 +302,7 @@ export class Entity extends React.Component<IProps, IState> {
                     }
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
@@ -295,8 +313,16 @@ export class Entity extends React.Component<IProps, IState> {
             this.handleTaskChange(entityTrait, actions, newTitle);
         };
 
+        const indicators = this.renderIndicators();
+        const classes = classNames({
+            'item-container': true,
+            'with-picture': true,
+            'with-indicators': !!indicators,
+            'task': true,
+        });
+
         return (
-            <div className="task item-container with-picture">
+            <div className={classes}>
                 {this.renderEntityImage(entityTrait)}
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
@@ -309,6 +335,7 @@ export class Entity extends React.Component<IProps, IState> {
                     </div>
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
@@ -316,14 +343,23 @@ export class Entity extends React.Component<IProps, IState> {
     private renderNoteElement(entityTrait: EntityTrait<exomind.base.v1.INote>): React.ReactNode {
         const note = entityTrait.message;
 
+        const indicators = this.renderIndicators();
+        const classes = classNames({
+            'item-container': true,
+            'with-picture': true,
+            'with-indicators': !!indicators,
+            'note': true,
+        });
+
         return (
-            <div className="note item-container with-picture">
+            <div className={classes}>
                 {this.renderEntityImage(entityTrait)}
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
                     <div className="title1"><span className="name">{note.title}</span></div>
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
@@ -331,8 +367,16 @@ export class Entity extends React.Component<IProps, IState> {
     private renderLinkElement(entityTrait: EntityTrait<exomind.base.v1.ILink>): React.ReactNode {
         const link = entityTrait.message;
 
+        const indicators = this.renderIndicators();
+        const classes = classNames({
+            'item-container': true,
+            'with-picture': true,
+            'with-indicators': !!indicators,
+            'link': true,
+        });
+
         return (
-            <div className="link item-container with-picture">
+            <div className={classes}>
                 {this.renderEntityImage(entityTrait)}
                 <div className="date">{this.entityDate(entityTrait)}</div>
                 <div className="content">
@@ -340,6 +384,7 @@ export class Entity extends React.Component<IProps, IState> {
                     <div className="text">{link.url}</div>
                     {this.renderParents(entityTrait.et)}
                 </div>
+                {indicators}
             </div>
         );
     }
@@ -373,6 +418,21 @@ export class Entity extends React.Component<IProps, IState> {
         </div>;
     }
 
+    private renderIndicators(): React.ReactNode {
+        const isPinned = this.isPinned;
+        const isSnoozed = this.isSnoozed;
+        if (!isPinned && !isSnoozed) {
+            return null;
+        }
+
+        return (
+            <div className="indicators">
+                {isPinned ? <span className="pinned" /> : null}
+                {isSnoozed ? <span className="snoozed" /> : null}
+            </div>
+        );
+    }
+
     private entityDate(entityTrait: EntityTrait<unknown>): React.ReactFragment {
         if (this.props.renderEntityDate) {
             return this.props.renderEntityDate(entityTrait);
@@ -399,6 +459,20 @@ export class Entity extends React.Component<IProps, IState> {
         if (actions.inlineAction) {
             actions.inlineAction.trigger();
         }
+    }
+
+    private get isPinned(): boolean {
+        if (!this.props.parentEntity) {
+            return false;
+        }
+
+        const weight = getEntityParentWeight(this.props.entity, this.props.parentEntity.id);
+        return weight >= PINNED_WEIGHT
+    }
+
+    private get isSnoozed(): boolean {
+        const snoozed = this.props.entity.traitOfType<exomind.base.v1.ISnoozed>(exomind.base.v1.Snoozed);
+        return !!snoozed;
     }
 }
 
