@@ -14,8 +14,7 @@ import './entity-list.less';
 export interface IProps {
     entities: EntityTraits[];
     parentEntity?: EntityTraits;
-
-    onRequireLoadMore?: () => void;
+    onLoadMore?: () => void;
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
@@ -119,7 +118,7 @@ export class EntityList extends React.Component<IProps, IState> {
             <div className={classes}>
                 <Scrollable
                     loadMoreItems={15}
-                    onNeedMore={this.props.onRequireLoadMore}
+                    onNeedMore={this.props.onLoadMore}
                     nbItems={nbItems}>
 
                     {this.renderCollection()}

@@ -3,6 +3,7 @@ import Exocore
 
 class Collections {
     static let instance = Collections()
+    static let PINNED_WEIGHT: UInt64 = 5000000000000
 
     private let queue = DispatchQueue(label: "io.exomind.collections")
     private var collectionQuery: ManagedQuery?

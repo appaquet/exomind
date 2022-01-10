@@ -131,7 +131,7 @@ export class Children extends React.Component<IProps, IState> {
                         entities={this.state.entities}
                         parentEntity={this.state.parent}
 
-                        onRequireLoadMore={this.handleLoadMore}
+                        onLoadMore={this.handleLoadMore}
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}

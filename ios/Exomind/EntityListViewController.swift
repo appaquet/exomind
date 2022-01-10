@@ -216,7 +216,7 @@ class EntityListViewController: UITableViewController {
                 if completed && swipeAction.style == .destructive,
                    let cutItem = this.collectionData.element(at: index),
                    cutItem.entity.id == item.entity.id {
-                    
+
                     DispatchQueue.main.async {
                         // make sure that we don't refresh during an animation of the swipe actions
                         self?.query?.inhibitChanges()
@@ -316,9 +316,17 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
     let date = priorityTrait.modificationDate ?? priorityTrait.creationDate
     let color = Stylesheet.objectColor(forId: priorityTrait.constants?.color ?? 0)
 
+    var data: EntityListCellData
     switch priorityTrait.typeInstance() {
     case let .email(email):
-        return EntityListCellData(image: image, date: date, color: color, title: Emails.formatContact(email.message.from), subtitle: displayName, text: email.message.snippet, collections: result.collections)
+        data = EntityListCellData(
+                image: image,
+                date: date,
+                color: color,
+                title: Emails.formatContact(email.message.from),
+                subtitle: displayName,
+                text: email.message.snippet
+        )
 
     case let .emailThread(emailThread):
         let emails = entity.traitsOfType(Exomind_Base_V1_Email.self)
@@ -341,14 +349,88 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
             emailDate = lastEmail.modificationDate ?? lastEmail.creationDate
         }
 
-        return EntityListCellData(image: image, date: emailDate, color: color, title: title, subtitle: displayName, text: emailThread.message.snippet, collections: result.collections, bold: unread)
+        data = EntityListCellData(
+                image: image,
+                date: emailDate,
+                color: color,
+                title: title,
+                subtitle: displayName,
+                text: emailThread.message.snippet
+        ).withBold(enabled: unread)
 
     case let .draftEmail(draftEmail):
-        return EntityListCellData(image: image, date: date, color: color, title: "Me", subtitle: draftEmail.displayName, collections: result.collections)
+        data = EntityListCellData(
+                image: image,
+                date: date,
+                color: color,
+                title: "Me",
+                subtitle: draftEmail.displayName
+        )
+
+    case let .collection(collection):
+        if !collection.message.description_p.isEmpty {
+            data = EntityListCellData(
+                    image: image,
+                    date: date,
+                    color: color,
+                    title: collection.strippedDisplayName,
+                    text: collection.message.description_p
+            )
+        } else {
+            data = EntityListCellData(
+                    image: image,
+                    date: date,
+                    color: color,
+                    title: collection.strippedDisplayName
+            )
+        }
 
     default:
-        return EntityListCellData(image: image, date: date, color: color, title: displayName, collections: result.collections)
+        data = EntityListCellData(
+                image: image,
+                date: date,
+                color: color,
+                title: displayName
+        )
     }
+
+    if !result.collections.isEmpty {
+        data = data.withCollections(result.collections)
+    }
+
+    var indicators: [UIImage] = []
+    if isSnoozed(result) {
+        indicators.append(ObjectsIcon.icon(forFontAwesome: .clock, color: .lightGray, dimension: 16))
+    }
+    if isPinned(result, parentId: parentId) {
+        indicators.append(ObjectsIcon.icon(forFontAwesome: .thumbtack, color: .lightGray, dimension: 16))
+    }
+    if !indicators.isEmpty {
+        data = data.withIndicators(indicators)
+    }
+
+    return data
+}
+
+fileprivate func isSnoozed(_ result: EntityResult) -> Bool {
+    result.entity.traitOfType(Exomind_Base_V1_Snoozed.self) != nil
+}
+
+fileprivate func isPinned(_ result: EntityResult, parentId: EntityId?) -> Bool {
+    if parentId == nil {
+        return false
+    }
+
+    let parentRelation = result.entity.traitsOfType(Exomind_Base_V1_CollectionChild.self)
+            .filter {
+                $0.message.collection.entityID == parentId
+            }
+            .first
+    guard let parentRelation = parentRelation else {
+        return false
+    }
+
+    return parentRelation.message.weight >= Collections.PINNED_WEIGHT
 }
 
 fileprivate struct EntityResult: Equatable, Hashable {

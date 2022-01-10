@@ -82,7 +82,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
                     <EntityList
                         entities={this.state.entities}
 
-                        onRequireLoadMore={this.handleLoadMore}
+                        onLoadMore={this.handleLoadMore}
 
                         selection={this.props.selection}
                         onSelectionChange={this.props.onSelectionChange}
