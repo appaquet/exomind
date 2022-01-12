@@ -14,7 +14,6 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: EntityTraits) => void;
 
     sections?: string[];
     section?: string;

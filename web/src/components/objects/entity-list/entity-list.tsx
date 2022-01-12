@@ -4,7 +4,7 @@ import React from 'react';
 import { ListenerToken, Shortcuts } from "../../../shortcuts";
 import { EntityTrait, EntityTraits } from "../../../utils/entities";
 import DragAndDrop, { DragData } from "../../interaction/drag-and-drop/drag-and-drop";
-import Scrollable from "../../interaction/scrollable/scrollable";
+import Scrollable, { isVisibleWithinScrollable } from "../../interaction/scrollable/scrollable";
 import { ContainerState } from "../container-state";
 import { Entity } from './entity';
 import { ListEntityActions } from "./actions";
@@ -229,7 +229,7 @@ export class EntityList extends React.Component<IProps, IState> {
             idx = 0;
         }
 
-        this.hoverEntityIndex(idx);
+        this.hoverEntityIndex(idx, 'up');
 
         return true;
     };
@@ -242,7 +242,7 @@ export class EntityList extends React.Component<IProps, IState> {
             idx = this.props.entities.length - 1;
         }
 
-        this.hoverEntityIndex(idx);
+        this.hoverEntityIndex(idx, 'down');
 
         return true;
     };
@@ -257,16 +257,23 @@ export class EntityList extends React.Component<IProps, IState> {
         return true;
     };
 
-    private hoverEntityIndex(idx: number): void {
+    private hoverEntityIndex(idx: number, dir: 'up' | 'down' | null = null): void {
         const entity = this.props.entities[idx];
         if (!entity) {
             return;
         }
 
         const elId = this.getEntityElementId(idx);
-        const el = document.getElementById(elId);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
+        let el = document.getElementById(elId);
+        if (el && !isVisibleWithinScrollable(el)) {
+            if (dir == 'up') {
+                const elId = this.getEntityElementId(Math.max(idx - 3, 0));
+                el = document.getElementById(elId);
+            } else if (dir == 'down') {
+                const elId = this.getEntityElementId(Math.min(idx - 3, this.props.entities.length - 1));
+                el = document.getElementById(elId);
+            }
+            el?.scrollIntoView({ behavior: 'smooth' });
         }
 
         this.setState({

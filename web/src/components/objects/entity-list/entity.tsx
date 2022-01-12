@@ -138,6 +138,7 @@ export class Entity extends React.Component<IProps, IState> {
                 const result = await action.trigger(e);
                 if (result == 'remove') {
                     this.removeItem();
+                    this.props.onSelectionChange?.(new Selection());
                 }
             };
             return (
