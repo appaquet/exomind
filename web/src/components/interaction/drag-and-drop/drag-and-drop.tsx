@@ -77,12 +77,32 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
     );
   }
 
+  static getDraggedData(event: React.DragEvent | DragEvent, take = true): DragData | null {
+    const item = event.dataTransfer.getData('item');
+    if (!item) {
+      return null;
+    }
+
+    const sequence = parseInt(item);
+    const data = _drag_data[sequence];
+    if (!data) {
+      return null;
+    }
+
+    if (take) {
+      delete _drag_data[sequence];
+    }
+
+    return data;
+  }
+
   private renderDropIndicator() {
     if (this.state.isHovered) {
       const classes = classNames({
         'drop-indicator': true,
         [this.state.dropPosition]: true,
       });
+
       return <div
         className={classes}
         onDragOver={this.handleDragOverIndicator}
@@ -119,9 +139,7 @@ export default class DragAndDrop extends React.Component<IProps, IState> {
       isHovered: false
     });
 
-    const sequence = parseInt(event.dataTransfer.getData('item'));
-    const data = _drag_data[sequence];
-    delete _drag_data[sequence];
+    const data = DragAndDrop.getDraggedData(event);
     if (this.props.onDropIn && data) {
       this.props.onDropIn({
         position: this.state.dropPosition,
