@@ -71,22 +71,16 @@
         z-index: 1; // make sure times appear on top of titles
       }
 
-      &.with-indicators {
-        .text {
-          // make sure text wraps with ellipsis when we have indicators
-          width: calc(100% - 30px);
-        }
-      }
-
       .indicators {
         position: absolute;
-        bottom: 3px;
+        top: 20px;
         right: 10px;
         text-align: right;
         padding-left: 10px;
         z-index: 1; // make sure indicators appear on top of titles
         color: var(--entity-component-item-indicators-fg);
         background: var(--entity-component-bg);
+        font-size: 12px;
 
         & > span {
           margin-left: 5px;

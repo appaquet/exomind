@@ -52,7 +52,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
         this.entityParentsQuery?.free();
     }
 
-    componentDidUpdate(prevProps: Readonly<IProps>, prevState: Readonly<IState>, snapshot?: any): void {
+    componentDidUpdate(prevProps: Readonly<IProps>, prevState: Readonly<IState>): void {
         if (this.state.debouncedKeywords !== prevState.debouncedKeywords || this.state.entityParentsIds !== prevState.entityParentsIds) {
             this.queryCollections();
         }
