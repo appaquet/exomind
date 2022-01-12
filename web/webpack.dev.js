@@ -17,14 +17,6 @@ module.exports = merge(common, {
     clientLogLevel: 'debug',
     open: false,
     hot: true,
-    proxy: {
-      '/v1': {
-        target: 'https://exomind.io',
-        secure: false,
-        changeOrigin: true,
-        ws: true
-      }
-    }
   },
 
   optimization: {

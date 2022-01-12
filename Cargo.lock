@@ -742,6 +742,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "fastrand"
+version = "1.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "779d043b6a0b90cc4c0ed7ee380a6504394cee7efd7db050e3774eee387324b2"
+dependencies = [
+ "instant",
+]
+
+[[package]]
 name = "fixedbitset"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1242,9 +1251,9 @@ checksum = "1b03d17f364a3a042d5e5d46b053bbbf82c92c9430c592dd4c064dc6ee997125"
 
 [[package]]
 name = "libp2p"
-version = "0.41.0"
+version = "0.41.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "782229f90bf7d5b12ee3ee08f7e160ba99f0d75eee7d118d9c1a688b13f6e64a"
+checksum = "2ec5b70fc23ed1b1b1169ce0d1116260a343f67cf7088b498b8d99255cd68c32"
 dependencies = [
  "atomic",
  "bytes",
@@ -1321,9 +1330,9 @@ dependencies = [
 
 [[package]]
 name = "libp2p-identify"
-version = "0.32.0"
+version = "0.32.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec6d59e3f88435a83797fc3734f18385f6f54e0fe081e12543573364687c7db5"
+checksum = "32329181638a103321c05ef697f406abbccc695780b7c7d3dc34206758e9eb09"
 dependencies = [
  "futures",
  "futures-timer",
@@ -1608,9 +1617,9 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.6.6"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ea2d928b485416e8908cff2d97d621db22b27f7b3b6729e438bcf42c671ba91"
+checksum = "274353858935c992b13c0ca408752e2121da852d07dec7ce5f108c77dfa14d1f"
 dependencies = [
  "hashbrown",
 ]
@@ -2719,13 +2728,13 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.2.0"
+version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dac1c663cfc93810f88aed9b8941d48cabf856a1b111c29a40439018d870eb22"
+checksum = "5cdb1ef4eaeeaddc8fbd371e5017057064af0911902ef36b39801f67cc6d79e4"
 dependencies = [
  "cfg-if",
+ "fastrand",
  "libc",
- "rand 0.8.4",
  "redox_syscall 0.2.10",
  "remove_dir_all",
  "winapi",
