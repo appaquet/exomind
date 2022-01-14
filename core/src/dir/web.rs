@@ -24,8 +24,6 @@ impl WebDirectory {
     }
 }
 
-unsafe impl Send for WebDirectory {}
-
 impl Directory for WebDirectory {
     fn open_read(&self, path: &Path) -> Result<Box<dyn FileRead>, Error> {
         let key = path_to_key(path, true)?;
@@ -214,10 +212,12 @@ impl FileStat for WebFileStat {
 }
 
 // Wraps a web_sys::Storage to make it send. This is needed because it contains
-// a inner pointer which is not Send. In web, there is no multi-threading, so we
-// can assume that it's safe to send this across threads.
+// a inner pointer which is not Send. In WASM, there is no multi-threading yet,
+// so we can assume that it's safe to send this across threads.
+// See https://github.com/rustwasm/wasm-bindgen/issues/1505
 struct Storage(web_sys::Storage);
 
+#[allow(clippy::non_send_fields_in_send_ty)]
 unsafe impl Send for Storage {}
 
 impl Deref for Storage {
