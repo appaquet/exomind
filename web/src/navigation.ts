@@ -139,9 +139,8 @@ export function setupLinkClickNavigation(fallback: (e: MouseEvent, el: HTMLEleme
     }
 
     if (el.tagName === 'A') {
-      if (el.getAttribute('target') == 'local') {
-        // if target is marked as local, it means it's handled by another component
-        // Ex: `note.tsx`
+      if (el.getAttribute('target') == 'local' || (el.getAttribute('rel')?.indexOf('nofollow') ?? -1) >= 0) {
+        // if target is marked as local or nofollow, it's handled elsewhere
         return false;
       }
 

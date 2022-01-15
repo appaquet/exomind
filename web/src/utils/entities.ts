@@ -230,6 +230,10 @@ export class EntityTrait<T> {
     }
 }
 
+export function isEntityTraits(object: unknown): object is EntityTraits {
+    return object instanceof EntityTraits;
+}
+
 export interface ITraitMatcher {
     emailThread?: (trait: EntityTrait<exomind.base.v1.IEmailThread>) => unknown;
     email?: (trait: EntityTrait<exomind.base.v1.IEmail>) => unknown;

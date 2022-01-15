@@ -23,7 +23,6 @@ interface IProps {
 
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
-    onEntityAction?: (action: string, entity: EntityTraits) => void;
 
     containerState?: ContainerState;
 }
@@ -307,10 +306,6 @@ export class Children extends React.Component<IProps, IState> {
         }
 
         Exocore.store.mutate(mb.build());
-
-        if (this.props.onEntityAction) {
-            this.props.onEntityAction('drop', droppedEntity);
-        }
     };
 
     private handleEntityCreated(action: IAction, res: IEntityCreateResult) {

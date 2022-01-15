@@ -24,6 +24,8 @@ import { Shortcuts } from "../../../shortcuts";
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
+import DragAndDrop from "../drag-and-drop/drag-and-drop";
+import { EntityTraits, isEntityTraits } from "../../../utils/entities";
 
 const defaultInitialFocus = false;
 
@@ -194,6 +196,17 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     dblclick: (view, event) => {
                         return this.maybeHandleLinkClick(view, event as unknown as MouseEvent, true);
                     },
+                    drop: (view, event) => {
+                        const data = DragAndDrop.getDraggedData(event);
+                        if (!data || !data.object || !isEntityTraits(data.object)) {
+                            return false;
+                        }
+
+                        const et = data.object as EntityTraits;
+                        this.toggleLink(`entity://${et.id}`, et.priorityTrait?.displayName);
+
+                        return true;
+                    }
                 }
             },
         });

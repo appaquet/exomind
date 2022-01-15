@@ -1,7 +1,7 @@
 import React from "react";
 import { EntityTraits } from "../../../utils/entities";
 import { Message } from "../../objects/message";
-import Scrollable from "../scrollable/scrollable";
+import Scrollable, { isVisibleWithinScrollable } from "../scrollable/scrollable";
 import { IStores, StoresContext } from "../../../stores/stores";
 import { observer } from "mobx-react";
 import EntityIcon from "../../objects/entity-icon";
@@ -146,7 +146,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
             idx = this.props.entities.length - 1;
         }
 
-        this.hoverIndex(idx);
+        this.hoverIndex(idx, 'down');
         return true;
     };
 
@@ -166,7 +166,7 @@ export class EntitySelector extends React.Component<IProps, IState> {
             }
         }
 
-        this.hoverIndex(idx);
+        this.hoverIndex(idx, 'up');
         return true;
     };
 
@@ -180,12 +180,23 @@ export class EntitySelector extends React.Component<IProps, IState> {
         return true;
     };
 
-    private hoverIndex(idx: number) {
+    private hoverIndex(idx: number, dir: 'up' | 'down' | null = null) {
         if (idx >= this.props.entities.length - 10) {
             this.props.onNeedMore?.();
         }
 
-        document.getElementById(`entity-${idx}`)?.scrollIntoView({ behavior: 'smooth' });
+        let el = document.getElementById(`entity-${idx}`);
+        if (el && !isVisibleWithinScrollable(el)) {
+            if (dir == 'up') {
+                const scrollIdx = Math.max(idx - 3, 0);
+                el = document.getElementById(`entity-${scrollIdx}`);
+            } else if (dir == 'down') {
+                const scrollIdx = Math.min(idx - 2, this.props.entities.length - 1);
+                el = document.getElementById(`entity-${scrollIdx}`);
+            }
+            el?.scrollIntoView({ behavior: 'smooth' });
+        }
+
         this.setState({
             hoveredIndex: idx,
         });

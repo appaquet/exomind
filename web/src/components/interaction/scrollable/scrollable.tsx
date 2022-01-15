@@ -58,3 +58,32 @@ export default class Scrollable extends React.Component<IProps> {
         }
     };
 }
+
+// Inspired from https://htmldom.dev/check-if-an-element-is-visible-in-a-scrollable-container/
+export function isVisibleWithinScrollable(ele: HTMLElement, padding = 50): boolean {
+    let scrollable: HTMLElement | null = ele.parentElement;
+    for (let i = 0; i < 20; i++) {
+        if (!scrollable) {
+            return false;
+        }
+
+        if (scrollable.className.indexOf('scrollable') >= 0) {
+            break;
+        }
+
+        scrollable = scrollable.parentElement;
+    }
+
+    const eleTop = ele.offsetTop;
+    const eleBottom = eleTop + ele.clientHeight;
+    const containerTop = scrollable.scrollTop;
+    const containerBottom = containerTop + scrollable.clientHeight;
+
+    if (eleBottom + padding > containerBottom) {
+        return false;
+    } else if (eleTop - padding < containerTop) {
+        return false;
+    }
+
+    return true;
+}
