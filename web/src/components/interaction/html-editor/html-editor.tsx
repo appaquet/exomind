@@ -81,7 +81,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
             focused: false,
         };
 
-        this.debouncer = new Debouncer(300);
+        this.debouncer = new Debouncer(500);
     }
 
     componentDidMount(): void {
@@ -141,8 +141,8 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                 image.plugins(),
                 new Plugin({
                     view: () => ({
-                        update: (view, prevState) => {
-                            this.handleChange(view.state, prevState);
+                        update: (view) => {
+                            this.handleChange(view.state);
                         },
                     })
                 }),
@@ -410,17 +410,17 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         }
     };
 
-    private handleChange = (newState: EditorState, prevState: EditorState) => {
+    private handleChange = (newState: EditorState) => {
         this.debouncer.debounce(() => {
-            if (!newState.doc.eq(prevState.doc)) {
-                const htmlContent = toHTMLString(newState);
+            const newHtmlContent = toHTMLString(newState);
+            if (this.state.content != newHtmlContent) {
                 this.setState({
-                    content: htmlContent,
+                    content: newHtmlContent,
                     localChanges: true,
                 });
 
                 if (this.props.onChange) {
-                    this.props.onChange(htmlContent);
+                    this.props.onChange(newHtmlContent);
                 }
             }
 
