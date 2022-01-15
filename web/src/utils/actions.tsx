@@ -1,4 +1,4 @@
-import { getEntityParentRelation, isPinnedInParent } from "../stores/collections";
+import { getEntityParentRelation, hasEntityParent, isPinnedInParent } from "../stores/collections";
 import { EntityTraits } from "./entities";
 import { CancellableEvent } from "./events";
 import { Stores } from "../stores/stores";
@@ -55,7 +55,7 @@ export class Actions {
                 push(18, this.snooze(entity, parentId, parentId === 'inbox'));
             }
 
-            if (parentId !== 'inbox') {
+            if (parentId !== 'inbox' && !hasEntityParent(entity, 'inbox')) {
                 push(13, this.addToInbox(entity));
             }
         }

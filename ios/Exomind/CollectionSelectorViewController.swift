@@ -217,7 +217,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
             return false
         }
 
-        return Commands.hasParent(entity: entityComplete, parentId: id)
+        return Collections.hasParent(entity: entityComplete, parentId: id)
     }
 
     private func addParent(parentEntityId id: String) {
@@ -225,11 +225,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
             return
         }
 
-        do {
-            try Commands.addToParent(entity: entityComplete, parentId: id)
-        } catch {
-            print("CollectionSelectionViewController> Error adding parent \(error)")
-        }
+        Commands.addToParent(entity: entityComplete, parentId: id)
     }
 
     private func removeParent(parentEntityId id: String) {

@@ -301,7 +301,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     private func handleDone() {
-        let inInbox = Commands.hasParent(entity: self.entity, parentId: "inbox")
+        let inInbox = Collections.hasParent(entity: self.entity, parentId: "inbox")
         if inInbox {
             Commands.removeFromParent(entity: self.entity, parentId: "inbox")
             let _ = self.navigationController?.popViewController(animated: true)

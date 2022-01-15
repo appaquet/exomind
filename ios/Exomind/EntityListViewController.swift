@@ -260,15 +260,23 @@ class EntityListViewController: UITableViewController {
     private func showMoreSwipeAction(indexPath: IndexPath, actions: [Action]) -> UIContextualAction {
         let sAction = UIContextualAction(style: .normal, title: "More...") { _swipeAction, _view, swipeCb in
             swipeCb(true)
+
             let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
             for action in actions {
                 let alertBtn = UIAlertAction(title: action.label, style: .default) { alertAction in
                     action.execute({ res in })
                 }
+
+                if let icon = action.icon {
+                    let img = ObjectsIcon.icon(forFontAwesome: icon, color: UIColor.white, dimension: 30)
+                    alertBtn.setValue(img, forKey: "image")
+                }
+
                 alertController.addAction(alertBtn)
             }
             alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
             self.present(alertController, animated: true)
+
         }
         sAction.backgroundColor = Stylesheet.collectionSwipeMoreBg
         sAction.image = ObjectsIcon.icon(forFontAwesome: .ellipsisH, color: UIColor.white, dimension: 30)
@@ -414,9 +422,11 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
     if isSnoozed(result) {
         indicators.append(ObjectsIcon.icon(forFontAwesome: .clock, color: .lightGray, dimension: 16))
     }
-    if isPinned(result, parentId: parentId) {
+
+    if let parentId = parentId, Collections.isPinnedInParent(result.entity, parentId: parentId) {
         indicators.append(ObjectsIcon.icon(forFontAwesome: .thumbtack, color: .lightGray, dimension: 16))
     }
+
     if !indicators.isEmpty {
         data = data.withIndicators(indicators)
     }
@@ -426,23 +436,6 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
 
 fileprivate func isSnoozed(_ result: EntityResult) -> Bool {
     result.entity.traitOfType(Exomind_Base_V1_Snoozed.self) != nil
-}
-
-fileprivate func isPinned(_ result: EntityResult, parentId: EntityId?) -> Bool {
-    if parentId == nil {
-        return false
-    }
-
-    let parentRelation = result.entity.traitsOfType(Exomind_Base_V1_CollectionChild.self)
-            .filter {
-                $0.message.collection.entityID == parentId
-            }
-            .first
-    guard let parentRelation = parentRelation else {
-        return false
-    }
-
-    return parentRelation.message.weight >= Collections.PINNED_WEIGHT
 }
 
 fileprivate struct EntityResult: Equatable, Hashable {
