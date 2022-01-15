@@ -86,7 +86,7 @@ class Collections {
     }
 }
 
-class CollectionEntity {
+fileprivate class CollectionEntity {
     let entity: EntityExt
     let collection: TraitInstance<Exomind_Base_V1_Collection>
 

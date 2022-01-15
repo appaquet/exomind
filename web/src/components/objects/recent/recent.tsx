@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import { exocore, QueryBuilder } from 'exocore';
 import React from 'react';
 import { EntityTraits } from '../../../utils/entities';
-import { ExpandableQuery } from '../../../stores/queries';
+import { ManagedQuery } from '../../../stores/queries';
 import { ContainerState } from '../container-state';
 import { ListEntityActions } from '../entity-list/actions';
 import { EntityList } from '../entity-list/entity-list';
@@ -24,7 +24,7 @@ interface IState {
 }
 
 export default class Recent extends React.Component<IProps, IState> {
-    private entityQuery: ExpandableQuery;
+    private entityQuery: ManagedQuery;
 
     constructor(props: IProps) {
         super(props);
@@ -44,7 +44,7 @@ export default class Recent extends React.Component<IProps, IState> {
                 })
             )
             .build();
-        this.entityQuery = new ExpandableQuery(childrenQuery, () => {
+        this.entityQuery = new ManagedQuery(childrenQuery, () => {
             const entities = Array.from(this.entityQuery.results()).map((res) => {
                 return new EntityTraits(res.entity);
             });

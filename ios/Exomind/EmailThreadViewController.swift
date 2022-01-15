@@ -301,9 +301,9 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     private func handleDone() {
-        let inInbox = ExomindMutations.hasParent(entity: self.entity, parentId: "inbox")
+        let inInbox = Commands.hasParent(entity: self.entity, parentId: "inbox")
         if inInbox {
-            ExomindMutations.removeParent(entity: self.entity, parentId: "inbox")
+            Commands.removeFromParent(entity: self.entity, parentId: "inbox")
             let _ = self.navigationController?.popViewController(animated: true)
         }
     }

@@ -3,7 +3,7 @@ import { Exocore, exocore, MutationBuilder, QueryBuilder, TraitQueryBuilder, Wat
 import React from 'react';
 import { exomind } from "../../../protos";
 import { EntityTraits } from '../../../utils/entities';
-import { ExpandableQuery } from "../../../stores/queries";
+import { ManagedQuery } from "../../../stores/queries";
 import { ListEntityActions, InlineAction } from '../entity-list/actions';
 import { EntityList, IDroppedItem } from "../entity-list/entity-list";
 import { SelectedItem, Selection } from "../entity-list/selection";
@@ -40,7 +40,7 @@ export class Children extends React.Component<IProps, IState> {
     static contextType = StoresContext;
     declare context: IStores;
 
-    private entityQuery: ExpandableQuery;
+    private entityQuery: ManagedQuery;
     private parentQuery: WatchedQueryWrapper;
     private parentId: string;
 
@@ -65,7 +65,7 @@ export class Children extends React.Component<IProps, IState> {
             )
             .build();
 
-        this.entityQuery = new ExpandableQuery(childrenQuery, () => {
+        this.entityQuery = new ManagedQuery(childrenQuery, () => {
             const entities = Array.from(this.entityQuery.results()).map((res) => {
                 return new EntityTraits(res.entity);
             });

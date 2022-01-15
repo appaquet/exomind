@@ -167,7 +167,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         let showIn = self.parent ?? self
         let timeSelector = TimeSelectionViewController { (date) in
             if let realDate = date {
-                ExomindMutations.snooze(entity: forEntity, date: realDate)
+                Commands.snooze(entity: forEntity, date: realDate)
                 callback?(true)
             } else {
                 callback?(false)

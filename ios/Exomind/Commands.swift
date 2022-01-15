@@ -1,36 +1,27 @@
 import Foundation
 import Exocore
 
-class ExomindMutations {
-    static func hasParent(entity: EntityExt, parentId: String) -> Bool {
-        let parentRel = entity
-                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
-                .first(where: { $0.message.collection.entityID == parentId })
+// TODO: pinEntityInParent
+// TODO: unpinEntityInParent
+// TODO: removeSnooze
+// TODO: delete
+// TODO: createNote, Task, Collection, Link
 
-        return parentRel != nil
-    }
-
-    static func getParent(entity: EntityExt, parentId: String) -> TraitInstance<Exomind_Base_V1_CollectionChild>? {
-        entity
-                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
-                .first(where: { $0.message.collection.entityID == parentId })
-    }
-
-    static func addParent(entity: EntityExt, parentId: String) throws {
+class Commands {
+    static func addToParent(entity: EntityExt, parentId: String) throws {
         var mutation = MutationBuilder.updateEntity(entityId: entity.id)
         try addChildMutation(parentId: parentId, builder: &mutation)
         ExocoreClient.store.mutate(mutation: mutation.build())
     }
 
-    static func removeParent(entity: EntityExt, parentId: String) {
-        guard let parentRel = getParent(entity: entity, parentId: parentId) else {
+    static func removeFromParent(entity: EntityExt, parentId: String) {
+        guard let parentRel = getEntityParentRelation(entity: entity, parentId: parentId) else {
             return
         }
 
         let mutation = MutationBuilder
                 .updateEntity(entityId: entity.id)
                 .deleteTrait(traitId: parentRel.id)
-
         ExocoreClient.store.mutate(mutation: mutation.build())
     }
 
@@ -57,7 +48,18 @@ class ExomindMutations {
         builder = try builder.putTrait(message: child, traitId: "child_\(parentId)")
     }
 
-    static func executeCreateEntityMutation(mutation: Exocore_Store_MutationRequest, callback: ((EntityExt?) -> ())?) {
+    static func hasParent(entity: EntityExt, parentId: String) -> Bool {
+        let parentRel = self.getEntityParentRelation(entity: entity, parentId: parentId)
+        return parentRel != nil
+    }
+
+    static func getEntityParentRelation(entity: EntityExt, parentId: String) -> TraitInstance<Exomind_Base_V1_CollectionChild>? {
+        entity
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
+                .first(where: { $0.message.collection.entityID == parentId })
+    }
+
+    static func executeNewEntityMutation(mutation: Exocore_Store_MutationRequest, callback: ((EntityExt?) -> ())?) {
         ExocoreClient.store.mutate(mutation: mutation, onCompletion: { (status, results) in
             DispatchQueue.main.async {
                 guard let results = results,

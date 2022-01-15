@@ -3,7 +3,7 @@ import { memoize } from 'lodash';
 import React, { KeyboardEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
-import { ExpandableQuery } from '../../../stores/queries';
+import { ManagedQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
 import { CancellableEvent } from '../../../utils/events';
@@ -22,7 +22,7 @@ interface IState {
 export class CollectionNavigator extends React.Component<IProps, IState> {
     private searchDebouncer: Debouncer;
 
-    private collectionsQuery?: ExpandableQuery;
+    private collectionsQuery?: ManagedQuery;
     private collectionsQueryKeywords?: string;
     private filterInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
@@ -84,7 +84,7 @@ export class CollectionNavigator extends React.Component<IProps, IState> {
                 .withTrait(exomind.base.v1.Collection, traitQuery)
                 .count(30)
                 .build();
-            this.collectionsQuery = new ExpandableQuery(query, () => {
+            this.collectionsQuery = new ManagedQuery(query, () => {
                 this.setState({});
             });
             this.collectionsQueryKeywords = this.state.debouncedKeywords;
