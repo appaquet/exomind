@@ -25,19 +25,29 @@ class Commands {
         ExocoreClient.store.mutate(mutation: mutation.build())
     }
 
-    static func snooze(entity: EntityExt, date: Date, callback: (() -> Void)? = nil) {
+    static func snooze(entity: EntityExt, date: Date) {
         var snoozed = Exomind_Base_V1_Snoozed()
         snoozed.untilDate = date.toProtobuf()
 
         let mutation = try! MutationBuilder
                 .updateEntity(entityId: entity.id)
                 .putTrait(message: snoozed, traitId: "snoozed")
-                .returnEntities()
                 .build()
 
-        ExocoreClient.store.mutate(mutation: mutation, onCompletion: { (status, results) in
-            callback?()
-        })
+        ExocoreClient.store.mutate(mutation: mutation)
+    }
+
+    static func removeSnooze(_ entity: EntityExt) {
+        guard let snoozeTrait = entity.traitsOfType(Exomind_Base_V1_Snoozed.self).first else {
+            return
+        }
+
+        let mutation = MutationBuilder
+                .updateEntity(entityId: entity.id)
+                .deleteTrait(traitId: snoozeTrait.id)
+                .build()
+
+        ExocoreClient.store.mutate(mutation: mutation)
     }
 
     static func addChildMutation(parentId: EntityId, builder: inout MutationBuilder) throws {

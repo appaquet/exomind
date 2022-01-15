@@ -8,9 +8,6 @@ class EntityListViewController: UITableViewController {
     private var parentId: EntityId?
 
     private var collectionData: [EntityResult] = []
-    private var itemClickHandler: ((EntityExt) -> Void)?
-    private var collectionClickHandler: ((EntityExt) -> Void)?
-    private var swipeActions: [EntityListSwipeAction] = []
 
     private var switcherButton: SwitcherButton?
     private var switcherButtonActions: [SwitcherButtonAction] = []
@@ -19,6 +16,10 @@ class EntityListViewController: UITableViewController {
     private var scrollDragging = false
     private var headerShown: Bool = false
     private var headerWasShownBeforeDrag: Bool = false
+
+    var actionsForEntity: ((EntityExt) -> [Action])?
+    var itemClickHandler: ((EntityExt) -> Void)?
+    var collectionClickHandler: ((_ entity: EntityExt, _ collection: EntityExt) -> Void)?
 
     private lazy var datasource: EditableDataSource = {
         var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
@@ -48,15 +49,6 @@ class EntityListViewController: UITableViewController {
             self?.collectionData = []
             self?.refreshData()
         }
-    }
-
-    func setSwipeActions(_ actions: [EntityListSwipeAction]) {
-        self.swipeActions = actions
-    }
-
-    func setClickHandler(_ itemClick: @escaping (EntityExt) -> Void, collectionClick: @escaping (EntityExt) -> Void) {
-        self.itemClickHandler = itemClick
-        self.collectionClickHandler = collectionClick
     }
 
     func setSwitcherActions(_ actions: [SwitcherButtonAction]) {
@@ -181,16 +173,40 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let swipeActions = self.swipeActions
-                .filter({ $0.side == .leading })
-                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
-        return UISwipeActionsConfiguration(actions: swipeActions)
+        guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
+              let actionsForEntity = self.actionsForEntity,
+              let firstAction = actionsForEntity(entity).first
+                else {
+            return nil
+        }
+
+        let swipeAction = self.toSwipeAction(indexPath: indexPath, action: firstAction)
+        return UISwipeActionsConfiguration(actions: [swipeAction])
     }
 
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let swipeActions = self.swipeActions
-                .filter({ $0.side == .trailing })
-                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
+              let actionsForEntity = self.actionsForEntity
+                else {
+            return nil
+        }
+
+        let actions = actionsForEntity(entity)
+        if actions.count < 2 {
+            // first action is on leading side
+            return nil
+        }
+
+        var swipeActions = [UIContextualAction]()
+        if actions.count <= 3 {
+            swipeActions = actions.dropFirst().map {
+                self.toSwipeAction(indexPath: indexPath, action: $0)
+            }
+        } else {
+            swipeActions.append(self.toSwipeAction(indexPath: indexPath, action: actions[1]))
+            swipeActions.append(self.showMoreSwipeAction(indexPath: indexPath, actions: actions))
+        }
+
         return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
@@ -201,39 +217,62 @@ class EntityListViewController: UITableViewController {
         return cell
     }
 
-    private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {
+    private func toSwipeAction(indexPath: IndexPath, action: Action) -> UIContextualAction {
         let index = (indexPath as NSIndexPath).item
-        let doneAction = UIContextualAction(style: swipeAction.style, title: nil) { action, view, completionHandler in
-            guard let item = self.collectionData.element(at: index) else {
-                return
-            }
 
-            swipeAction.handler(item.entity) { [weak self] (completed) in
+        var style: UIContextualAction.Style = .normal
+        if action.destructive {
+            style = .destructive
+        }
+
+        let sAction = UIContextualAction(style: style, title: action.label) { _swipeAction, _view, swipeCb in
+            action.execute { [weak self] (result: ActionResult) in
                 guard let this = self else {
                     return
                 }
 
-                if completed && swipeAction.style == .destructive,
-                   let cutItem = this.collectionData.element(at: index),
-                   cutItem.entity.id == item.entity.id {
-
+                switch result {
+                case .successRemoved:
                     DispatchQueue.main.async {
                         // make sure that we don't refresh during an animation of the swipe actions
-                        self?.query?.inhibitChanges()
+                        this.query?.inhibitChanges()
 
                         // remove right away from data to make it faster
                         this.collectionData.remove(at: index)
                         this.setData(this.collectionData)
-                        completionHandler(true)
+                        swipeCb(true)
                     }
-                } else {
-                    completionHandler(completed)
+                case .success:
+                    swipeCb(true)
+                default:
+                    swipeCb(false)
                 }
             }
         }
-        doneAction.backgroundColor = swipeAction.color
-        doneAction.image = swipeAction.iconImage
-        return doneAction
+        sAction.backgroundColor = action.swipeColor ?? UIColor.blue
+        sAction.image = action.icon.map {
+            ObjectsIcon.icon(forFontAwesome: $0, color: UIColor.white, dimension: 30)
+        }
+
+        return sAction
+    }
+
+    private func showMoreSwipeAction(indexPath: IndexPath, actions: [Action]) -> UIContextualAction {
+        let sAction = UIContextualAction(style: .normal, title: "More...") { _swipeAction, _view, swipeCb in
+            swipeCb(true)
+            let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+            for action in actions {
+                let alertBtn = UIAlertAction(title: action.label, style: .default) { alertAction in
+                    action.execute({ res in })
+                }
+                alertController.addAction(alertBtn)
+            }
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            self.present(alertController, animated: true)
+        }
+        sAction.backgroundColor = Stylesheet.collectionSwipeMoreBg
+        sAction.image = ObjectsIcon.icon(forFontAwesome: .ellipsisH, color: UIColor.white, dimension: 30)
+        return sAction
     }
 
     private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Store_EntityResult]) -> [EntityResult] {
@@ -251,7 +290,7 @@ class EntityListViewController: UITableViewController {
             }
 
             let onCollectionClick: (EntityExt) -> Void = { [weak self] collection in
-                self?.collectionClickHandler?(collection)
+                self?.collectionClickHandler?(entity, collection)
             }
             let collections = Collections.instance.entityParentsPillData(entity: entity, onCollectionClick: onCollectionClick)
                     .filter { pillData in
@@ -266,33 +305,6 @@ class EntityListViewController: UITableViewController {
     deinit {
         print("EntityListViewController > Deinit")
         NotificationCenter.default.removeObserver(self)
-    }
-}
-
-struct EntityListSwipeAction {
-    let icon: FontAwesome
-    let handler: Handler
-    let color: UIColor
-    let side: SwipeSide
-    let style: UIContextualAction.Style
-
-    fileprivate let iconImage: UIImage
-
-    enum SwipeSide {
-        case leading
-        case trailing
-    }
-
-    typealias Handler = (EntityExt, @escaping (Bool) -> Void) -> Void
-
-    init(action: FontAwesome, color: UIColor, side: SwipeSide, style: UIContextualAction.Style, handler: @escaping Handler) {
-        self.icon = action
-        self.color = color
-        self.side = side
-        self.style = style
-        self.handler = handler
-
-        self.iconImage = ObjectsIcon.icon(forFontAwesome: self.icon, color: UIColor.white, dimension: 30)
     }
 }
 

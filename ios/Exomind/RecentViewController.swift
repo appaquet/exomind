@@ -32,20 +32,23 @@ class RecentViewController: UIViewController {
                 .count(30)
                 .build()
 
-        self.entityListViewController.loadData(fromQuery: query)
-
-        self.entityListViewController.setClickHandler { [weak self] in
-            self?.handleItemClick($0)
-        } collectionClick: { [weak self] in
-            self?.handleItemClick($0)
+        self.entityListViewController.itemClickHandler = { [weak self] (entity) in
+            self?.handleItemClick(entity)
         }
 
-        self.entityListViewController.setSwipeActions([
-            EntityListSwipeAction(action: .inbox, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .normal) { [weak self] (entity, callback) -> Void in
-                self?.handleCopyInbox(entity)
-                callback(true)
+        self.entityListViewController.collectionClickHandler = { [weak self] (entity, collection) in
+            self?.handleItemClick(collection)
+        }
+
+        self.entityListViewController.actionsForEntity = { [weak self] entity in
+            guard let this = self else {
+                return []
             }
-        ])
+            let navController = this.navigationController as? NavigationController
+            return Actions.forEntity(entity, section: .recent, navController: navController)
+        }
+
+        self.entityListViewController.loadData(fromQuery: query)
     }
 
     override func viewWillAppear(_ animated: Bool) {

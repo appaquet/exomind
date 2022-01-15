@@ -26,25 +26,21 @@ class CollectionViewController: UIViewController, EntityTraitView {
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
-        self.entityListViewController.setClickHandler { [weak self] in
-            self?.handleItemClick($0)
-        } collectionClick: { [weak self] in
-            self?.handleItemClick($0)
+        self.entityListViewController.itemClickHandler = { [weak self] (entity) in
+            self?.handleItemClick(entity)
         }
 
-        self.entityListViewController.setSwipeActions([
-            EntityListSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleDone(entity)
-                callback(true)
-            }),
-            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleMoveLater(entity, callback: callback)
-            }),
-            EntityListSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleAddToCollection(entity)
-                callback(false)
-            }),
-        ])
+        self.entityListViewController.collectionClickHandler = { [weak self] (entity, collection) in
+            self?.handleItemClick(collection)
+        }
+
+        self.entityListViewController.actionsForEntity = { [weak self] entity in
+            guard let this = self else {
+                return []
+            }
+            let navController = this.navigationController as? NavigationController
+            return Actions.forEntity(entity, parentId: this.collection.id, navController: navController)
+        }
 
         self.entityListViewController.loadData(fromChildrenOf: self.entity.id)
     }
@@ -128,18 +124,6 @@ class CollectionViewController: UIViewController, EntityTraitView {
 
     private func handleItemClick(_ entity: EntityExt) {
         (self.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
-    }
-
-    private func handleDone(_ entity: EntityExt) {
-        Commands.removeFromParent(entity: entity, parentId: self.entity.id)
-    }
-
-    private func handleMoveLater(_ entity: EntityExt, callback: @escaping (Bool) -> Void) {
-        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity, callback: callback)
-    }
-
-    private func handleAddToCollection(_ entity: EntityExt) {
-        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
 
     deinit {

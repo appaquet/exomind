@@ -18,27 +18,23 @@ class InboxViewController: UIViewController {
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
 
-        self.entityListViewController.loadData(fromChildrenOf: "inbox")
-
-        self.entityListViewController.setClickHandler { [weak self] in
-            self?.handleItemClick($0)
-        } collectionClick: { [weak self] in
-            self?.handleItemClick($0)
+        self.entityListViewController.itemClickHandler = { [weak self] (entity) in
+            self?.handleItemClick(entity)
         }
 
-        self.entityListViewController.setSwipeActions([
-            EntityListSwipeAction(action: .check, color: Stylesheet.collectionSwipeDoneBg, side: .leading, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleDone(entity)
-                callback(true)
-            }),
-            EntityListSwipeAction(action: .clock, color: Stylesheet.collectionSwipeLaterBg, side: .trailing, style: .destructive, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleMoveLater(entity, callback: callback)
-            }),
-            EntityListSwipeAction(action: .folderOpen, color: Stylesheet.collectionSwipeAddCollectionBg, side: .trailing, style: .normal, handler: { [weak self] (entity, callback) -> Void in
-                self?.handleAddToCollection(entity)
-                callback(false)
-            }),
-        ])
+        self.entityListViewController.collectionClickHandler = { [weak self] (entity, collection) in
+            self?.handleItemClick(collection)
+        }
+
+        self.entityListViewController.actionsForEntity = { [weak self] entity in
+            guard let this = self else {
+                return []
+            }
+            let navController = this.navigationController as? NavigationController
+            return Actions.forEntity(entity, parentId: "inbox", section: .inbox, navController: navController)
+        }
+
+        self.entityListViewController.loadData(fromChildrenOf: "inbox")
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -56,7 +52,7 @@ class InboxViewController: UIViewController {
         ])
 
         // quick button only visible in current
-        nav.setQuickButtonActions([
+        nav.setQuickButtonActions([ // TODO: replace by actions
             QuickButtonAction(icon: .clock, handler: { () -> Void in
                 // TODO: Goto snoozed
             }),
@@ -80,22 +76,5 @@ class InboxViewController: UIViewController {
 
     private func handleItemClick(_ entity: EntityExt) {
         (self.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))
-    }
-
-    private func handleDone(_ entity: EntityExt) {
-        Commands.removeFromParent(entity: entity, parentId: "inbox")
-    }
-
-    private func handleMoveLater(_ entity: EntityExt, callback: @escaping  (Bool) -> Void) {
-        (self.navigationController as? NavigationController)?.showTimeSelector(forEntity: entity) { completed in
-            if (completed) {
-                Commands.removeFromParent(entity: entity, parentId: "inbox")
-            }
-            callback(completed)
-        }
-    }
-
-    private func handleAddToCollection(_ entity: EntityExt) {
-        (self.navigationController as? NavigationController)?.showCollectionSelector(forEntity: entity)
     }
 }

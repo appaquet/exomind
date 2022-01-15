@@ -51,7 +51,13 @@ export class Actions {
         }
 
         if (!this.isSpecialEntity(entity.id)) {
-            push(20, this.snooze(entity, parentId, parentId === 'inbox'));
+            if (context?.section !== 'snoozed') {
+                push(18, this.snooze(entity, parentId, parentId === 'inbox'));
+            }
+
+            if (parentId !== 'inbox') {
+                push(13, this.addToInbox(entity));
+            }
         }
 
         if (parentId && !this.isSpecialEntity(parentId)) {
@@ -66,21 +72,15 @@ export class Actions {
             push(32, this.moveTopParent(entity, parentId));
         }
 
-        if (parentId !== 'inbox') {
-            push(15, this.addToInbox(entity));
-        }
-
         if (context?.section === 'snoozed') {
-            const action = this.removeSnooze(entity);
-            action.icon = 'times';
-            push(10, action);
+            push(10, this.removeSnooze(entity));
         }
 
         if (this.isNoteEntity(entity)) {
             push(45, this.popOutToWindow(entity));
         }
 
-        push(16, this.selectEntityCollections(entity));
+        push(20, this.selectEntityCollections(entity));
 
         push(40, this.copyLink(entity));
 
