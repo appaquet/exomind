@@ -54,7 +54,7 @@ class EntityListViewController: UITableViewController {
         self.swipeActions = actions
     }
 
-    func setClickHandlers(_ itemClick: @escaping (EntityExt) -> Void, collectionClick: @escaping (EntityExt) -> Void) {
+    func setClickHandler(_ itemClick: @escaping (EntityExt) -> Void, collectionClick: @escaping (EntityExt) -> Void) {
         self.itemClickHandler = itemClick
         self.collectionClickHandler = collectionClick
     }

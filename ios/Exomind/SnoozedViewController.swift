@@ -32,7 +32,7 @@ class SnoozedViewController: UIViewController {
 
         self.entityListViewController.loadData(fromQuery: query)
 
-        self.entityListViewController.setClickHandlers { [weak self] in
+        self.entityListViewController.setClickHandler { [weak self] in
             self?.handleItemClick($0)
         } collectionClick: { [weak self] in
             self?.handleItemClick($0)

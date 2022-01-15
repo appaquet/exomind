@@ -71,8 +71,8 @@ class EntityViewController: UIViewController {
         self.title = trait.displayName
 
         if !self.viewCreated {
-            self.createEntityViewController()
             self.viewCreated = true
+            self.createEntityViewController()
         } else if let vc = self.entityViewController {
             vc.loadEntityTrait(entity: entity, trait: trait, fullEntity: self.fullEntity)
         }
