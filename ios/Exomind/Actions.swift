@@ -54,7 +54,7 @@ class Actions {
     static func forSelectedEntities(_ entities: [EntityExt], parentId: EntityId? = nil, navController: NavigationController? = nil) -> [Action] {
         var ret: [PrioAction] = []
 
-        if let navController = navController, let parentId = parentId {
+        if let parentId = parentId {
             // TODO:
             ret.append(PrioAction(prio: 32, action: Actions.moveTopParent(entities[0], parentId: parentId)))
         }
