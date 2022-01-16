@@ -108,7 +108,7 @@ export class Actions {
         return _.sortBy(actions, (a) => a.priority);
     }
 
-    static forObjectCreation(parent: EntityTraits | string): IAction[] {
+    static forEntityCreation(parent: EntityTraits | string): IAction[] {
         const parentId = Commands.getEntityId(parent);
 
         const actions: IAction[] = [];

@@ -19,6 +19,7 @@ class EntityCreationViewController: ModalGridViewController {
 
     func createView() {
         let items: [GridIconsViewItem] = [
+            // TODO: Should use actions
             GridIconsViewItem(label: "Task", icon: .check, callback: { [weak self] (item) -> () in
                 EntityCreationViewController.createTask(self?.parentId, callback: self?.callback)
                 self?.close()
@@ -47,6 +48,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
+    // TODO: Move
     static func createTask(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             var task = Exomind_Base_V1_Task()
@@ -64,6 +66,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
+    // TODO: Move
     static func createNote(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             var note = Exomind_Base_V1_Note()
@@ -81,6 +84,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
+    // TODO: Move
     static func createEmail(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             let email = Exomind_Base_V1_DraftEmail()
@@ -97,6 +101,7 @@ class EntityCreationViewController: ModalGridViewController {
         }
     }
 
+    // TODO: Move
     static func createCollection(_ parentId: EntityId?, callback: ((EntityExt?) -> Void)?) {
         do {
             var collection = Exomind_Base_V1_Collection()

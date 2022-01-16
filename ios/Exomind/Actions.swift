@@ -1,7 +1,7 @@
 import Foundation
 import FontAwesome_swift
 
-// TODO: Pin & unpin
+// TODO: Creation actions
 
 class Actions {
     static func forEntity(_ entity: EntityExt, parentId: EntityId? = nil, section: ActionSection? = nil, navController: NavigationController? = nil) -> [Action] {
@@ -43,6 +43,8 @@ class Actions {
             ret.append(PrioAction(prio: 10, action: Actions.removeSnooze(entity)))
         }
 
+        ret.append(PrioAction(prio: 40, action: Actions.copyLink(entity)))
+
         return ret.sorted {
                     $0.prio < $1.prio
                 }
@@ -51,8 +53,18 @@ class Actions {
                 }
     }
 
+    static func forEntityCreation(_ entity: EntityExt) -> [Action] {
+        // TODO:
+//        push(10, this.createNote(parentId));
+//        push(11, this.createCollection(parentId));
+//        push(12, this.createLink(parentId));
+//        push(13, this.createTask(parentId));
+
+        return []
+    }
+
     static func removeFromParent(_ entity: EntityExt, parentId: String) -> Action {
-        Action(key: .removeParent, label: "Remove from parent", icon: .check, destructive: true, swipeColor: Stylesheet.collectionSwipeDoneBg) { cb in
+        Action(key: .removeParent, label: "Remove", icon: .check, destructive: true, swipeColor: Stylesheet.collectionSwipeDoneBg) { cb in
             Commands.removeFromParent(entity: entity, parentId: parentId)
             cb(.successRemoved)
         }
@@ -90,7 +102,7 @@ class Actions {
     }
 
     static func removeSnooze(_ entity: EntityExt) -> Action {
-        Action(key: .removeSnooze, label: "Remove snooze", icon: .clock) { (cb) in
+        Action(key: .removeSnooze, label: "Remove snooze", icon: .clock, swipeColor: Stylesheet.collectionSwipeSnoozeBg) { (cb) in
             Commands.removeSnooze(entity)
             cb(.success)
         }
@@ -113,6 +125,13 @@ class Actions {
     static func unpinInParent(_ entity: EntityExt, parentId: String) -> Action {
         Action(key: .pinParent, label: "Unpin from top", icon: .thumbtack) { (cb) in
             Commands.unpinEntityInParent(entity: entity, parentId: parentId)
+            cb(.success)
+        }
+    }
+
+    static func copyLink(_ entity: EntityExt) -> Action {
+        Action(key: .copyLink, label: "Copy link", icon: .link) { (cb) in
+            UIPasteboard.general.string = "entity://\(entity.id)"
             cb(.success)
         }
     }
@@ -170,6 +189,7 @@ enum ActionKey {
     case moveTopParent
     case pinParent
     case unpinParent
+    case copyLink
     case delete
 }
 

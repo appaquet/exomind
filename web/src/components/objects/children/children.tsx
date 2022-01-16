@@ -185,7 +185,7 @@ export class Children extends React.Component<IProps, IState> {
         }
 
         // Creation actions
-        items = items.concat(Actions.forObjectCreation(this.state.parent));
+        items = items.concat(Actions.forEntityCreation(this.state.parent));
 
         const handleExecuted = (action: IAction, result: IActionResult) => {
             if (action.key.startsWith('create-')) {

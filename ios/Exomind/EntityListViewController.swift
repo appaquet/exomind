@@ -258,7 +258,7 @@ class EntityListViewController: UITableViewController {
     }
 
     private func showMoreSwipeAction(indexPath: IndexPath, actions: [Action]) -> UIContextualAction {
-        let sAction = UIContextualAction(style: .normal, title: "More...") { _swipeAction, _view, swipeCb in
+        let sAction = UIContextualAction(style: .normal, title: "More...") { _swipeAction, view, swipeCb in
             swipeCb(true)
 
             let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
@@ -276,8 +276,8 @@ class EntityListViewController: UITableViewController {
             }
             alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
             self.present(alertController, animated: true)
-
         }
+
         sAction.backgroundColor = Stylesheet.collectionSwipeMoreBg
         sAction.image = ObjectsIcon.icon(forFontAwesome: .ellipsisH, color: UIColor.white, dimension: 30)
         return sAction
