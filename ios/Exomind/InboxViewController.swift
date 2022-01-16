@@ -67,8 +67,8 @@ class InboxViewController: UIViewController {
     }
 
     private func handleCreateObject() -> ()? {
-        (self.navigationController as? NavigationController)?.showCreateObject("inbox") { [weak self] (entity) -> Void in
-            guard let entity = entity else {
+        (self.navigationController as? NavigationController)?.showCreateObject("inbox") { [weak self] (res) -> Void in
+            guard case let .success(entity) = res, let entity = entity else {
                 return
             }
             (self?.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))

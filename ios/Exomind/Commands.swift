@@ -64,6 +64,77 @@ class Commands {
         ExocoreClient.store.mutate(mutation: mutation)
     }
 
+    static func createTask(_ parentId: EntityId?, callback: ((EntityCreateResult) -> Void)? = nil) {
+        do {
+            var task = Exomind_Base_V1_Task()
+            task.title = "New task"
+
+            var builder = try MutationBuilder
+                    .createEntity()
+                    .returnEntities()
+                    .putTrait(message: task)
+
+            try Commands.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
+        } catch {
+            print("Error creating task: \(error)")
+            callback?(.failure(error))
+        }
+    }
+
+    static func createNote(_ parentId: EntityId?, callback: ((EntityCreateResult) -> Void)? = nil) {
+        do {
+            var note = Exomind_Base_V1_Note()
+            note.title = "New note"
+
+            var builder = try MutationBuilder
+                    .createEntity()
+                    .returnEntities()
+                    .putTrait(message: note)
+
+            try Commands.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
+        } catch {
+            print("Error creating note: \(error)")
+            callback?(.failure(error))
+        }
+    }
+
+    static func createEmail(_ parentId: EntityId?, callback: ((EntityCreateResult) -> Void)? = nil) {
+        do {
+            let email = Exomind_Base_V1_DraftEmail()
+
+            var builder = try MutationBuilder
+                    .createEntity()
+                    .returnEntities()
+                    .putTrait(message: email)
+
+            try Commands.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
+        } catch {
+            print("Error creating email: \(error)")
+            callback?(.failure(error))
+        }
+    }
+
+    static func createCollection(_ parentId: EntityId?, callback: ((EntityCreateResult) -> Void)? = nil) {
+        do {
+            var collection = Exomind_Base_V1_Collection()
+            collection.name = "New collection"
+
+            var builder = try MutationBuilder
+                    .createEntity()
+                    .returnEntities()
+                    .putTrait(message: collection)
+
+            try Commands.addChildMutation(parentId: parentId ?? "inbox", builder: &builder)
+            Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
+        } catch {
+            print("Error creating collection: \(error)")
+            callback?(.failure(error))
+        }
+    }
+
     static func addChildMutation(parentId: EntityId, builder: inout MutationBuilder, weight: UInt64? = nil) throws {
         var child = Exomind_Base_V1_CollectionChild()
         child.collection.entityID = parentId
@@ -72,17 +143,23 @@ class Commands {
         builder = try builder.putTrait(message: child, traitId: "child_\(parentId)")
     }
 
-    static func executeNewEntityMutation(mutation: Exocore_Store_MutationRequest, callback: ((EntityExt?) -> ())?) {
+    static func executeNewEntityMutation(mutation: Exocore_Store_MutationRequest, callback: ((EntityCreateResult) -> ())? = nil) {
         ExocoreClient.store.mutate(mutation: mutation, onCompletion: { (status, results) in
+            // TODO: move this out
             DispatchQueue.main.async {
                 guard let results = results,
                       results.entities.count > 0 else {
-                    callback?(nil)
+                    callback?(.success(nil))
                     return
                 }
 
-                callback?(results.entities[0].toExtension())
+                callback?(.success(results.entities[0].toExtension()))
             }
         })
     }
+}
+
+enum EntityCreateResult {
+    case success(EntityExt?)
+    case failure(Error)
 }

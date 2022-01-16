@@ -27,20 +27,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
-        func openObject(_ entity: EntityExt?) {
-            if let entity = entity {
+        func openObject(_ res: EntityCreateResult?) {
+            if case let .success(entity) = res, let entity = entity {
                 RootViewController.mainInstance()?.show(navigationObject: .entity(entity: entity))
             }
         }
 
         if (shortcutItem.type.contains("NewNote")) {
-            EntityCreationViewController.createNote(nil, callback: openObject)
+            Commands.createNote(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewTask")) {
-            EntityCreationViewController.createTask(nil, callback: openObject)
-        } else if (shortcutItem.type.contains("NewEmail")) {
-            EntityCreationViewController.createEmail(nil, callback: openObject)
+            Commands.createTask(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewCollection")) {
-            EntityCreationViewController.createCollection(nil, callback: openObject)
+            Commands.createCollection(nil, callback: openObject)
         }
     }
 

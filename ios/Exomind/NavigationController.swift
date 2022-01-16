@@ -157,7 +157,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         self.present(vc, animated: true, completion: nil)
     }
 
-    func showCreateObject(_ fromEntityId: EntityId, callback: @escaping (EntityExt?) -> Void) {
+    func showCreateObject(_ fromEntityId: EntityId, callback: ((EntityCreateResult) -> Void)? = nil) {
         let showIn = self.parent ?? self
         let vc = EntityCreationViewController(parentId: fromEntityId, callback: callback)
         vc.showInsideViewController(showIn)

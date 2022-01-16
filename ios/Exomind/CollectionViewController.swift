@@ -109,8 +109,8 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func handleCreateObject() -> ()? {
-        (self.navigationController as? NavigationController)?.showCreateObject(self.entity.id) { [weak self] (entity) -> Void in
-            guard let entity = entity else {
+        (self.navigationController as? NavigationController)?.showCreateObject(self.entity.id) { [weak self] (res) -> Void in
+            guard case let .success(entity) = res, let entity = entity else {
                 return
             }
             (self?.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))

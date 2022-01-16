@@ -60,12 +60,6 @@
 		</dict>
 		<dict>
 			<key>UIApplicationShortcutItemTitle</key>
-			<string>New email</string>
-			<key>UIApplicationShortcutItemType</key>
-			<string>$(PRODUCT_BUNDLE_IDENTIFIER).NewEmail</string>
-		</dict>
-		<dict>
-			<key>UIApplicationShortcutItemTitle</key>
 			<string>New note</string>
 			<key>UIApplicationShortcutItemType</key>
 			<string>$(PRODUCT_BUNDLE_IDENTIFIER).NewNote</string>

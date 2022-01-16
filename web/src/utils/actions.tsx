@@ -180,7 +180,7 @@ export class Actions {
     static moveTopParent(et: EntityTraits | EntityTraits[], parent: EntityTraits | string): IAction {
         return {
             key: 'move-top-parent',
-            label: 'Move top',
+            label: 'Move to top',
             icon: 'arrow-up',
             execute: async () => {
                 await Commands.addToParent(et, parent);
@@ -241,7 +241,7 @@ export class Actions {
     static removeSnooze(et: EntityTraits): IAction {
         return {
             key: 'remove-snooze',
-            label: 'Remove snooze',
+            label: 'Unsnooze',
             icon: 'clock-o',
             execute: async () => {
                 await Commands.removeSnooze(et);

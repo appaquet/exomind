@@ -1,8 +1,6 @@
 import Foundation
 import FontAwesome_swift
 
-// TODO: Creation actions
-
 class Actions {
     static func forEntity(_ entity: EntityExt, parentId: EntityId? = nil, section: ActionSection? = nil, navController: NavigationController? = nil) -> [Action] {
         var ret: [PrioAction] = []
@@ -53,14 +51,19 @@ class Actions {
                 }
     }
 
-    static func forEntityCreation(_ entity: EntityExt) -> [Action] {
-        // TODO:
-//        push(10, this.createNote(parentId));
-//        push(11, this.createCollection(parentId));
-//        push(12, this.createLink(parentId));
-//        push(13, this.createTask(parentId));
+    static func forEntityCreation(_ parentId: EntityId? = nil) -> [Action] {
+        var ret: [PrioAction] = []
 
-        return []
+        ret.append(PrioAction(prio: 10, action: Actions.createNote(parentId)))
+        ret.append(PrioAction(prio: 11, action: Actions.createCollection(parentId)))
+        ret.append(PrioAction(prio: 13, action: Actions.createTask(parentId)))
+
+        return ret.sorted {
+                    $0.prio < $1.prio
+                }
+                .map {
+                    $0.action
+                }
     }
 
     static func removeFromParent(_ entity: EntityExt, parentId: String) -> Action {
@@ -102,27 +105,27 @@ class Actions {
     }
 
     static func removeSnooze(_ entity: EntityExt) -> Action {
-        Action(key: .removeSnooze, label: "Remove snooze", icon: .clock, swipeColor: Stylesheet.collectionSwipeSnoozeBg) { (cb) in
+        Action(key: .removeSnooze, label: "Unsnooze", icon: .clock, swipeColor: Stylesheet.collectionSwipeSnoozeBg) { (cb) in
             Commands.removeSnooze(entity)
             cb(.success)
         }
     }
 
-    static func moveTopParent(_ entity: EntityExt, parentId: String) -> Action {
-        Action(key: .moveTopParent, label: "Move top", icon: .arrowUp) { (cb) in
+    static func moveTopParent(_ entity: EntityExt, parentId: EntityId) -> Action {
+        Action(key: .moveTopParent, label: "Move to top", icon: .arrowUp) { (cb) in
             Commands.addToParent(entity: entity, parentId: parentId)
             cb(.success)
         }
     }
 
-    static func pinInParent(_ entity: EntityExt, parentId: String) -> Action {
+    static func pinInParent(_ entity: EntityExt, parentId: EntityId) -> Action {
         Action(key: .pinParent, label: "Pin to top", icon: .thumbtack) { (cb) in
             Commands.pinEntityInParent(entity: entity, parentId: parentId)
             cb(.success)
         }
     }
 
-    static func unpinInParent(_ entity: EntityExt, parentId: String) -> Action {
+    static func unpinInParent(_ entity: EntityExt, parentId: EntityId) -> Action {
         Action(key: .pinParent, label: "Unpin from top", icon: .thumbtack) { (cb) in
             Commands.unpinEntityInParent(entity: entity, parentId: parentId)
             cb(.success)
@@ -150,7 +153,28 @@ class Actions {
         }
     }
 
-    static func isSpecialEntity(_ id: EntityId) -> Bool {
+    static func createNote(_ parentId: EntityId?) -> Action {
+        Action(key: .createNote, label: "Create note", icon: .pen) { cb in
+            Commands.createNote(parentId)
+            cb(.success)
+        }
+    }
+
+    static func createCollection(_ parentId: EntityId?) -> Action {
+        Action(key: .createCollection, label: "Create collection", icon: .folderOpen) { cb in
+            Commands.createCollection(parentId)
+            cb(.success)
+        }
+    }
+
+    static func createTask(_ parentId: EntityId?) -> Action {
+        Action(key: .createTask, label: "Create task", icon: .check) { cb in
+            Commands.createTask(parentId)
+            cb(.success)
+        }
+    }
+
+    private static func isSpecialEntity(_ id: EntityId) -> Bool {
         id == "inbox" || id == "favorites"
     }
 }
@@ -191,6 +215,9 @@ enum ActionKey {
     case unpinParent
     case copyLink
     case delete
+    case createNote
+    case createTask
+    case createCollection
 }
 
 enum ActionSection {
