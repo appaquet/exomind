@@ -33,6 +33,17 @@ class EntityListViewController: UITableViewController {
         return ds
     }()
 
+    var editMode: Bool {
+        set {
+            tableView.allowsMultipleSelectionDuringEditing = newValue
+            tableView.setEditing(newValue, animated: true)
+            self.refreshSelectedItemActions()
+        }
+        get {
+            self.tableView.isEditing
+        }
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.tableView.dataSource = self.datasource
@@ -165,12 +176,20 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.tableView.deselectRow(at: indexPath, animated: false)
+        if self.editMode {
+            self.refreshSelectedItemActions()
+            return
+        }
 
+        self.tableView.deselectRow(at: indexPath, animated: false) // prevent selection highlight
         if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
            let handler = self.itemClickHandler {
             handler(res.entity)
         }
+    }
+
+    override func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        self.refreshSelectedItemActions()
     }
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -350,6 +369,44 @@ class EntityListViewController: UITableViewController {
 
             return EntityResult(result: res, entity: entity, priorityTrait: entity.priorityTrait, collections: collections)
         }
+    }
+
+    private func refreshSelectedItemActions() {
+        if !self.editMode {
+            self.navigationController?.setToolbarHidden(true, animated: true)
+        }
+
+        let selectedPaths = self.tableView.indexPathsForSelectedRows ?? []
+        let selectedEntities = selectedPaths.map {
+            self.collectionData[$0.row].entity
+        }
+        if selectedEntities.isEmpty {
+            self.navigationController?.setToolbarHidden(true, animated: true)
+            return
+        }
+
+        let actions = Actions.forSelectedEntities(selectedEntities, parentId: self.parentId, navController: self.navigationController as? NavigationController)
+        if actions.isEmpty {
+            self.navigationController?.setToolbarHidden(true, animated: true)
+            return
+        }
+
+        var items = [UIBarButtonItem]()
+        items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
+
+        for action in actions.prefix(3) {
+            items.append(UIBarButtonItem(title: action.label, primaryAction: UIAction { _ in
+                action.execute { _ in }
+                self.editMode = false
+            }))
+        }
+
+        // TODO: more
+
+        items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
+
+        self.parent?.toolbarItems = items
+        self.navigationController?.setToolbarHidden(false, animated: true)
     }
 
     deinit {

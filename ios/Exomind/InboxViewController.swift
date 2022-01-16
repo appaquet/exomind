@@ -48,6 +48,9 @@ class InboxViewController: UIViewController {
             nav.setBarActions([
                 NavigationControllerBarAction(icon: .search, handler: { [weak self] () -> Void in
                     (self?.navigationController as? NavigationController)?.showSearch("inbox")
+                }),
+                NavigationControllerBarAction(icon: .checkCircle, handler: { [weak self] () -> Void in
+                    self?.entityListViewController.editMode = !(self?.entityListViewController.editMode ?? true)
                 })
             ])
 

@@ -27,7 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
-        func openObject(_ res: EntityCreateResult?) {
+        let openObject = { res in
             if case let .success(entity) = res, let entity = entity {
                 RootViewController.mainInstance()?.show(navigationObject: .entity(entity: entity))
             }
