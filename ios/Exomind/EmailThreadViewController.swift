@@ -75,25 +75,26 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
-        nav.setQuickButtonActions([
-            QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
-                self?.handleReply()
-            }),
-            QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
-                self?.handleReplyAll()
-            }),
-            QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
-                self?.handleForward()
-            }),
-            QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
-                self?.handleAddToCollection()
-            }),
-            QuickButtonAction(icon: .check, handler: { [weak self]() -> Void in
-                self?.handleDone()
-            })
-        ])
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+            nav.setQuickButtonActions([
+                QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
+                    self?.handleReply()
+                }),
+                QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
+                    self?.handleReplyAll()
+                }),
+                QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
+                    self?.handleForward()
+                }),
+                QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
+                    self?.handleAddToCollection()
+                }),
+                QuickButtonAction(icon: .check, handler: { [weak self]() -> Void in
+                    self?.handleDone()
+                })
+            ])
+        }
     }
 
     func refreshHeights() {

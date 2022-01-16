@@ -43,26 +43,27 @@ class InboxViewController: UIViewController {
     }
 
     private func setupNavigationActions() {
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
-        nav.setBarActions([
-            NavigationControllerBarAction(icon: .search, handler: { [weak self] () -> Void in
-                (self?.navigationController as? NavigationController)?.showSearch("inbox")
-            })
-        ])
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+            nav.setBarActions([
+                NavigationControllerBarAction(icon: .search, handler: { [weak self] () -> Void in
+                    (self?.navigationController as? NavigationController)?.showSearch("inbox")
+                })
+            ])
 
-        // quick button only visible in current
-        nav.setQuickButtonActions([ // TODO: replace by actions
-            QuickButtonAction(icon: .clock, handler: { () -> Void in
-                // TODO: Goto snoozed
-            }),
-            QuickButtonAction(icon: .plus, handler: { [weak self] () -> Void in
-                self?.handleCreateObject()
-            }),
-            QuickButtonAction(icon: .check, handler: { () -> Void in
-                // TODO: Goto History
-            })
-        ])
+            // quick button only visible in current
+            nav.setQuickButtonActions([// TODO: replace by actions
+                QuickButtonAction(icon: .clock, handler: { () -> Void in
+                    // TODO: Goto snoozed
+                }),
+                QuickButtonAction(icon: .plus, handler: { [weak self] () -> Void in
+                    self?.handleCreateObject()
+                }),
+                QuickButtonAction(icon: .check, handler: { () -> Void in
+                    // TODO: Goto History
+                })
+            ])
+        }
     }
 
     private func handleCreateObject() -> ()? {

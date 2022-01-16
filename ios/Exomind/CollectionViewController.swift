@@ -51,7 +51,10 @@ class CollectionViewController: UIViewController, EntityTraitView {
     }
 
     private func setupNavigationActions() {
-        let nav = (self.navigationController as! NavigationController)
+        guard let nav = self.navigationController as? NavigationController else {
+            return
+        }
+
         nav.resetState()
         nav.setBarActions([
             NavigationControllerBarAction(icon: .search, handler: { [weak self] () -> Void in

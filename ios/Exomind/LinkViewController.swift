@@ -27,7 +27,8 @@ class LinkViewController: UIViewController, EntityTraitView {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+        }
     }
 }

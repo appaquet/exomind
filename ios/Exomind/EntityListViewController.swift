@@ -16,6 +16,7 @@ class EntityListViewController: UITableViewController {
     private var scrollDragging = false
     private var headerShown: Bool = false
     private var headerWasShownBeforeDrag: Bool = false
+    private var previewedEntity: EntityExt?
 
     var actionsForEntity: ((EntityExt) -> [Action])?
     var itemClickHandler: ((EntityExt) -> Void)?
@@ -197,17 +198,58 @@ class EntityListViewController: UITableViewController {
             return nil
         }
 
-        var swipeActions = [UIContextualAction]()
-        if actions.count <= 3 {
-            swipeActions = actions.dropFirst().map {
-                self.toSwipeAction(indexPath: indexPath, action: $0)
-            }
-        } else {
-            swipeActions.append(self.toSwipeAction(indexPath: indexPath, action: actions[1]))
-            swipeActions.append(self.showMoreSwipeAction(indexPath: indexPath, actions: actions))
+        let swipeActions: [UIContextualAction] = actions.dropFirst().prefix(2).map {
+            self.toSwipeAction(indexPath: indexPath, action: $0)
+        }
+        return UISwipeActionsConfiguration(actions: swipeActions)
+    }
+
+    override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
+              let actionsForEntity = self.actionsForEntity
+                else {
+            return nil
         }
 
-        return UISwipeActionsConfiguration(actions: swipeActions)
+        let actions = actionsForEntity(entity)
+        if actions.isEmpty {
+            return nil
+        }
+
+        let actionProvider: UIContextMenuActionProvider = { _ in
+            let children: [UIAction] = actions.map { action in
+                let image = action.icon.map {
+                    ObjectsIcon.icon(forFontAwesome: $0, color: UIColor.label, dimension: 30)
+                }
+
+                return UIAction(title: action.label, image: image) { _ in
+                    action.execute { _ in
+                    }
+                }
+            }
+
+            return UIMenu(children: children)
+        }
+
+        var previewProvider: UIContextMenuContentPreviewProvider? = nil
+        if entity.priorityTrait?.constants?.canPreview ?? false {
+            previewProvider = {
+                let vc = EntityViewController()
+                vc.populate(entity: entity)
+                return vc
+            }
+            previewedEntity = entity
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider, actionProvider: actionProvider)
+    }
+
+    override func tableView(_ tableView: UITableView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        animator.addCompletion {
+            if let previewedEntity = self.previewedEntity {
+                self.itemClickHandler?(previewedEntity)
+            }
+        }
     }
 
     private func createCell(_ indexPath: IndexPath, result: EntityResult) -> SwiftUICellViewHost<EntityListCell> {

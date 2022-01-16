@@ -1,4 +1,3 @@
-
 import UIKit
 
 class LogsViewController: UIViewController {
@@ -7,12 +6,13 @@ class LogsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
-        nav.setBarActions([NavigationControllerBarAction(icon: .retweet, handler: {
-            self.refreshLogs()
-            self.logTextView.scrollToBottom()
-        })])
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+            nav.setBarActions([NavigationControllerBarAction(icon: .retweet, handler: {
+                self.refreshLogs()
+                self.logTextView.scrollToBottom()
+            })])
+        }
 
         self.refreshLogs()
     }
@@ -22,7 +22,9 @@ class LogsViewController: UIViewController {
     }
 
     func refreshLogs() {
-        guard var logs = try? String.init(contentsOfFile: ExocoreUtils.logFile, encoding: .utf8) else { return }
+        guard var logs = try? String.init(contentsOfFile: ExocoreUtils.logFile, encoding: .utf8) else {
+            return
+        }
         if logs.count > 10000 {
             logs = String(logs.suffix(10000))
         }
@@ -34,7 +36,9 @@ class LogsViewController: UIViewController {
 extension UITextView {
     func scrollToBottom() {
         let textCount: Int = text.count
-        guard textCount >= 1 else { return }
+        guard textCount >= 1 else {
+            return
+        }
         scrollRangeToVisible(NSRange(location: textCount - 1, length: 1))
     }
 }

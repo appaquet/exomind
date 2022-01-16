@@ -23,7 +23,7 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
             // we only load if it's full entity to prevent saving empty
             return
         }
-        
+
         self.entity = entity
         self.draftTrait = entity.trait(withId: trait.id)
 
@@ -144,18 +144,20 @@ class DraftEmailViewController: VerticalLinearViewController, EntityTraitView, C
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
-        nav.setBarActions([
-            NavigationControllerBarAction(icon: .paperPlane, handler: { [weak self] () -> Void in
-                self?.handleSendClick()
-            })
-        ])
-        nav.setQuickButtonActions([
-            QuickButtonAction(icon: .times, handler: { [weak self] () -> Void in
-                self?.handleDelete()
-            })
-        ])
+
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+            nav.setBarActions([
+                NavigationControllerBarAction(icon: .paperPlane, handler: { [weak self] () -> Void in
+                    self?.handleSendClick()
+                })
+            ])
+            nav.setQuickButtonActions([
+                QuickButtonAction(icon: .times, handler: { [weak self] () -> Void in
+                    self?.handleDelete()
+                })
+            ])
+        }
     }
 
     func loadData() {

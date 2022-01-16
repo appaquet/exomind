@@ -132,8 +132,9 @@ class EntityExt {
     func traitOfType<T: Message>(_ message: T.Type) -> TraitInstance<T>? {
         let traits = self.typeTraits[message.protoMessageName] ?? []
         return traits.compactMap({ (trait) -> TraitInstance<T>? in
-            self.trait(withId: trait.id)
-        }).first
+                    self.trait(withId: trait.id)
+                })
+                .first
     }
 
     func traitsOfType<T: Message>(_ message: T.Type) -> [TraitInstance<T>] {
@@ -281,12 +282,12 @@ struct TraitInstance<T: Message>: AnyTraitInstance {
         case let email as Exomind_Base_V1_Email:
             name = email.subject.nonEmpty() ?? "Untitled email"
         case let collection as Exomind_Base_V1_Collection:
-           if strip && collection.name.startsWithEmoji() {
-               let (_, rest) = collection.name.splitFirstEmoji()
-               name = rest.nonEmpty() ?? "Untitled collection"
-           } else {
-               name = collection.name.nonEmpty() ?? "Untitled collection"
-           }
+            if strip && collection.name.startsWithEmoji() {
+                let (_, rest) = collection.name.splitFirstEmoji()
+                name = rest.nonEmpty() ?? "Untitled collection"
+            } else {
+                name = collection.name.nonEmpty() ?? "Untitled collection"
+            }
         case let task as Exomind_Base_V1_Task:
             name = task.title.nonEmpty() ?? "Untitled task"
         case let note as Exomind_Base_V1_Note:
@@ -334,6 +335,7 @@ struct TraitConstants {
     let color: Int
     let order: Int
     let collectionLike: Bool
+    let canPreview: Bool
 }
 
 func getTraitConstants(entity: EntityExt, trait: Exocore_Store_Trait) -> TraitConstants? {
@@ -353,7 +355,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "inbox",
             color: 4,
             order: 0,
-            collectionLike: true
+            collectionLike: true,
+            canPreview: false
     ),
     "favorites": TraitConstants(
             key: "favorites",
@@ -363,7 +366,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "star",
             color: 4,
             order: 1,
-            collectionLike: true
+            collectionLike: true,
+            canPreview: false
     ),
     "exomind.base.v1.EmailThread": TraitConstants(
             key: "exomind.base.v1.EmailThread",
@@ -373,7 +377,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "envelope-o",
             color: 1,
             order: 2,
-            collectionLike: false
+            collectionLike: false,
+            canPreview: true
     ),
     "exomind.base.v1.DraftEmail": TraitConstants(
             key: "exomind.base.v1.DraftEmail",
@@ -383,7 +388,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "envelope-o",
             color: 6,
             order: 3,
-            collectionLike: false
+            collectionLike: false,
+            canPreview: true
     ),
     "exomind.base.v1.Email": TraitConstants(
             key: "exomind.base.v1.Email",
@@ -393,7 +399,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "envelope-o",
             color: 6,
             order: 4,
-            collectionLike: false
+            collectionLike: false,
+            canPreview: true
     ),
     "exomind.base.v1.Collection": TraitConstants(
             key: "exomind.base.v1.Collection",
@@ -403,7 +410,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "folder-o",
             color: 2,
             order: 5,
-            collectionLike: true
+            collectionLike: true,
+            canPreview: true
     ),
     "exomind.base.v1.Task": TraitConstants(
             key: "exomind.base.v1.Task",
@@ -413,7 +421,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "check-square-o",
             color: 7,
             order: 6,
-            collectionLike: false
+            collectionLike: false,
+            canPreview: false
     ),
     "exomind.base.v1.Note": TraitConstants(
             key: "exomind.base.v1.Note",
@@ -423,7 +432,8 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "pencil",
             color: 3,
             order: 7,
-            collectionLike: false
+            collectionLike: false,
+            canPreview: true
     ),
     "exomind.base.v1.Link": TraitConstants(
             key: "exomind.base.v1.Link",
@@ -433,6 +443,7 @@ let TraitsConstants: [String: TraitConstants] = [
             icon: "link",
             color: 9,
             order: 8,
-            collectionLike: false
+            collectionLike: false,
+            canPreview: true
     )
 ]
