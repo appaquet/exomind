@@ -35,7 +35,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                 .sorted(by: { (em1, em2) in
                     em1.message.receivedDate.date.isLessThan(em2.message.receivedDate.date)
                 })
-        self.firstNonRead = self.emails.firstIndex(where: { self.unreadEmails[$0.id] != nil }) ?? 0
+        self.firstNonRead = self.emails.firstIndex(where: { self.unreadEmails[$0.id] != nil }) ?? self.emails.count
         
         // unread emails are considered loaded since we use to sequentially load them
         self.loadedEmails = self.emails.map({ self.unreadEmails[$0.id] == nil })
