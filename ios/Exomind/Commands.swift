@@ -1,36 +1,52 @@
 import Foundation
 import Exocore
 
-// TODO: createNote, Task, Collection, Link
-
 class Commands {
     static func addToParent(entity: EntityExt, parentId: String, weight: UInt64? = nil) {
-        var mutation = MutationBuilder.updateEntity(entityId: entity.id)
-        try! addChildMutation(parentId: parentId, builder: &mutation, weight: weight)
-        ExocoreClient.store.mutate(mutation: mutation.build())
+        Commands.addToParent(entities: [entity], parentId: parentId, weight: weight)
+    }
+
+    static func addToParent(entities: [EntityExt], parentId: String, weight: UInt64? = nil) {
+        for entity in entities {
+            var mutation = MutationBuilder.updateEntity(entityId: entity.id)
+            try! addChildMutation(parentId: parentId, builder: &mutation, weight: weight)
+            ExocoreClient.store.mutate(mutation: mutation.build())
+        }
     }
 
     static func removeFromParent(entity: EntityExt, parentId: String) {
-        guard let parentRel = Collections.getParentRelation(entity: entity, parentId: parentId) else {
-            return
-        }
+        Commands.removeFromParent(entities: [entity], parentId: parentId)
+    }
 
-        let mutation = MutationBuilder
-                .updateEntity(entityId: entity.id)
-                .deleteTrait(traitId: parentRel.id)
-        ExocoreClient.store.mutate(mutation: mutation.build())
+    static func removeFromParent(entities: [EntityExt], parentId: String) {
+        for entity in entities {
+            guard let parentRel = Collections.getParentRelation(entity: entity, parentId: parentId) else {
+                continue
+            }
+
+            let mutation = MutationBuilder
+                    .updateEntity(entityId: entity.id)
+                    .deleteTrait(traitId: parentRel.id)
+            ExocoreClient.store.mutate(mutation: mutation.build())
+        }
     }
 
     static func snooze(entity: EntityExt, date: Date) {
-        var snoozed = Exomind_Base_V1_Snoozed()
-        snoozed.untilDate = date.toProtobuf()
+        Commands.snooze(entities: [entity], date: date)
+    }
 
-        let mutation = try! MutationBuilder
-                .updateEntity(entityId: entity.id)
-                .putTrait(message: snoozed, traitId: "snoozed")
-                .build()
+    static func snooze(entities: [EntityExt], date: Date) {
+        for entity in entities {
+            var snoozed = Exomind_Base_V1_Snoozed()
+            snoozed.untilDate = date.toProtobuf()
 
-        ExocoreClient.store.mutate(mutation: mutation)
+            let mutation = try! MutationBuilder
+                    .updateEntity(entityId: entity.id)
+                    .putTrait(message: snoozed, traitId: "snoozed")
+                    .build()
+
+            ExocoreClient.store.mutate(mutation: mutation)
+        }
     }
 
     static func removeSnooze(_ entity: EntityExt) {
@@ -48,11 +64,11 @@ class Commands {
 
     static func pinEntityInParent(entity: EntityExt, parentId: String) {
         let weight = UInt64(Date().millisecondsSince1970) + Collections.PINNED_WEIGHT;
-        addToParent(entity: entity, parentId: parentId, weight: weight)
+        addToParent(entities: [entity], parentId: parentId, weight: weight)
     }
 
     static func unpinEntityInParent(entity: EntityExt, parentId: String) {
-        addToParent(entity: entity, parentId: parentId)
+        addToParent(entities: [entity], parentId: parentId)
     }
 
     static func delete(_ entity: EntityExt) {
@@ -78,7 +94,7 @@ class Commands {
             Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating task: \(error)")
-            callback?(.failure(error))
+            callback?(.failed(error))
         }
     }
 
@@ -96,7 +112,7 @@ class Commands {
             Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating note: \(error)")
-            callback?(.failure(error))
+            callback?(.failed(error))
         }
     }
 
@@ -113,7 +129,7 @@ class Commands {
             Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating email: \(error)")
-            callback?(.failure(error))
+            callback?(.failed(error))
         }
     }
 
@@ -131,7 +147,7 @@ class Commands {
             Commands.executeNewEntityMutation(mutation: builder.build(), callback: callback)
         } catch {
             print("Error creating collection: \(error)")
-            callback?(.failure(error))
+            callback?(.failed(error))
         }
     }
 
@@ -145,7 +161,6 @@ class Commands {
 
     static func executeNewEntityMutation(mutation: Exocore_Store_MutationRequest, callback: ((EntityCreateResult) -> ())? = nil) {
         ExocoreClient.store.mutate(mutation: mutation, onCompletion: { (status, results) in
-            // TODO: move this out
             DispatchQueue.main.async {
                 guard let results = results,
                       results.entities.count > 0 else {
@@ -161,5 +176,5 @@ class Commands {
 
 enum EntityCreateResult {
     case success(EntityExt?)
-    case failure(Error)
+    case failed(Error)
 }

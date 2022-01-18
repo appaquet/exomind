@@ -12,9 +12,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var reach: Reachability?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        AppCenter.start(withAppSecret: "fd71ff63-e602-441d-8fc6-26932fcf55de", services:[
-          Analytics.self,
-          Crashes.self
+        AppCenter.start(withAppSecret: "fd71ff63-e602-441d-8fc6-26932fcf55de", services: [
+            Analytics.self,
+            Crashes.self
         ])
 
         HttpUtils.copyCookiesToKeychain()
@@ -79,6 +79,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     private var previousReachability: Reachability?
+
     private func startNetworkMonitoring() {
         self.reach = try? Reachability()
         self.reach?.whenReachable = { reachability in

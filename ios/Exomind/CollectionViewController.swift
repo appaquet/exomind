@@ -42,6 +42,14 @@ class CollectionViewController: UIViewController, EntityTraitView {
             return Actions.forEntity(entity, parentId: this.collection.id, navController: navController)
         }
 
+        self.entityListViewController.actionsForSelectedEntities = { [weak self] entities in
+            guard let this = self else {
+                return []
+            }
+            let navController = this.navigationController as? NavigationController
+            return Actions.forSelectedEntities(entities, parentId: "inbox", section: .inbox, navController: navController)
+        }
+
         self.entityListViewController.loadData(fromChildrenOf: self.entity.id)
     }
 
@@ -59,6 +67,9 @@ class CollectionViewController: UIViewController, EntityTraitView {
         nav.setBarActions([
             NavigationControllerBarAction(icon: .search, handler: { [weak self] () -> Void in
                 self?.handleShowSearch()
+            }),
+            NavigationControllerBarAction(icon: .checkCircle, handler: { [weak self] () -> Void in
+                self?.entityListViewController.editMode = !(self?.entityListViewController.editMode ?? true)
             })
         ])
 
@@ -110,7 +121,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
 
     private func handleCreateObject() -> ()? {
         (self.navigationController as? NavigationController)?.showCreateObject(self.entity.id) { [weak self] (res) -> Void in
-            guard case let .success(entity) = res, let entity = entity else {
+            guard case let .successCreated(entity) = res, let entity = entity else {
                 return
             }
             (self?.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))

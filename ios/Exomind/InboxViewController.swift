@@ -34,6 +34,14 @@ class InboxViewController: UIViewController {
             return Actions.forEntity(entity, parentId: "inbox", section: .inbox, navController: navController)
         }
 
+        self.entityListViewController.actionsForSelectedEntities = { [weak self] entities in
+            guard let this = self else {
+                return []
+            }
+            let navController = this.navigationController as? NavigationController
+            return Actions.forSelectedEntities(entities, parentId: "inbox", section: .inbox, navController: navController)
+        }
+
         self.entityListViewController.loadData(fromChildrenOf: "inbox")
     }
 
@@ -71,7 +79,7 @@ class InboxViewController: UIViewController {
 
     private func handleCreateObject() -> ()? {
         (self.navigationController as? NavigationController)?.showCreateObject("inbox") { [weak self] (res) -> Void in
-            guard case let .success(entity) = res, let entity = entity else {
+            guard case let .successCreated(entity) = res, let entity = entity else {
                 return
             }
             (self?.navigationController as? NavigationController)?.pushObject(.entity(entity: entity))

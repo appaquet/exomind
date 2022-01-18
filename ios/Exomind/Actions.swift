@@ -6,17 +6,17 @@ class Actions {
         var ret: [PrioAction] = []
 
         if let parentId = parentId {
-            ret.append(PrioAction(prio: 10, action: Actions.removeFromParent(entity, parentId: parentId)))
+            ret.append(PrioAction(prio: 10, action: Actions.removeFromParent([entity], parentId: parentId)))
         }
 
         if !isSpecialEntity(entity.id) {
             if let navController = navController, section != .snoozed {
                 let removeFromParent = parentId == "inbox"
-                ret.append(PrioAction(prio: 18, action: Actions.snooze(entity, navController: navController, parentId: parentId, removeFromParent: removeFromParent)))
+                ret.append(PrioAction(prio: 18, action: Actions.snooze([entity], navController: navController, parentId: parentId, removeFromParent: removeFromParent)))
             }
 
             if parentId != "inbox" && !Collections.hasParent(entity: entity, parentId: "inbox") {
-                ret.append(PrioAction(prio: 13, action: Actions.addToInbox(entity)))
+                ret.append(PrioAction(prio: 13, action: Actions.addToInbox([entity])))
             }
         }
 
@@ -29,12 +29,12 @@ class Actions {
         }
 
         if let navController = navController {
-            ret.append(PrioAction(prio: 20, action: Actions.selectEntityCollection(entity, navController: navController)))
+            ret.append(PrioAction(prio: 20, action: Actions.selectEntityCollection([entity], navController: navController)))
             ret.append(PrioAction(prio: 50, action: Actions.delete(entity, navController: navController)))
         }
 
         if let parentId = parentId {
-            ret.append(PrioAction(prio: 32, action: Actions.moveTopParent(entity, parentId: parentId)))
+            ret.append(PrioAction(prio: 32, action: Actions.moveTopParent([entity], parentId: parentId)))
         }
 
         if section == .snoozed {
@@ -51,12 +51,21 @@ class Actions {
                 }
     }
 
-    static func forSelectedEntities(_ entities: [EntityExt], parentId: EntityId? = nil, navController: NavigationController? = nil) -> [Action] {
+    static func forSelectedEntities(_ entities: [EntityExt], parentId: EntityId? = nil, section: ActionSection? = nil, navController: NavigationController? = nil) -> [Action] {
         var ret: [PrioAction] = []
 
         if let parentId = parentId {
-            // TODO:
-            ret.append(PrioAction(prio: 32, action: Actions.moveTopParent(entities[0], parentId: parentId)))
+            ret.append(PrioAction(prio: 10, action: Actions.removeFromParent(entities, parentId: parentId)))
+            ret.append(PrioAction(prio: 32, action: Actions.moveTopParent(entities, parentId: parentId)))
+        }
+
+        if let navController = navController, section != .snoozed {
+            let removeFromParent = parentId == "inbox"
+            ret.append(PrioAction(prio: 18, action: Actions.snooze(entities, navController: navController, parentId: parentId, removeFromParent: removeFromParent)))
+        }
+
+        if let navController = navController {
+            ret.append(PrioAction(prio: 20, action: Actions.selectEntityCollection(entities, navController: navController)))
         }
 
         return ret.sorted {
@@ -82,26 +91,26 @@ class Actions {
                 }
     }
 
-    static func removeFromParent(_ entity: EntityExt, parentId: String) -> Action {
+    static func removeFromParent(_ entities: [EntityExt], parentId: String) -> Action {
         Action(key: .removeParent, label: "Remove", icon: .check, destructive: true, swipeColor: Stylesheet.collectionSwipeDoneBg) { cb in
-            Commands.removeFromParent(entity: entity, parentId: parentId)
+            Commands.removeFromParent(entities: entities, parentId: parentId)
             cb(.successRemoved)
         }
     }
 
-    static func addToInbox(_ entity: EntityExt) -> Action {
+    static func addToInbox(_ entities: [EntityExt]) -> Action {
         Action(key: .addInbox, label: "Move to inbox", icon: .inbox, swipeColor: Stylesheet.collectionSwipeMoveInboxBg) { cb in
-            Commands.addToParent(entity: entity, parentId: "inbox")
+            Commands.addToParent(entities: entities, parentId: "inbox")
             cb(.success)
         }
     }
 
-    static func snooze(_ entity: EntityExt, navController: NavigationController, parentId: String? = nil, removeFromParent: Bool = false) -> Action {
+    static func snooze(_ entities: [EntityExt], navController: NavigationController, parentId: String? = nil, removeFromParent: Bool = false) -> Action {
         Action(key: .snooze, label: "Snooze...", icon: .clock, destructive: removeFromParent, swipeColor: Stylesheet.collectionSwipeSnoozeBg) { (cb) in
-            navController.showTimeSelector(forEntity: entity) { completed in
+            navController.showTimeSelector(forEntities: entities) { completed in
                 if (completed) {
                     if removeFromParent {
-                        Commands.removeFromParent(entity: entity, parentId: "inbox")
+                        Commands.removeFromParent(entities: entities, parentId: "inbox")
                         cb(.successRemoved)
                     } else {
                         cb(.success)
@@ -113,9 +122,9 @@ class Actions {
         }
     }
 
-    static func selectEntityCollection(_ entity: EntityExt, navController: NavigationController) -> Action {
+    static func selectEntityCollection(_ entities: [EntityExt], navController: NavigationController) -> Action {
         Action(key: .selectionCollection, label: "Add to collections...", icon: .folderOpen, swipeColor: Stylesheet.collectionSwipeCollectionBg) { (cb) in
-            navController.showCollectionSelector(forEntity: entity)
+            navController.showCollectionSelector(forEntities: entities)
             cb(.success)
         }
     }
@@ -127,9 +136,9 @@ class Actions {
         }
     }
 
-    static func moveTopParent(_ entity: EntityExt, parentId: EntityId) -> Action {
+    static func moveTopParent(_ entities: [EntityExt], parentId: EntityId) -> Action {
         Action(key: .moveTopParent, label: "Move to top", icon: .arrowUp) { (cb) in
-            Commands.addToParent(entity: entity, parentId: parentId)
+            Commands.addToParent(entities: entities, parentId: parentId)
             cb(.success)
         }
     }
@@ -171,22 +180,25 @@ class Actions {
 
     static func createNote(_ parentId: EntityId?) -> Action {
         Action(key: .createNote, label: "Create note", icon: .pen) { cb in
-            Commands.createNote(parentId)
-            cb(.success)
+            Commands.createNote(parentId) { res in
+                cb(ActionResult.fromCreateResult(res))
+            }
         }
     }
 
     static func createCollection(_ parentId: EntityId?) -> Action {
         Action(key: .createCollection, label: "Create collection", icon: .folderOpen) { cb in
-            Commands.createCollection(parentId)
-            cb(.success)
+            Commands.createCollection(parentId) { res in
+                cb(ActionResult.fromCreateResult(res))
+            }
         }
     }
 
     static func createTask(_ parentId: EntityId?) -> Action {
         Action(key: .createTask, label: "Create task", icon: .check) { cb in
-            Commands.createTask(parentId)
-            cb(.success)
+            Commands.createTask(parentId) { res in
+                cb(ActionResult.fromCreateResult(res))
+            }
         }
     }
 
@@ -210,9 +222,21 @@ struct Action {
 
 enum ActionResult {
     case success
+    case successCreated(EntityExt?)
     case successRemoved
     case cancelled
     case failed(Error)
+}
+
+extension ActionResult {
+    static func fromCreateResult(_ res: EntityCreateResult) -> ActionResult {
+        switch res {
+        case .success(let entity):
+            return .successCreated(entity)
+        case .failed(let err):
+            return .failed(err)
+        }
+    }
 }
 
 fileprivate struct PrioAction {

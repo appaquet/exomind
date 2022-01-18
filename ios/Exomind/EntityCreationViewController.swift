@@ -4,9 +4,9 @@ import Exocore
 
 class EntityCreationViewController: ModalGridViewController {
     var parentId: EntityId?
-    var callback: ((EntityCreateResult) -> Void)?
+    var callback: ((ActionResult) -> Void)?
 
-    convenience init(parentId: EntityId?, callback: ((EntityCreateResult) -> Void)? = nil) {
+    convenience init(parentId: EntityId?, callback: ((ActionResult) -> Void)? = nil) {
         self.init(nibName: nil, bundle: nil)
         self.parentId = parentId
         self.callback = callback
@@ -26,9 +26,11 @@ class EntityCreationViewController: ModalGridViewController {
 
             let label = action.label.replacingOccurrences(of: "Create ", with: "").capitalized
 
-            return GridIconsViewItem(label: label, icon: icon) { [weak self] item in
-                action.execute { _ in }
-                self?.close()
+            return GridIconsViewItem(label: label, icon: icon) { item in
+                action.execute { res in
+                    self.callback?(res)
+                }
+                self.close()
             }
         }
 

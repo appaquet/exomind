@@ -142,9 +142,13 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         self.barActions[sender.tag].handler?()
     }
 
-    func showCollectionSelector(forEntity: EntityExt) {
+    func showCollectionSelector(forEntity entity: EntityExt) {
+        self.showCollectionSelector(forEntities: [entity])
+    }
+
+    func showCollectionSelector(forEntities entities: [EntityExt]) {
         let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
-        vc.forEntity = forEntity
+        vc.forEntities = entities
         self.present(vc, animated: true, completion: nil)
     }
 
@@ -157,17 +161,21 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         self.present(vc, animated: true, completion: nil)
     }
 
-    func showCreateObject(_ fromEntityId: EntityId, callback: ((EntityCreateResult) -> Void)? = nil) {
+    func showCreateObject(_ fromEntityId: EntityId, callback: ((ActionResult) -> Void)? = nil) {
         let showIn = self.parent ?? self
         let vc = EntityCreationViewController(parentId: fromEntityId, callback: callback)
         vc.showInsideViewController(showIn)
     }
 
-    func showTimeSelector(forEntity: EntityExt, callback: ((Bool) -> Void)? = nil) {
+    func showTimeSelector(forEntity entity: EntityExt, callback: ((Bool) -> Void)? = nil) {
+        self.showTimeSelector(forEntities: [entity], callback: callback)
+    }
+
+    func showTimeSelector(forEntities entities: [EntityExt], callback: ((Bool) -> Void)? = nil) {
         let showIn = self.parent ?? self
         let timeSelector = TimeSelectionViewController { (date) in
             if let realDate = date {
-                Commands.snooze(entity: forEntity, date: realDate)
+                Commands.snooze(entities: entities, date: realDate)
                 callback?(true)
             } else {
                 callback?(false)

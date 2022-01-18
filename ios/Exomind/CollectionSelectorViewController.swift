@@ -3,13 +3,13 @@ import Exocore
 import SwiftUI
 
 class CollectionSelectorViewController: UINavigationController {
-    var forEntity: EntityExt!
+    var forEntities: [EntityExt] = []
     var tableView: CollectionSelectorTableViewController!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.tableView = (super.topViewController as! CollectionSelectorTableViewController)
-        self.tableView.partialEntity = forEntity
+        self.tableView.partialEntities = forEntities
 
         // set colors of navigation bar
         Stylesheet.styleNavigationBar(self.navigationBar, bgColor: Stylesheet.collectionSelectorNavigationBarBg, fgColor: Stylesheet.collectionSelectorNavigationBarFg)
@@ -17,7 +17,7 @@ class CollectionSelectorViewController: UINavigationController {
 }
 
 class CollectionSelectorTableViewController: UITableViewController, UISearchBarDelegate {
-    fileprivate var partialEntity: EntityExt!
+    fileprivate var partialEntities: [EntityExt] = []
 
     private var searchBar: UISearchBar!
 
@@ -25,7 +25,7 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     private var collectionsQueryFilter: String?
 
     private var entityQuery: QueryStreamHandle?
-    private var entityComplete: EntityExt?
+    private var completeEntities: [EntityExt] = []
     private var entityParentsQuery: QueryStreamHandle?
     private var entityParents: [Collection]?
 
@@ -99,16 +99,18 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     private func queryEntity() {
-        let entityQuery = QueryBuilder.withId(self.partialEntity.id).build()
+        let ids = self.partialEntities.map { $0.id }
+        let entityQuery = QueryBuilder.withIds(ids).build()
         self.entityQuery = ExocoreClient.store.watchedQuery(query: entityQuery, onChange: { [weak self] (status, res) in
             guard let this = self,
-                  res?.entities.count ?? 0 > 0 else {
+                  let res = res,
+                  res.entities.count > 0 else {
                 return
             }
 
-            let entity = res!.entities[0].entity.toExtension()
-            this.entityComplete = entity
-            this.queryEntityParents(entity: entity)
+            let entities = res.entities.map { $0.entity.toExtension() }
+            this.completeEntities = entities
+            this.queryEntityParents(entities)
             this.loadData()
         })
     }
@@ -128,7 +130,9 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         self.collectionsQueryFilter = currentFilter
     }
 
-    private func queryEntityParents(entity: EntityExt) {
+    private func queryEntityParents(_ entities: [EntityExt]) {
+        let entity = entities[0] // TODO:
+
         let parents = entity
                 .traitsOfType(Exomind_Base_V1_CollectionChild.self)
                 .map({ $0.message.collection.entityID })
@@ -213,27 +217,29 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     private func hasParent(parentEntityId id: String) -> Bool {
-        guard let entityComplete = self.entityComplete else {
+        if self.completeEntities.isEmpty {
             return false
         }
 
-        return Collections.hasParent(entity: entityComplete, parentId: id)
+        return self.completeEntities.allSatisfy { entity in
+            Collections.hasParent(entity: entity, parentId: id)
+        }
     }
 
     private func addParent(parentEntityId id: String) {
-        guard let entityComplete = self.entityComplete else {
+        if self.completeEntities.isEmpty {
             return
         }
 
-        Commands.addToParent(entity: entityComplete, parentId: id)
+        Commands.addToParent(entities: self.completeEntities, parentId: id)
     }
 
     private func removeParent(parentEntityId id: String) {
-        guard let entityComplete = self.entityComplete else {
+        if self.completeEntities.isEmpty {
             return
         }
 
-        Commands.removeFromParent(entity: entityComplete, parentId: id)
+        Commands.removeFromParent(entities: self.completeEntities, parentId: id)
     }
 
     deinit {

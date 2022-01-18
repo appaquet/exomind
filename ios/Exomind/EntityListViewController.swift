@@ -19,6 +19,7 @@ class EntityListViewController: UITableViewController {
     private var previewedEntity: EntityExt?
 
     var actionsForEntity: ((EntityExt) -> [Action])?
+    var actionsForSelectedEntities: (([EntityExt]) -> [Action])?
     var itemClickHandler: ((EntityExt) -> Void)?
     var collectionClickHandler: ((_ entity: EntityExt, _ collection: EntityExt) -> Void)?
 
@@ -35,9 +36,9 @@ class EntityListViewController: UITableViewController {
 
     var editMode: Bool {
         set {
-            tableView.allowsMultipleSelectionDuringEditing = newValue
-            tableView.setEditing(newValue, animated: true)
-            self.refreshSelectedItemActions()
+            self.tableView.allowsMultipleSelectionDuringEditing = newValue
+            self.tableView.setEditing(newValue, animated: true)
+            self.setupSelectedItemTabBarActions()
         }
         get {
             self.tableView.isEditing
@@ -177,7 +178,7 @@ class EntityListViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if self.editMode {
-            self.refreshSelectedItemActions()
+            self.setupSelectedItemTabBarActions()
             return
         }
 
@@ -189,7 +190,7 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        self.refreshSelectedItemActions()
+        self.setupSelectedItemTabBarActions()
     }
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -236,18 +237,7 @@ class EntityListViewController: UITableViewController {
         }
 
         let actionProvider: UIContextMenuActionProvider = { _ in
-            let children: [UIAction] = actions.map { action in
-                let image = action.icon.map {
-                    ObjectsIcon.icon(forFontAwesome: $0, color: UIColor.label, dimension: 30)
-                }
-
-                return UIAction(title: action.label, image: image) { _ in
-                    action.execute { _ in
-                    }
-                }
-            }
-
-            return UIMenu(children: children)
+            self.actionsToMenu(actions: actions)
         }
 
         var previewProvider: UIContextMenuContentPreviewProvider? = nil
@@ -371,7 +361,7 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func refreshSelectedItemActions() {
+    private func setupSelectedItemTabBarActions() {
         if !self.editMode {
             self.navigationController?.setToolbarHidden(true, animated: true)
         }
@@ -385,7 +375,7 @@ class EntityListViewController: UITableViewController {
             return
         }
 
-        let actions = Actions.forSelectedEntities(selectedEntities, parentId: self.parentId, navController: self.navigationController as? NavigationController)
+        let actions = self.actionsForSelectedEntities?(selectedEntities) ?? []
         if actions.isEmpty {
             self.navigationController?.setToolbarHidden(true, animated: true)
             return
@@ -394,19 +384,40 @@ class EntityListViewController: UITableViewController {
         var items = [UIBarButtonItem]()
         items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
 
-        for action in actions.prefix(3) {
+        for action in actions.prefix(2) {
             items.append(UIBarButtonItem(title: action.label, primaryAction: UIAction { _ in
                 action.execute { _ in }
                 self.editMode = false
             }))
         }
 
-        // TODO: more
+        if actions.count > 2 {
+            let menu = self.actionsToMenu(actions: actions) { (_, _) in
+                self.editMode = false
+            }
+            items.append(UIBarButtonItem(title: "More...", menu: menu))
+        }
 
         items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
 
         self.parent?.toolbarItems = items
         self.navigationController?.setToolbarHidden(false, animated: true)
+    }
+
+    private func actionsToMenu(actions: [Action], cb: ((Action, ActionResult) -> Void)? = nil) -> UIMenu {
+        let children: [UIAction] = actions.map { action in
+            let image = action.icon.map {
+                ObjectsIcon.icon(forFontAwesome: $0, color: UIColor.label, dimension: 30)
+            }
+
+            return UIAction(title: action.label, image: image) { _ in
+                action.execute { res in
+                    cb?(action, res)
+                }
+            }
+        }
+
+        return UIMenu(children: children)
     }
 
     deinit {
