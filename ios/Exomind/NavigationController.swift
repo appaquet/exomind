@@ -23,6 +23,11 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             bottomMargin = bottomMargin + tabBar.tabBar.frame.height
         }
         self.quickButton.addToView(self.view, bottomMargin: bottomMargin)
+
+        // make sure that appearance with or without data under toolbar is the same since,
+        // from iOS 15, toolbar may be transparent when no data is under
+        // https://nemecek.be/blog/127/how-to-disable-automatic-transparent-tabbar-in-ios-15
+        self.toolbar.scrollEdgeAppearance = self.toolbar.standardAppearance
     }
 
     override func viewLayoutMarginsDidChange() {

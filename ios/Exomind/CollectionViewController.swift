@@ -25,6 +25,9 @@ class CollectionViewController: UIViewController, EntityTraitView {
         self.entityListViewController = (objectsStoryboard.instantiateViewController(withIdentifier: "EntityListViewController") as! EntityListViewController)
         self.addChild(self.entityListViewController)
         self.view.addSubview(self.entityListViewController.view)
+        self.entityListViewController.didMove(toParent: self)
+        self.entityListViewController.viewWillAppear(false)
+        self.entityListViewController.viewDidAppear(false)
 
         self.entityListViewController.itemClickHandler = { [weak self] (entity) in
             self?.handleItemClick(entity)

@@ -386,7 +386,8 @@ class EntityListViewController: UITableViewController {
 
         for action in actions.prefix(2) {
             items.append(UIBarButtonItem(title: action.label, primaryAction: UIAction { _ in
-                action.execute { _ in }
+                action.execute { _ in
+                }
                 self.editMode = false
             }))
         }
@@ -400,8 +401,18 @@ class EntityListViewController: UITableViewController {
 
         items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
 
-        self.parent?.toolbarItems = items
+        self.topMostParent()?.toolbarItems = items
         self.navigationController?.setToolbarHidden(false, animated: true)
+    }
+
+    // Find parent in hierarchy that is right under the navigation controller.
+    // This is in this last parent that the toolbar items can be added to.
+    private func topMostParent() -> UIViewController? {
+        var current: UIViewController? = self
+        while current?.parent as? UINavigationController == nil {
+            current = current?.parent
+        }
+        return current
     }
 
     private func actionsToMenu(actions: [Action], cb: ((Action, ActionResult) -> Void)? = nil) -> UIMenu {
