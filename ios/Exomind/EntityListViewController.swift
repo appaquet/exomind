@@ -384,19 +384,26 @@ class EntityListViewController: UITableViewController {
         var items = [UIBarButtonItem]()
         items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
 
-        for action in actions.prefix(2) {
-            items.append(UIBarButtonItem(title: action.label, primaryAction: UIAction { _ in
+        for action in actions.prefix(3) {
+            guard let icon = action.icon else {
+                continue
+            }
+
+            let img = ObjectsIcon.icon(forFontAwesome: icon, color: UIColor.label, dimension: 30)
+            items.append(UIBarButtonItem(image: img, primaryAction: UIAction { _ in
                 action.execute { _ in
                 }
                 self.editMode = false
             }))
+            items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
         }
 
-        if actions.count > 2 {
+        if actions.count > 3 {
+            let img = ObjectsIcon.icon(forFontAwesome: .ellipsisH, color: UIColor.label, dimension: 30)
             let menu = self.actionsToMenu(actions: actions) { (_, _) in
                 self.editMode = false
             }
-            items.append(UIBarButtonItem(title: "More...", menu: menu))
+            items.append(UIBarButtonItem(image: img, menu: menu))
         }
 
         items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
