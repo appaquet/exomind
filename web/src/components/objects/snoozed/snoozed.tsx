@@ -3,7 +3,7 @@ import { exocore, fromProtoTimestamp, QueryBuilder } from 'exocore';
 import { exomind } from '../../../protos';
 import React from 'react';
 import { EntityTrait, EntityTraits } from '../../../utils/entities';
-import { ExpandableQuery } from '../../../stores/queries';
+import { ManagedQuery } from '../../../stores/queries';
 import { ContainerState } from '../container-state';
 import { ListEntityActions } from '../entity-list/actions';
 import { EntityList } from '../entity-list/entity-list';
@@ -26,7 +26,7 @@ interface IState {
 }
 
 export default class Snoozed extends React.Component<IProps, IState> {
-    private entityQuery: ExpandableQuery;
+    private entityQuery: ManagedQuery;
 
     constructor(props: IProps) {
         super(props);
@@ -48,7 +48,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
             )
             .orderByField('until_date', true)
             .build();
-        this.entityQuery = new ExpandableQuery(childrenQuery, () => {
+        this.entityQuery = new ManagedQuery(childrenQuery, () => {
             const entities = Array.from(this.entityQuery.results()).map((res) => {
                 return new EntityTraits(res.entity);
             });

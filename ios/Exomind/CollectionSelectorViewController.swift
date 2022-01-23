@@ -3,13 +3,13 @@ import Exocore
 import SwiftUI
 
 class CollectionSelectorViewController: UINavigationController {
-    var forEntity: EntityExt!
+    var forEntities: [EntityExt] = []
     var tableView: CollectionSelectorTableViewController!
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.tableView = (super.topViewController as! CollectionSelectorTableViewController)
-        self.tableView.partialEntity = forEntity
+        self.tableView.partialEntities = forEntities
 
         // set colors of navigation bar
         Stylesheet.styleNavigationBar(self.navigationBar, bgColor: Stylesheet.collectionSelectorNavigationBarBg, fgColor: Stylesheet.collectionSelectorNavigationBarFg)
@@ -17,16 +17,16 @@ class CollectionSelectorViewController: UINavigationController {
 }
 
 class CollectionSelectorTableViewController: UITableViewController, UISearchBarDelegate {
-    fileprivate var partialEntity: EntityExt!
+    fileprivate var partialEntities: [EntityExt] = []
 
     private var searchBar: UISearchBar!
 
     private var collectionsQuery: ManagedQuery?
     private var collectionsQueryFilter: String?
 
-    private var entityQuery: QueryStreamHandle?
-    private var entityComplete: EntityExt?
-    private var entityParentsQuery: QueryStreamHandle?
+    private var entitiesQuery: QueryStreamHandle?
+    private var completeEntities: [EntityExt] = []
+    private var entityParentsQueries: [QueryStreamHandle] = []
     private var entityParents: [Collection]?
 
     private var currentFilter: String?
@@ -66,8 +66,8 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
                 return
             }
 
-            if this.entityQuery == nil {
-                this.queryEntity()
+            if this.entitiesQuery == nil {
+                this.queryEntities()
             }
 
             if this.collectionsQuery == nil || this.collectionsQueryFilter != this.currentFilter {
@@ -98,17 +98,23 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         }
     }
 
-    private func queryEntity() {
-        let entityQuery = QueryBuilder.withId(self.partialEntity.id).build()
-        self.entityQuery = ExocoreClient.store.watchedQuery(query: entityQuery, onChange: { [weak self] (status, res) in
+    private func queryEntities() {
+        let ids = self.partialEntities.map {
+            $0.id
+        }
+        let entityQuery = QueryBuilder.withIds(ids).build()
+        self.entitiesQuery = ExocoreClient.store.watchedQuery(query: entityQuery, onChange: { [weak self] (status, res) in
             guard let this = self,
-                  res?.entities.count ?? 0 > 0 else {
+                  let res = res,
+                  res.entities.count > 0 else {
                 return
             }
 
-            let entity = res!.entities[0].entity.toExtension()
-            this.entityComplete = entity
-            this.queryEntityParents(entity: entity)
+            let entities = res.entities.map {
+                $0.entity.toExtension()
+            }
+            this.completeEntities = entities
+            this.queryEntityParents(entities)
             this.loadData()
         })
     }
@@ -128,19 +134,23 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         self.collectionsQueryFilter = currentFilter
     }
 
-    private func queryEntityParents(entity: EntityExt) {
-        let parents = entity
-                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
-                .map({ $0.message.collection.entityID })
+    private func queryEntityParents(_ entities: [EntityExt]) {
+        self.entityParentsQueries = []
+        self.entityParents = []
 
-        if !parents.isEmpty {
-            let query = QueryBuilder.withIds(parents).count(100).build()
-            self.entityParentsQuery = ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, res) in
-                self?.entityParents = res?.entities.compactMap({ Collection.fromEntity(entity: $0.entity.toExtension()) })
-                self?.loadData()
-            })
-        } else {
-            self.entityParents = []
+        for entity in entities {
+            let parents = entity
+                    .traitsOfType(Exomind_Base_V1_CollectionChild.self)
+                    .map({ $0.message.collection.entityID })
+
+            if !parents.isEmpty {
+                let query = QueryBuilder.withIds(parents).count(100).build()
+                self.entityParentsQueries.append(ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, res) in
+                    let parents = res?.entities.compactMap({ Collection.fromEntity(entity: $0.entity.toExtension()) }) ?? []
+                    self?.entityParents?.append(contentsOf: parents)
+                    self?.loadData()
+                }))
+            }
         }
     }
 
@@ -213,31 +223,29 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     private func hasParent(parentEntityId id: String) -> Bool {
-        guard let entityComplete = self.entityComplete else {
+        if self.completeEntities.isEmpty {
             return false
         }
 
-        return ExomindMutations.hasParent(entity: entityComplete, parentId: id)
+        return self.completeEntities.allSatisfy { entity in
+            Collections.hasParent(entity: entity, parentId: id)
+        }
     }
 
     private func addParent(parentEntityId id: String) {
-        guard let entityComplete = self.entityComplete else {
+        if self.completeEntities.isEmpty {
             return
         }
 
-        do {
-            try ExomindMutations.addParent(entity: entityComplete, parentId: id)
-        } catch {
-            print("CollectionSelectionViewController> Error adding parent \(error)")
-        }
+        Commands.addToParent(entities: self.completeEntities, parentId: id)
     }
 
     private func removeParent(parentEntityId id: String) {
-        guard let entityComplete = self.entityComplete else {
+        if self.completeEntities.isEmpty {
             return
         }
 
-        ExomindMutations.removeParent(entity: entityComplete, parentId: id)
+        Commands.removeFromParent(entities: self.completeEntities, parentId: id)
     }
 
     deinit {

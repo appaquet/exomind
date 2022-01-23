@@ -35,7 +35,7 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
                 .sorted(by: { (em1, em2) in
                     em1.message.receivedDate.date.isLessThan(em2.message.receivedDate.date)
                 })
-        self.firstNonRead = self.emails.firstIndex(where: { self.unreadEmails[$0.id] != nil }) ?? 0
+        self.firstNonRead = self.emails.firstIndex(where: { self.unreadEmails[$0.id] != nil }) ?? self.emails.count - 1
         
         // unread emails are considered loaded since we use to sequentially load them
         self.loadedEmails = self.emails.map({ self.unreadEmails[$0.id] == nil })
@@ -75,25 +75,26 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
-        nav.setQuickButtonActions([
-            QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
-                self?.handleReply()
-            }),
-            QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
-                self?.handleReplyAll()
-            }),
-            QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
-                self?.handleForward()
-            }),
-            QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
-                self?.handleAddToCollection()
-            }),
-            QuickButtonAction(icon: .check, handler: { [weak self]() -> Void in
-                self?.handleDone()
-            })
-        ])
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+            nav.setQuickButtonActions([
+                QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
+                    self?.handleReply()
+                }),
+                QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
+                    self?.handleReplyAll()
+                }),
+                QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
+                    self?.handleForward()
+                }),
+                QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
+                    self?.handleAddToCollection()
+                }),
+                QuickButtonAction(icon: .check, handler: { [weak self]() -> Void in
+                    self?.handleDone()
+                })
+            ])
+        }
     }
 
     func refreshHeights() {
@@ -301,9 +302,9 @@ class EmailThreadViewController: UITableViewController, EntityTraitView {
     }
 
     private func handleDone() {
-        let inInbox = ExomindMutations.hasParent(entity: self.entity, parentId: "inbox")
+        let inInbox = Collections.hasParent(entity: self.entity, parentId: "inbox")
         if inInbox {
-            ExomindMutations.removeParent(entity: self.entity, parentId: "inbox")
+            Commands.removeFromParent(entity: self.entity, parentId: "inbox")
             let _ = self.navigationController?.popViewController(animated: true)
         }
     }

@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import { Exocore, QueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React, { ChangeEvent, KeyboardEvent } from 'react';
 import { ListenerToken, Shortcuts } from '../../../shortcuts';
-import { ExpandableQuery } from '../../../stores/queries';
+import { ManagedQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntityTraits } from '../../../utils/entities';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
@@ -27,7 +27,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
 
     private searchDebouncer: Debouncer;
 
-    private searchEntityQuery?: ExpandableQuery;
+    private searchEntityQuery?: ManagedQuery;
     private searchEntityText?: string;
 
     private entityQuery?: WatchedQueryWrapper;
@@ -172,7 +172,7 @@ export default class LinkSelector extends React.Component<IProps, IState> {
                     .matches(queryText)
                     .count(30)
                     .build();
-                this.searchEntityQuery = new ExpandableQuery(query, () => {
+                this.searchEntityQuery = new ManagedQuery(query, () => {
                     const entities: EntityTraits[] = [];
                     for (const res of this.searchEntityQuery.results()) {
                         entities.push(new EntityTraits(res.entity));

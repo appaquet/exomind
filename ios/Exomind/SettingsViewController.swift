@@ -10,8 +10,9 @@ class SettingsViewController: UITableViewController {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        guard let navCtrl = self.navigationController as? NavigationController else { return }
-        navCtrl.setQuickButtonVisibility(false)
+        if let nav = self.navigationController as? NavigationController {
+            nav.setQuickButtonVisibility(false)
+        }
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -91,8 +92,8 @@ class SettingsViewController: UITableViewController {
 
 fileprivate func buildDate() -> Date {
     if let executablePath = Bundle.main.executablePath,
-        let attributes = try? FileManager.default.attributesOfItem(atPath: executablePath),
-        let date = attributes[.creationDate] as? Date {
+       let attributes = try? FileManager.default.attributesOfItem(atPath: executablePath),
+       let date = attributes[.creationDate] as? Date {
         return date
     }
 

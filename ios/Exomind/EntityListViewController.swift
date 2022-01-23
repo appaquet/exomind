@@ -8,9 +8,6 @@ class EntityListViewController: UITableViewController {
     private var parentId: EntityId?
 
     private var collectionData: [EntityResult] = []
-    private var itemClickHandler: ((EntityExt) -> Void)?
-    private var collectionClickHandler: ((EntityExt) -> Void)?
-    private var swipeActions: [EntityListSwipeAction] = []
 
     private var switcherButton: SwitcherButton?
     private var switcherButtonActions: [SwitcherButtonAction] = []
@@ -19,6 +16,12 @@ class EntityListViewController: UITableViewController {
     private var scrollDragging = false
     private var headerShown: Bool = false
     private var headerWasShownBeforeDrag: Bool = false
+    private var previewedEntity: EntityExt?
+
+    var actionsForEntity: ((EntityExt) -> [Action])?
+    var actionsForSelectedEntities: (([EntityExt]) -> [Action])?
+    var itemClickHandler: ((EntityExt) -> Void)?
+    var collectionClickHandler: ((_ entity: EntityExt, _ collection: EntityExt) -> Void)?
 
     private lazy var datasource: EditableDataSource = {
         var ds = EditableDataSource(tableView: self.tableView) { [weak self] tableView, indexPath, item in
@@ -30,6 +33,17 @@ class EntityListViewController: UITableViewController {
 
         return ds
     }()
+
+    var editMode: Bool {
+        set {
+            self.tableView.allowsMultipleSelectionDuringEditing = newValue
+            self.tableView.setEditing(newValue, animated: true)
+            self.setupSelectedItemTabBarActions()
+        }
+        get {
+            self.tableView.isEditing
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,15 +62,6 @@ class EntityListViewController: UITableViewController {
             self?.collectionData = []
             self?.refreshData()
         }
-    }
-
-    func setSwipeActions(_ actions: [EntityListSwipeAction]) {
-        self.swipeActions = actions
-    }
-
-    func setClickHandlers(_ itemClick: @escaping (EntityExt) -> Void, collectionClick: @escaping (EntityExt) -> Void) {
-        self.itemClickHandler = itemClick
-        self.collectionClickHandler = collectionClick
     }
 
     func setSwitcherActions(_ actions: [SwitcherButtonAction]) {
@@ -172,26 +177,98 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.tableView.deselectRow(at: indexPath, animated: false)
+        if self.editMode {
+            self.setupSelectedItemTabBarActions()
+            return
+        }
 
+        self.tableView.deselectRow(at: indexPath, animated: false) // prevent selection highlight
         if let res = self.collectionData.element(at: (indexPath as NSIndexPath).item),
            let handler = self.itemClickHandler {
             handler(res.entity)
         }
     }
 
+    override func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+        self.setupSelectedItemTabBarActions()
+    }
+
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let swipeActions = self.swipeActions
-                .filter({ $0.side == .leading })
-                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
+              let actionsForEntity = self.actionsForEntity
+                else {
+            return nil
+        }
+
+        let actions = actionsForEntity(entity)
+        let swipeActions: [UIContextualAction] = actions.filter {
+                    $0.swipeSide == .leading
+                }
+                .prefix(2).map {
+                    self.toSwipeAction(indexPath: indexPath, action: $0)
+                }
+        if swipeActions.isEmpty {
+            return nil
+        }
+
         return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        let swipeActions = self.swipeActions
-                .filter({ $0.side == .trailing })
-                .map({ self.swipeActionsForRow(swipeAction: $0, indexPath: indexPath) })
+        guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
+              let actionsForEntity = self.actionsForEntity
+                else {
+            return nil
+        }
+
+        let actions = actionsForEntity(entity)
+        let swipeActions: [UIContextualAction] = actions.filter {
+                    $0.swipeSide == .trailing
+                }
+                .prefix(2).map {
+                    self.toSwipeAction(indexPath: indexPath, action: $0)
+                }
+        if swipeActions.isEmpty {
+            return nil
+        }
         return UISwipeActionsConfiguration(actions: swipeActions)
+    }
+
+    override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
+              let actionsForEntity = self.actionsForEntity
+                else {
+            return nil
+        }
+
+        let actions = actionsForEntity(entity)
+        if actions.isEmpty {
+            return nil
+        }
+
+        let actionProvider: UIContextMenuActionProvider = { _ in
+            self.actionsToMenu(actions: actions)
+        }
+
+        var previewProvider: UIContextMenuContentPreviewProvider? = nil
+        if entity.priorityTrait?.constants?.canPreview ?? false {
+            previewProvider = {
+                let vc = EntityViewController()
+                vc.populate(entity: entity)
+                return vc
+            }
+            previewedEntity = entity
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider, actionProvider: actionProvider)
+    }
+
+    override func tableView(_ tableView: UITableView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        animator.addCompletion {
+            if let previewedEntity = self.previewedEntity {
+                self.itemClickHandler?(previewedEntity)
+            }
+        }
     }
 
     private func createCell(_ indexPath: IndexPath, result: EntityResult) -> SwiftUICellViewHost<EntityListCell> {
@@ -201,39 +278,70 @@ class EntityListViewController: UITableViewController {
         return cell
     }
 
-    private func swipeActionsForRow(swipeAction: EntityListSwipeAction, indexPath: IndexPath) -> UIContextualAction {
+    private func toSwipeAction(indexPath: IndexPath, action: Action) -> UIContextualAction {
         let index = (indexPath as NSIndexPath).item
-        let doneAction = UIContextualAction(style: swipeAction.style, title: nil) { action, view, completionHandler in
-            guard let item = self.collectionData.element(at: index) else {
-                return
-            }
 
-            swipeAction.handler(item.entity) { [weak self] (completed) in
+        var style: UIContextualAction.Style = .normal
+        if action.destructive {
+            style = .destructive
+        }
+
+        let sAction = UIContextualAction(style: style, title: nil) { _swipeAction, _view, swipeCb in
+            action.execute { [weak self] (result: ActionResult) in
                 guard let this = self else {
                     return
                 }
 
-                if completed && swipeAction.style == .destructive,
-                   let cutItem = this.collectionData.element(at: index),
-                   cutItem.entity.id == item.entity.id {
-
+                switch result {
+                case .successRemoved:
                     DispatchQueue.main.async {
                         // make sure that we don't refresh during an animation of the swipe actions
-                        self?.query?.inhibitChanges()
+                        this.query?.inhibitChanges()
 
                         // remove right away from data to make it faster
                         this.collectionData.remove(at: index)
                         this.setData(this.collectionData)
-                        completionHandler(true)
+                        swipeCb(true)
                     }
-                } else {
-                    completionHandler(completed)
+                case .success:
+                    swipeCb(true)
+                default:
+                    swipeCb(false)
                 }
             }
         }
-        doneAction.backgroundColor = swipeAction.color
-        doneAction.image = swipeAction.iconImage
-        return doneAction
+        sAction.backgroundColor = action.swipeColor ?? UIColor.blue
+        sAction.image = action.icon.map {
+            ObjectsIcon.icon(forFontAwesome: $0, color: UIColor.white, dimension: 30)
+        }
+
+        return sAction
+    }
+
+    private func showMoreSwipeAction(indexPath: IndexPath, actions: [Action]) -> UIContextualAction {
+        let sAction = UIContextualAction(style: .normal, title: "More...") { _swipeAction, view, swipeCb in
+            swipeCb(true)
+
+            let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+            for action in actions {
+                let alertBtn = UIAlertAction(title: action.label, style: .default) { alertAction in
+                    action.execute({ res in })
+                }
+
+                if let icon = action.icon {
+                    let img = ObjectsIcon.icon(forFontAwesome: icon, color: UIColor.white, dimension: 30)
+                    alertBtn.setValue(img, forKey: "image")
+                }
+
+                alertController.addAction(alertBtn)
+            }
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+            self.present(alertController, animated: true)
+        }
+
+        sAction.backgroundColor = Stylesheet.collectionSwipeMoreBg
+        sAction.image = ObjectsIcon.icon(forFontAwesome: .ellipsisH, color: UIColor.white, dimension: 30)
+        return sAction
     }
 
     private func convertResults(oldResults: [EntityResult], newResults: [Exocore_Store_EntityResult]) -> [EntityResult] {
@@ -251,7 +359,7 @@ class EntityListViewController: UITableViewController {
             }
 
             let onCollectionClick: (EntityExt) -> Void = { [weak self] collection in
-                self?.collectionClickHandler?(collection)
+                self?.collectionClickHandler?(entity, collection)
             }
             let collections = Collections.instance.entityParentsPillData(entity: entity, onCollectionClick: onCollectionClick)
                     .filter { pillData in
@@ -263,36 +371,86 @@ class EntityListViewController: UITableViewController {
         }
     }
 
+    private func setupSelectedItemTabBarActions() {
+        if !self.editMode {
+            self.navigationController?.setToolbarHidden(true, animated: true)
+        }
+
+        let selectedPaths = self.tableView.indexPathsForSelectedRows ?? []
+        let selectedEntities = selectedPaths.map {
+            self.collectionData[$0.row].entity
+        }
+        if selectedEntities.isEmpty {
+            self.navigationController?.setToolbarHidden(true, animated: true)
+            return
+        }
+
+        let actions = self.actionsForSelectedEntities?(selectedEntities) ?? []
+        if actions.isEmpty {
+            self.navigationController?.setToolbarHidden(true, animated: true)
+            return
+        }
+
+        var items = [UIBarButtonItem]()
+        items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
+
+        for action in actions.prefix(3) {
+            guard let icon = action.icon else {
+                continue
+            }
+
+            let img = ObjectsIcon.icon(forFontAwesome: icon, color: UIColor.label, dimension: 30)
+            items.append(UIBarButtonItem(image: img, primaryAction: UIAction { _ in
+                action.execute { _ in
+                }
+                self.editMode = false
+            }))
+            items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
+        }
+
+        if actions.count > 3 {
+            let img = ObjectsIcon.icon(forFontAwesome: .ellipsisH, color: UIColor.label, dimension: 30)
+            let menu = self.actionsToMenu(actions: actions) { (_, _) in
+                self.editMode = false
+            }
+            items.append(UIBarButtonItem(image: img, menu: menu))
+        }
+
+        items.append(UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil))
+
+        self.topMostParent()?.toolbarItems = items
+        self.navigationController?.setToolbarHidden(false, animated: true)
+    }
+
+    // Find parent in hierarchy that is right under the navigation controller.
+    // This is in this last parent that the toolbar items can be added to.
+    private func topMostParent() -> UIViewController? {
+        var current: UIViewController? = self
+        while current?.parent as? UINavigationController == nil {
+            current = current?.parent
+        }
+        return current
+    }
+
+    private func actionsToMenu(actions: [Action], cb: ((Action, ActionResult) -> Void)? = nil) -> UIMenu {
+        let children: [UIAction] = actions.map { action in
+            let image = action.icon.map {
+                ObjectsIcon.icon(forFontAwesome: $0, color: UIColor.label, dimension: 30)
+            }
+
+            return UIAction(title: action.label, image: image) { _ in
+                action.execute { res in
+                    cb?(action, res)
+                }
+            }
+        }
+
+        return UIMenu(children: children)
+    }
+
     deinit {
         print("EntityListViewController > Deinit")
         NotificationCenter.default.removeObserver(self)
-    }
-}
-
-struct EntityListSwipeAction {
-    let icon: FontAwesome
-    let handler: Handler
-    let color: UIColor
-    let side: SwipeSide
-    let style: UIContextualAction.Style
-
-    fileprivate let iconImage: UIImage
-
-    enum SwipeSide {
-        case leading
-        case trailing
-    }
-
-    typealias Handler = (EntityExt, @escaping (Bool) -> Void) -> Void
-
-    init(action: FontAwesome, color: UIColor, side: SwipeSide, style: UIContextualAction.Style, handler: @escaping Handler) {
-        self.icon = action
-        self.color = color
-        self.side = side
-        self.style = style
-        self.handler = handler
-
-        self.iconImage = ObjectsIcon.icon(forFontAwesome: self.icon, color: UIColor.white, dimension: 30)
     }
 }
 
@@ -402,9 +560,11 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
     if isSnoozed(result) {
         indicators.append(ObjectsIcon.icon(forFontAwesome: .clock, color: .lightGray, dimension: 16))
     }
-    if isPinned(result, parentId: parentId) {
+
+    if let parentId = parentId, Collections.isPinnedInParent(result.entity, parentId: parentId) {
         indicators.append(ObjectsIcon.icon(forFontAwesome: .thumbtack, color: .lightGray, dimension: 16))
     }
+
     if !indicators.isEmpty {
         data = data.withIndicators(indicators)
     }
@@ -414,23 +574,6 @@ fileprivate func cellDataFromResult(_ result: EntityResult, parentId: EntityId?)
 
 fileprivate func isSnoozed(_ result: EntityResult) -> Bool {
     result.entity.traitOfType(Exomind_Base_V1_Snoozed.self) != nil
-}
-
-fileprivate func isPinned(_ result: EntityResult, parentId: EntityId?) -> Bool {
-    if parentId == nil {
-        return false
-    }
-
-    let parentRelation = result.entity.traitsOfType(Exomind_Base_V1_CollectionChild.self)
-            .filter {
-                $0.message.collection.entityID == parentId
-            }
-            .first
-    guard let parentRelation = parentRelation else {
-        return false
-    }
-
-    return parentRelation.message.weight >= Collections.PINNED_WEIGHT
 }
 
 fileprivate struct EntityResult: Equatable, Hashable {

@@ -242,6 +242,10 @@ export function flattenHierarchy(parent: EntityParent): EntityParent[] {
     return out.reverse();
 }
 
+export function hasEntityParent(entity: EntityTraits, parentId: string): boolean {
+    return !!getEntityParentRelation(entity, parentId);
+}
+
 export function getEntityParentRelation(entity: EntityTraits, parentId: string): EntityTrait<exomind.base.v1.CollectionChild> {
     return entity
         .traitsOfType<exomind.base.v1.CollectionChild>(exomind.base.v1.CollectionChild)

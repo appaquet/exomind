@@ -14,16 +14,13 @@ class Stylesheet {
 
     static let collectionSwipeDoneBg = UIColor("#5CB296")
     static let collectionSwipeInboxBg = UIColor("#5CB296")
-    static let collectionSwipeLaterBg = UIColor("#2670E0")
-    static let collectionSwipeAddCollectionBg = exomindSecondary
+    static let collectionSwipeSnoozeBg = UIColor("#2670E0")
+    static let collectionSwipeCollectionBg = exomindSecondary
+    static let collectionSwipeMoveInboxBg = UIColor("#5CB296")
+    static let collectionSwipeMoreBg = UIColor("#C0C0C0")
 
     static let collectionSelectorNavigationBarBg = exomindSecondary
     static let collectionSelectorNavigationBarFg = navigationBarFg
-
-    static let collectionThemeDoneBg = collectionSwipeDoneBg.withAlphaComponent(0.3)
-    static let collectionThemeLaterBg = collectionSwipeLaterBg.withAlphaComponent(0.3)
-    static let collectionThemeIconFg = UIColor.white.withAlphaComponent(0.6)
-    static let collectionThemeIconSize = 150
 
     static let searchNavigationBarBg = exomindSecondary
     static let searchNavigationBarFg = navigationBarFg

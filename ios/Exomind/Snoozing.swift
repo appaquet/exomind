@@ -13,7 +13,7 @@ class Snoozing {
     }
 
     static func getLaterIcon(_ key: String) -> String {
-        return JSBridge.instance.jsContext.evaluateScript("exomind.dateUtil.getSnoozeIcon").call(withArguments: [key]).toString()
+        JSBridge.instance.jsContext.evaluateScript("exomind.dateUtil.getSnoozeIcon").call(withArguments: [key]).toString()
     }
 
     static func textDiffToDate(_ textDiff: String) -> Date {

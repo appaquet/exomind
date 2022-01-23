@@ -60,22 +60,23 @@ class EmailViewController: VerticalLinearViewController, EntityTraitView {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
-        nav.setQuickButtonActions([
-            QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
-                self?.handleReply()
-            }),
-            QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
-                self?.handleReplyAll()
-            }),
-            QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
-                self?.handleForward()
-            }),
-            QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
-                self?.handleAddToCollection()
-            }),
-        ])
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+            nav.setQuickButtonActions([
+                QuickButtonAction(icon: .reply, handler: { [weak self]() -> Void in
+                    self?.handleReply()
+                }),
+                QuickButtonAction(icon: .replyAll, handler: { [weak self]() -> Void in
+                    self?.handleReplyAll()
+                }),
+                QuickButtonAction(icon: .forward, handler: { [weak self]() -> Void in
+                    self?.handleForward()
+                }),
+                QuickButtonAction(icon: .folderOpen, handler: { [weak self]() -> Void in
+                    self?.handleAddToCollection()
+                }),
+            ])
+        }
     }
 
     private func loadData() {

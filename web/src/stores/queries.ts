@@ -1,7 +1,7 @@
 
 import { Exocore, exocore, WatchedQueryWrapper } from 'exocore';
 
-export class ExpandableQuery {
+export class ManagedQuery {
     query: exocore.store.IEntityQuery;
     onChange: () => void;
     hasResults: boolean;

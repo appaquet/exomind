@@ -4,7 +4,8 @@ import Exocore
 
 class NoteViewController: VerticalLinearViewController, EntityTraitView {
     private var entity: EntityExt?
-    private var noteTrait: TraitInstance<Exomind_Base_V1_Note>?
+    private var curNoteTrait: TraitInstance<Exomind_Base_V1_Note>?
+    private var curNote: Exomind_Base_V1_Note?
     private var modifiedNote: Exomind_Base_V1_Note?
 
     private var headerView: LabelledFieldView!
@@ -18,7 +19,8 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
         }
 
         self.entity = entity
-        self.noteTrait = entity.trait(withId: trait.id)
+        self.curNoteTrait = entity.trait(withId: trait.id)
+        self.curNote = self.curNoteTrait?.message
 
         if self.isViewLoaded && self.modifiedNote == nil {
             self.loadData()
@@ -35,8 +37,10 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        let nav = (self.navigationController as! NavigationController)
-        nav.resetState()
+
+        if let nav = self.navigationController as? NavigationController {
+            nav.resetState()
+        }
 
         self.tabBarController?.tabBar.isHidden = true
     }
@@ -56,7 +60,7 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
             }
 
             if this.modifiedNote == nil {
-                this.modifiedNote = this.noteTrait?.message
+                this.modifiedNote = this.curNote
             }
             this.modifiedNote?.title = this.titleField.text
             this.saveNote()
@@ -70,7 +74,7 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
             guard let this = self else {
                 return
             }
-            
+
             if let url = json?["link"].string {
                 if url.starts(with: "entity://") {
                     let entityId = url.replacingOccurrences(of: "entity://", with: "")
@@ -83,13 +87,13 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
                     }
                 }
             } else if let body = json?["content"].string {
-                if this.noteTrait == nil {
+                if this.curNote == nil {
                     // note is still loading, we don't accept any changes yet
                     return
                 }
 
                 if this.modifiedNote == nil {
-                    this.modifiedNote = this.noteTrait?.message
+                    this.modifiedNote = this.curNote
                 }
                 this.modifiedNote?.body = body
                 this.saveNote() // we don't care about saving every time since it's already debounced in javascript
@@ -104,7 +108,7 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
     }
 
     private func loadData() {
-        if let note = self.modifiedNote ?? self.noteTrait?.message {
+        if let note = self.modifiedNote ?? self.curNote {
             self.titleField.text = note.title
             self.richTextEditor.setContent(note.body)
         }
@@ -112,20 +116,21 @@ class NoteViewController: VerticalLinearViewController, EntityTraitView {
 
     private func saveNote() {
         guard   let entity = self.entity,
-                let initialNote = self.noteTrait,
+                let curNoteTrait = self.curNoteTrait,
+                let curNote = self.curNote,
                 let modifiedNote = self.modifiedNote
                 else {
             return
         }
 
-        if !initialNote.message.isEqualTo(message: modifiedNote) {
+        if !curNote.isEqualTo(message: modifiedNote) {
             do {
+                self.curNote = modifiedNote
+
                 let mutation = try MutationBuilder
                         .updateEntity(entityId: entity.id)
-                        .putTrait(message: modifiedNote, traitId: initialNote.id)
+                        .putTrait(message: modifiedNote, traitId: curNoteTrait.id)
                         .build()
-
-                print("NoteViewController > Saving note")
                 ExocoreClient.store.mutate(mutation: mutation)
             } catch {
                 print("NoteViewController > Error mutating note: \(error)")

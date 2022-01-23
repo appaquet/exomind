@@ -1,5 +1,6 @@
 import UIKit
 import FontAwesome_swift
+import Exocore
 
 class NavigationController: UINavigationController, UINavigationControllerDelegate {
     fileprivate let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
@@ -8,6 +9,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     fileprivate var quickButton: QuickButtonView!
     fileprivate static let quickButtonExtraMargin = CGFloat(10)
     fileprivate var barActions: [NavigationControllerBarAction] = []
+    private var lastFetchQuery: QueryHandle? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,6 +25,11 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             bottomMargin = bottomMargin + tabBar.tabBar.frame.height
         }
         self.quickButton.addToView(self.view, bottomMargin: bottomMargin)
+
+        // make sure that appearance with or without data under toolbar is the same since,
+        // from iOS 15, toolbar may be transparent when no data is under
+        // https://nemecek.be/blog/127/how-to-disable-automatic-transparent-tabbar-in-ios-15
+        self.toolbar.scrollEdgeAppearance = self.toolbar.standardAppearance
     }
 
     override func viewLayoutMarginsDidChange() {
@@ -37,6 +44,11 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     }
 
     func pushObject(_ object: NavigationObject, animated: Bool = true) {
+        if case let .entityId(id: id) = object {
+            self.fetchPushedObjectId(id: id, animated: animated)
+            return
+        }
+
         var entityTrait: AnyTraitInstance?
         switch (object) {
         case let .entity(entity: entity):
@@ -74,6 +86,106 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         self.pushViewController(vc, animated: animated)
     }
 
+    func resetState() {
+        self.topViewController?.navigationItem.rightBarButtonItems = []
+        self.clearBarActions()
+        self.setQuickButtonVisibility(false)
+    }
+
+    func setQuickButtonActions(_ actions: [QuickButtonAction]) {
+        self.quickButton.setActions(actions)
+        self.quickButton.isHidden = false
+    }
+
+    func setQuickButtonVisibility(_ shown: Bool) {
+        self.quickButton.close()
+        self.quickButton.isHidden = !shown
+    }
+
+    func setBarActions(_ actions: [NavigationControllerBarAction]) {
+        self.barActions = actions.reversed()
+        self.topViewController?.navigationItem.rightBarButtonItems? = self.barActions.enumerated().map {
+            (i, action) in
+            let color = action.active ? Stylesheet.navigationBarActiveFg : Stylesheet.navigationBarFg
+            let img = UIImage.fontAwesomeIcon(name: action.icon, style: .solid, textColor: color, size: CGSize(width: 25, height: 25))
+            let button = UIButton()
+            button.setImage(img, for: UIControl.State())
+            button.frame = CGRect(x: 0, y: 0, width: 30, height: 25) // a bit wider to leave spacing
+            button.tag = i
+            button.addTarget(self, action: #selector(handleBarActionClick), for: .touchUpInside)
+
+            let barButton = UIBarButtonItem()
+            barButton.customView = button
+            return barButton
+        }
+    }
+
+    func clearBarActions() {
+        self.topViewController?.navigationItem.rightBarButtonItems? = []
+    }
+
+    @objc func handleBarActionClick(_ sender: UIButton) {
+        self.barActions[sender.tag].handler?()
+    }
+
+    func showCollectionSelector(forEntity entity: EntityExt) {
+        self.showCollectionSelector(forEntities: [entity])
+    }
+
+    func showCollectionSelector(forEntities entities: [EntityExt]) {
+        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
+        vc.forEntities = entities
+        self.present(vc, animated: true, completion: nil)
+    }
+
+    func showSearch(_ fromEntityId: EntityId?, selectionHandler: ((EntityExt) -> Void)? = nil) {
+        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "SearchViewController") as! SearchViewController
+        vc.fromEntityId = fromEntityId
+        if let handler = selectionHandler {
+            vc.selectionHandler = handler
+        }
+        self.present(vc, animated: true, completion: nil)
+    }
+
+    func showCreateObject(_ fromEntityId: EntityId, callback: ((ActionResult) -> Void)? = nil) {
+        let showIn = self.parent ?? self
+        let vc = EntityCreationViewController(parentId: fromEntityId, callback: callback)
+        vc.showInsideViewController(showIn)
+    }
+
+    func showTimeSelector(forEntity entity: EntityExt, callback: ((Bool) -> Void)? = nil) {
+        self.showTimeSelector(forEntities: [entity], callback: callback)
+    }
+
+    func showTimeSelector(forEntities entities: [EntityExt], callback: ((Bool) -> Void)? = nil) {
+        let showIn = self.parent ?? self
+        let timeSelector = TimeSelectionViewController { (date) in
+            if let realDate = date {
+                Commands.snooze(entities: entities, date: realDate)
+                callback?(true)
+            } else {
+                callback?(false)
+            }
+        }
+        timeSelector.showInsideViewController(showIn)
+    }
+
+    private func fetchPushedObjectId(id: EntityId, animated: Bool) {
+        let query = QueryBuilder.withId(id).build()
+        self.lastFetchQuery = ExocoreClient.store.query(query: query) { [weak self] (status, results) in
+            guard let this = self,
+                  let results = results,
+                  !results.entities.isEmpty else {
+                return
+            }
+
+            let entity = results.entities[0].entity.toExtension()
+            DispatchQueue.main.async {
+                this.pushObject(.entity(entity: entity), animated: animated)
+            }
+        }
+    }
+
     private func createViewController(forObject: NavigationObject) -> UIViewController {
         switch (forObject) {
         case let .entityId(id: entityId) where entityId == "inbox":
@@ -99,81 +211,6 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             vc.populate(entityTrait: et)
             return vc
         }
-    }
-
-    func resetState() {
-        self.topViewController?.navigationItem.rightBarButtonItems = []
-        self.clearBarActions()
-        self.setQuickButtonVisibility(false)
-    }
-
-    func setQuickButtonActions(_ actions: [QuickButtonAction]) {
-        self.quickButton.setActions(actions)
-        self.quickButton.isHidden = false
-    }
-
-    func setQuickButtonVisibility(_ shown: Bool) {
-        self.quickButton.close()
-        self.quickButton.isHidden = !shown
-    }
-
-    func setBarActions(_ actions: [NavigationControllerBarAction]) {
-        self.barActions = actions.reversed()
-        self.topViewController?.navigationItem.rightBarButtonItems? = self.barActions.enumerated().map {
-            (i, action) in
-            let color = action.active ? Stylesheet.navigationBarActiveFg : Stylesheet.navigationBarFg
-            let img = UIImage.fontAwesomeIcon(name: action.icon, style: .solid, textColor: color, size: CGSize(width: 25, height: 25))
-            let button = UIButton()
-            button.setImage(img, for: UIControl.State())
-            button.frame = CGRect(x: 0, y: 0, width: 25, height: 25)
-            button.tag = i
-            button.addTarget(self, action: #selector(handleBarActionClick), for: .touchUpInside)
-            let barButton = UIBarButtonItem()
-            barButton.customView = button
-            return barButton
-        }
-    }
-
-    func clearBarActions() {
-        self.topViewController?.navigationItem.rightBarButtonItems? = []
-    }
-
-    @objc func handleBarActionClick(_ sender: UIButton) {
-        self.barActions[sender.tag].handler?()
-    }
-
-    func showCollectionSelector(forEntity: EntityExt) {
-        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "CollectionSelectorViewController") as! CollectionSelectorViewController
-        vc.forEntity = forEntity
-        self.present(vc, animated: true, completion: nil)
-    }
-
-    func showSearch(_ fromEntityId: EntityId?, selectionHandler: ((EntityExt) -> Void)? = nil) {
-        let vc = self.mainStoryboard.instantiateViewController(withIdentifier: "SearchViewController") as! SearchViewController
-        vc.fromEntityId = fromEntityId
-        if let handler = selectionHandler {
-            vc.selectionHandler = handler
-        }
-        self.present(vc, animated: true, completion: nil)
-    }
-
-    func showCreateObject(_ fromEntityId: EntityId, callback: @escaping (EntityExt?) -> Void) {
-        let showIn = self.parent ?? self
-        let vc = EntityCreationViewController(parentId: fromEntityId, callback: callback)
-        vc.showInsideViewController(showIn)
-    }
-
-    func showTimeSelector(forEntity: EntityExt, callback: ((Bool) -> Void)? = nil) {
-        let showIn = self.parent ?? self
-        let timeSelector = TimeSelectionViewController { (date) in
-            if let realDate = date {
-                ExomindMutations.snooze(entity: forEntity, date: realDate)
-                callback?(true)
-            } else {
-                callback?(false)
-            }
-        }
-        timeSelector.showInsideViewController(showIn)
     }
 }
 

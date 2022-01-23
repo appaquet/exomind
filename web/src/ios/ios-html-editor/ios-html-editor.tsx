@@ -10,20 +10,18 @@ interface IProps {
 }
 
 interface IState {
-    content?: string;
     editor?: HtmlEditor
-    cursorY?: number;
 }
 
 export default class IosHtmlEditor extends React.Component<IProps, IState> {
+    // state is not used for these variables become of some feedback bug where
+    // the note constantly gets changed back to previous content
+    private cursorY = 0;
+    private content = '';
+
     constructor(props: IProps) {
         super(props);
-
-        // content is set via state because it may be empty at time in props
-        // props are used message passing, not as full state
-        this.state = {
-            content: props.content,
-        };
+        this.content = props.content;
     }
 
     componentDidUpdate(prevProps: IProps) {
@@ -34,18 +32,15 @@ export default class IosHtmlEditor extends React.Component<IProps, IState> {
 
         // if we receive new content and we update editor on same stack, it crashes
         if (this.props.content && this.props.content != prevProps.content) {
-            setTimeout(() => {
-                this.setState({
-                    content: this.props.content,
-                });
-            });
+            this.content = this.props.content;
+            this.setState({});
         }
     }
 
     render() {
         return (
             <HtmlEditor
-                content={this.state.content}
+                content={this.content}
                 onBound={this.handleBound}
                 onChange={this.handleContentChange}
                 onCursorChange={this.handleCursorChange}
@@ -61,14 +56,12 @@ export default class IosHtmlEditor extends React.Component<IProps, IState> {
     };
 
     handleContentChange = (newContent: string) => {
-        this.setState({
-            content: newContent,
-        });
+        this.content = newContent;
 
         sendIos(
             JSON.stringify({
                 content: newContent,
-                cursorY: this.state.cursorY,
+                cursorY: this.cursorY,
             })
         );
     };
@@ -76,14 +69,11 @@ export default class IosHtmlEditor extends React.Component<IProps, IState> {
     handleCursorChange = (cursor: EditorCursor) => {
         if (cursor && cursor.rect) {
             const newCursorY = cursor.rect.top;
-            if (this.state.cursorY != newCursorY) {
-                this.setState({
-                    cursorY: newCursorY,
-                });
-
+            if (this.cursorY != newCursorY) {
+                this.cursorY = newCursorY;
                 sendIos(
                     JSON.stringify({
-                        content: this.state.content,
+                        content: this.content,
                         cursorY: newCursorY,
                     })
                 );

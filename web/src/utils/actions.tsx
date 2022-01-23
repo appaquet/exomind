@@ -1,4 +1,4 @@
-import { getEntityParentRelation, isPinnedInParent } from "../stores/collections";
+import { getEntityParentRelation, hasEntityParent, isPinnedInParent } from "../stores/collections";
 import { EntityTraits } from "./entities";
 import { CancellableEvent } from "./events";
 import { Stores } from "../stores/stores";
@@ -51,7 +51,13 @@ export class Actions {
         }
 
         if (!this.isSpecialEntity(entity.id)) {
-            push(20, this.snooze(entity, parentId, parentId === 'inbox'));
+            if (context?.section !== 'snoozed') {
+                push(18, this.snooze(entity, parentId, parentId === 'inbox'));
+            }
+
+            if (parentId !== 'inbox' && !hasEntityParent(entity, 'inbox')) {
+                push(13, this.addToInbox(entity));
+            }
         }
 
         if (parentId && !this.isSpecialEntity(parentId)) {
@@ -66,21 +72,15 @@ export class Actions {
             push(32, this.moveTopParent(entity, parentId));
         }
 
-        if (parentId !== 'inbox') {
-            push(15, this.addToInbox(entity));
-        }
-
         if (context?.section === 'snoozed') {
-            const action = this.removeSnooze(entity);
-            action.icon = 'times';
-            push(10, action);
+            push(10, this.removeSnooze(entity));
         }
 
         if (this.isNoteEntity(entity)) {
             push(45, this.popOutToWindow(entity));
         }
 
-        push(16, this.selectEntityCollections(entity));
+        push(20, this.selectEntityCollections(entity));
 
         push(40, this.copyLink(entity));
 
@@ -108,7 +108,7 @@ export class Actions {
         return _.sortBy(actions, (a) => a.priority);
     }
 
-    static forObjectCreation(parent: EntityTraits | string): IAction[] {
+    static forEntityCreation(parent: EntityTraits | string): IAction[] {
         const parentId = Commands.getEntityId(parent);
 
         const actions: IAction[] = [];
@@ -180,7 +180,7 @@ export class Actions {
     static moveTopParent(et: EntityTraits | EntityTraits[], parent: EntityTraits | string): IAction {
         return {
             key: 'move-top-parent',
-            label: 'Move top',
+            label: 'Move to top',
             icon: 'arrow-up',
             execute: async () => {
                 await Commands.addToParent(et, parent);
@@ -241,7 +241,7 @@ export class Actions {
     static removeSnooze(et: EntityTraits): IAction {
         return {
             key: 'remove-snooze',
-            label: 'Remove snooze',
+            label: 'Unsnooze',
             icon: 'clock-o',
             execute: async () => {
                 await Commands.removeSnooze(et);

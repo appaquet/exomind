@@ -49,6 +49,10 @@ class RichTextEditor: UIViewController {
         self.webview.setContent(content)
     }
 
+    func blur() {
+        self.webview.blurEditor()
+    }
+
     @objc func handleKeyboardWillShow(_ notification: Notification) {
         self.webview.checkSize()
 
@@ -75,6 +79,8 @@ class RichTextEditor: UIViewController {
             outerScroll.contentInset = .zero
             outerScroll.scrollIndicatorInsets = .zero
         }
+
+        self.blur()
     }
 
     private func ensureCursorVisible() {
@@ -183,6 +189,13 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
                                 const pos = range.getBoundingClientRect();
                                 return { x: pos.left, y: pos.top };
                             };
+
+                        function blurCurrentElement() {
+                            var el = document.activeElement;
+                            if (el && el.blur) {
+                                el.blur();
+                            }
+                        }
                         """
         let script = WKUserScript(
                     source: strScript,
@@ -209,7 +222,7 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
         self.scrollView.isScrollEnabled = false
     }
 
-    func getCursorPosition(_ callback: @escaping (CGPoint) -> ()) {
+    fileprivate func getCursorPosition(_ callback: @escaping (CGPoint) -> ()) {
         self.evaluateJavaScript("getCaretClientPosition()") { any, error in
             guard error == nil,
                   let dict = any as? Dictionary<String, Any>,
@@ -226,6 +239,10 @@ fileprivate class RichTextEditorWebView: HybridWebView, UIScrollViewDelegate {
 
     func setContent(_ content: String) {
         self.setData(["content": content as AnyObject])
+    }
+
+    fileprivate func blurEditor() {
+        self.evaluateJavaScript("blurCurrentElement()")
     }
 }
 

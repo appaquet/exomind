@@ -48,7 +48,7 @@ class JSBridge {
                 print("JS > Got an exception error='\(String(describing: exception))' function='\(String(describing: stack))'")
             }
 
-            jsContext.evaluateScript("window = {}; window.location = {}; window.location.host = 'exomind.io'; exomind = {};");
+            jsContext.evaluateScript("window = {}; websocket = {}; window.location = {}; window.location.host = 'exomind.io'; exomind = {};");
 
             // support for setInterval
             let setInterval: @convention(block) (JSValue, Int) -> Void = {

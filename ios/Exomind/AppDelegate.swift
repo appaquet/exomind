@@ -12,9 +12,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var reach: Reachability?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        AppCenter.start(withAppSecret: "fd71ff63-e602-441d-8fc6-26932fcf55de", services:[
-          Analytics.self,
-          Crashes.self
+        AppCenter.start(withAppSecret: "fd71ff63-e602-441d-8fc6-26932fcf55de", services: [
+            Analytics.self,
+            Crashes.self
         ])
 
         HttpUtils.copyCookiesToKeychain()
@@ -27,20 +27,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, performActionFor shortcutItem: UIApplicationShortcutItem, completionHandler: @escaping (Bool) -> Void) {
-        func openObject(_ entity: EntityExt?) {
-            if let entity = entity {
+        let openObject = { (res: EntityCreateResult) in
+            if case let .success(entity) = res, let entity = entity {
                 RootViewController.mainInstance()?.show(navigationObject: .entity(entity: entity))
             }
         }
 
         if (shortcutItem.type.contains("NewNote")) {
-            EntityCreationViewController.createNote(nil, callback: openObject)
+            Commands.createNote(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewTask")) {
-            EntityCreationViewController.createTask(nil, callback: openObject)
-        } else if (shortcutItem.type.contains("NewEmail")) {
-            EntityCreationViewController.createEmail(nil, callback: openObject)
+            Commands.createTask(nil, callback: openObject)
         } else if (shortcutItem.type.contains("NewCollection")) {
-            EntityCreationViewController.createCollection(nil, callback: openObject)
+            Commands.createCollection(nil, callback: openObject)
         }
     }
 
@@ -81,6 +79,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     private var previousReachability: Reachability?
+
     private func startNetworkMonitoring() {
         self.reach = try? Reachability()
         self.reach?.whenReachable = { reachability in

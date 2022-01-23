@@ -146,6 +146,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2.4.0
 
+      - name: Select latest Xcode
+        run: |
+          sudo xcode-select -s "/Applications/Xcode_13.2.1.app" # select latest xcode
+
       - name: Install dependencies
         run: |
           HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf

@@ -84,9 +84,27 @@ class Collections {
             NotificationCenter.default.post(name: .exomindCollectionsChanged, object: nil)
         }
     }
+
+    static func hasParent(entity: EntityExt, parentId: String) -> Bool {
+        let parentRel = self.getParentRelation(entity: entity, parentId: parentId)
+        return parentRel != nil
+    }
+
+    static func getParentRelation(entity: EntityExt, parentId: String) -> TraitInstance<Exomind_Base_V1_CollectionChild>? {
+        entity
+                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
+                .first(where: { $0.message.collection.entityID == parentId })
+    }
+
+    static func isPinnedInParent(_ entity: EntityExt, parentId: EntityId) -> Bool {
+        guard let parentRelation = Collections.getParentRelation(entity: entity, parentId: parentId) else {
+            return false
+        }
+        return parentRelation.message.weight >= Collections.PINNED_WEIGHT
+    }
 }
 
-class CollectionEntity {
+fileprivate class CollectionEntity {
     let entity: EntityExt
     let collection: TraitInstance<Exomind_Base_V1_Collection>
 

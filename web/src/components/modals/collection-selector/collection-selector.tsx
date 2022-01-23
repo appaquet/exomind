@@ -2,7 +2,7 @@ import { Exocore, QueryBuilder, TraitQueryBuilder, WatchedQueryWrapper } from 'e
 import React, { KeyboardEvent } from 'react';
 import { exomind } from '../../../protos';
 import { EntityTraits } from '../../../utils/entities';
-import { ExpandableQuery } from '../../../stores/queries';
+import { ManagedQuery } from '../../../stores/queries';
 import Debouncer from '../../../utils/debouncer';
 import { EntitySelector } from '../../interaction/entity-selector/entity-selector';
 import { CancellableEvent } from '../../../utils/events';
@@ -28,7 +28,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
 
     private entityQuery: WatchedQueryWrapper;
     private entityParentsQuery: WatchedQueryWrapper;
-    private collectionsQuery?: ExpandableQuery;
+    private collectionsQuery?: ManagedQuery;
     private filterInputRef: React.RefObject<HTMLInputElement> = React.createRef();
 
     constructor(props: IProps) {
@@ -150,7 +150,7 @@ export class CollectionSelector extends React.Component<IProps, IState> {
             .count(30)
             .build();
         this.collectionsQuery?.free();
-        this.collectionsQuery = new ExpandableQuery(collectionQuery, () => {
+        this.collectionsQuery = new ManagedQuery(collectionQuery, () => {
             this.setState({
                 collectionEntities: Array.from(this.collectionsQuery.results()).map((r) => new EntityTraits(r.entity)),
             });
