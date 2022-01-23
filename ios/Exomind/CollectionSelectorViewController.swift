@@ -24,9 +24,9 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     private var collectionsQuery: ManagedQuery?
     private var collectionsQueryFilter: String?
 
-    private var entityQuery: QueryStreamHandle?
+    private var entitiesQuery: QueryStreamHandle?
     private var completeEntities: [EntityExt] = []
-    private var entityParentsQuery: QueryStreamHandle?
+    private var entityParentsQueries: [QueryStreamHandle] = []
     private var entityParents: [Collection]?
 
     private var currentFilter: String?
@@ -66,8 +66,8 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
                 return
             }
 
-            if this.entityQuery == nil {
-                this.queryEntity()
+            if this.entitiesQuery == nil {
+                this.queryEntities()
             }
 
             if this.collectionsQuery == nil || this.collectionsQueryFilter != this.currentFilter {
@@ -98,17 +98,21 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
         }
     }
 
-    private func queryEntity() {
-        let ids = self.partialEntities.map { $0.id }
+    private func queryEntities() {
+        let ids = self.partialEntities.map {
+            $0.id
+        }
         let entityQuery = QueryBuilder.withIds(ids).build()
-        self.entityQuery = ExocoreClient.store.watchedQuery(query: entityQuery, onChange: { [weak self] (status, res) in
+        self.entitiesQuery = ExocoreClient.store.watchedQuery(query: entityQuery, onChange: { [weak self] (status, res) in
             guard let this = self,
                   let res = res,
                   res.entities.count > 0 else {
                 return
             }
 
-            let entities = res.entities.map { $0.entity.toExtension() }
+            let entities = res.entities.map {
+                $0.entity.toExtension()
+            }
             this.completeEntities = entities
             this.queryEntityParents(entities)
             this.loadData()
@@ -131,20 +135,22 @@ class CollectionSelectorTableViewController: UITableViewController, UISearchBarD
     }
 
     private func queryEntityParents(_ entities: [EntityExt]) {
-        let entity = entities[0] // TODO:
+        self.entityParentsQueries = []
+        self.entityParents = []
 
-        let parents = entity
-                .traitsOfType(Exomind_Base_V1_CollectionChild.self)
-                .map({ $0.message.collection.entityID })
+        for entity in entities {
+            let parents = entity
+                    .traitsOfType(Exomind_Base_V1_CollectionChild.self)
+                    .map({ $0.message.collection.entityID })
 
-        if !parents.isEmpty {
-            let query = QueryBuilder.withIds(parents).count(100).build()
-            self.entityParentsQuery = ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, res) in
-                self?.entityParents = res?.entities.compactMap({ Collection.fromEntity(entity: $0.entity.toExtension()) })
-                self?.loadData()
-            })
-        } else {
-            self.entityParents = []
+            if !parents.isEmpty {
+                let query = QueryBuilder.withIds(parents).count(100).build()
+                self.entityParentsQueries.append(ExocoreClient.store.watchedQuery(query: query, onChange: { [weak self] (status, res) in
+                    let parents = res?.entities.compactMap({ Collection.fromEntity(entity: $0.entity.toExtension()) }) ?? []
+                    self?.entityParents?.append(contentsOf: parents)
+                    self?.loadData()
+                }))
+            }
         }
     }
 

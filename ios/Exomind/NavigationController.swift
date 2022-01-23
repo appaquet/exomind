@@ -110,7 +110,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             let img = UIImage.fontAwesomeIcon(name: action.icon, style: .solid, textColor: color, size: CGSize(width: 25, height: 25))
             let button = UIButton()
             button.setImage(img, for: UIControl.State())
-            button.frame = CGRect(x: 0, y: 0, width: 30, height: 25) // a bid more wide to leave spacing
+            button.frame = CGRect(x: 0, y: 0, width: 30, height: 25) // a bit wider to leave spacing
             button.tag = i
             button.addTarget(self, action: #selector(handleBarActionClick), for: .touchUpInside)
 
