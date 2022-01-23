@@ -73,7 +73,7 @@ export class Header extends React.Component<IProps> {
                 }, e.currentTarget as HTMLElement);
             };
 
-            visibleActions.push(new HeaderAction('More', 'bars', showMenu, false));
+            visibleActions.push(new HeaderAction('More', 'ellipsis-v', showMenu, false));
         }
 
         const actionFragments: React.ReactFragment[] = _.chain(visibleActions)

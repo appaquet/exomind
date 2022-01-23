@@ -92,21 +92,21 @@ class Actions {
     }
 
     static func removeFromParent(_ entities: [EntityExt], parentId: String) -> Action {
-        Action(key: .removeParent, label: "Remove", icon: .check, destructive: true, swipeColor: Stylesheet.collectionSwipeDoneBg) { cb in
+        Action(key: .removeParent, label: "Remove", icon: .check, destructive: true, swipeColor: Stylesheet.collectionSwipeDoneBg, swipeSide: .leading) { cb in
             Commands.removeFromParent(entities: entities, parentId: parentId)
             cb(.successRemoved)
         }
     }
 
     static func addToInbox(_ entities: [EntityExt]) -> Action {
-        Action(key: .addInbox, label: "Move to inbox", icon: .inbox, swipeColor: Stylesheet.collectionSwipeMoveInboxBg) { cb in
+        Action(key: .addInbox, label: "Move to inbox", icon: .inbox, swipeColor: Stylesheet.collectionSwipeMoveInboxBg, swipeSide: .trailing) { cb in
             Commands.addToParent(entities: entities, parentId: "inbox")
             cb(.success)
         }
     }
 
     static func snooze(_ entities: [EntityExt], navController: NavigationController, parentId: String? = nil, removeFromParent: Bool = false) -> Action {
-        Action(key: .snooze, label: "Snooze...", icon: .clock, destructive: removeFromParent, swipeColor: Stylesheet.collectionSwipeSnoozeBg) { (cb) in
+        Action(key: .snooze, label: "Snooze...", icon: .clock, destructive: removeFromParent, swipeColor: Stylesheet.collectionSwipeSnoozeBg, swipeSide: .leading) { (cb) in
             navController.showTimeSelector(forEntities: entities) { completed in
                 if (completed) {
                     if removeFromParent {
@@ -123,14 +123,14 @@ class Actions {
     }
 
     static func selectEntityCollection(_ entities: [EntityExt], navController: NavigationController) -> Action {
-        Action(key: .selectionCollection, label: "Add to collections...", icon: .folderOpen, swipeColor: Stylesheet.collectionSwipeCollectionBg) { (cb) in
+        Action(key: .selectionCollection, label: "Add to collections...", icon: .folderOpen, swipeColor: Stylesheet.collectionSwipeCollectionBg, swipeSide: .trailing) { (cb) in
             navController.showCollectionSelector(forEntities: entities)
             cb(.success)
         }
     }
 
     static func removeSnooze(_ entity: EntityExt) -> Action {
-        Action(key: .removeSnooze, label: "Unsnooze", icon: .clock, swipeColor: Stylesheet.collectionSwipeSnoozeBg) { (cb) in
+        Action(key: .removeSnooze, label: "Unsnooze", icon: .clock, swipeColor: Stylesheet.collectionSwipeSnoozeBg, swipeSide: .leading) { (cb) in
             Commands.removeSnooze(entity)
             cb(.success)
         }
@@ -216,6 +216,7 @@ struct Action {
     let icon: FontAwesome?
     var destructive: Bool = false
     var swipeColor: UIColor?
+    var swipeSide: SwipeSide = .none
 
     let execute: Handler
 }
@@ -265,4 +266,10 @@ enum ActionSection {
     case recent
     case snoozed
     case search
+}
+
+enum SwipeSide {
+    case none
+    case leading
+    case trailing
 }

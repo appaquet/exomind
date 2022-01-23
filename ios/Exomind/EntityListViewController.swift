@@ -195,14 +195,23 @@ class EntityListViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
-              let actionsForEntity = self.actionsForEntity,
-              let firstAction = actionsForEntity(entity).first
+              let actionsForEntity = self.actionsForEntity
                 else {
             return nil
         }
 
-        let swipeAction = self.toSwipeAction(indexPath: indexPath, action: firstAction)
-        return UISwipeActionsConfiguration(actions: [swipeAction])
+        let actions = actionsForEntity(entity)
+        let swipeActions: [UIContextualAction] = actions.filter {
+                    $0.swipeSide == .leading
+                }
+                .prefix(2).map {
+                    self.toSwipeAction(indexPath: indexPath, action: $0)
+                }
+        if swipeActions.isEmpty {
+            return nil
+        }
+
+        return UISwipeActionsConfiguration(actions: swipeActions)
     }
 
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -213,13 +222,14 @@ class EntityListViewController: UITableViewController {
         }
 
         let actions = actionsForEntity(entity)
-        if actions.count < 2 {
-            // first action is on leading side
+        let swipeActions: [UIContextualAction] = actions.filter {
+                    $0.swipeSide == .trailing
+                }
+                .prefix(2).map {
+                    self.toSwipeAction(indexPath: indexPath, action: $0)
+                }
+        if swipeActions.isEmpty {
             return nil
-        }
-
-        let swipeActions: [UIContextualAction] = actions.dropFirst().prefix(2).map {
-            self.toSwipeAction(indexPath: indexPath, action: $0)
         }
         return UISwipeActionsConfiguration(actions: swipeActions)
     }
@@ -276,7 +286,7 @@ class EntityListViewController: UITableViewController {
             style = .destructive
         }
 
-        let sAction = UIContextualAction(style: style, title: action.label) { _swipeAction, _view, swipeCb in
+        let sAction = UIContextualAction(style: style, title: nil) { _swipeAction, _view, swipeCb in
             action.execute { [weak self] (result: ActionResult) in
                 guard let this = self else {
                     return

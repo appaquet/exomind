@@ -1,5 +1,6 @@
 import UIKit
 import FontAwesome_swift
+import Exocore
 
 class NavigationController: UINavigationController, UINavigationControllerDelegate {
     fileprivate let objectsStoryboard: UIStoryboard = UIStoryboard(name: "Objects", bundle: nil)
@@ -8,6 +9,7 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     fileprivate var quickButton: QuickButtonView!
     fileprivate static let quickButtonExtraMargin = CGFloat(10)
     fileprivate var barActions: [NavigationControllerBarAction] = []
+    private var lastFetchQuery: QueryHandle? = nil
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -42,6 +44,11 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
     }
 
     func pushObject(_ object: NavigationObject, animated: Bool = true) {
+        if case let .entityId(id: id) = object {
+            self.fetchPushedObjectId(id: id, animated: animated)
+            return
+        }
+
         var entityTrait: AnyTraitInstance?
         switch (object) {
         case let .entity(entity: entity):
@@ -79,33 +86,6 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
         self.pushViewController(vc, animated: animated)
     }
 
-    private func createViewController(forObject: NavigationObject) -> UIViewController {
-        switch (forObject) {
-        case let .entityId(id: entityId) where entityId == "inbox":
-            let vc = InboxViewController()
-            return vc
-
-        case let .entity(entity: entity) where entity.id == "inbox":
-            let vc = InboxViewController()
-            return vc
-
-        case let .entityId(id: entityId):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
-            vc.populate(entityId: entityId)
-            return vc
-
-        case let .entity(entity: entity):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
-            vc.populate(entity: entity)
-            return vc
-
-        case let .entityTrait(entityTrait: et):
-            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
-            vc.populate(entityTrait: et)
-            return vc
-        }
-    }
-
     func resetState() {
         self.topViewController?.navigationItem.rightBarButtonItems = []
         self.clearBarActions()
@@ -130,9 +110,10 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             let img = UIImage.fontAwesomeIcon(name: action.icon, style: .solid, textColor: color, size: CGSize(width: 25, height: 25))
             let button = UIButton()
             button.setImage(img, for: UIControl.State())
-            button.frame = CGRect(x: 0, y: 0, width: 25, height: 25)
+            button.frame = CGRect(x: 0, y: 0, width: 30, height: 25) // a bid more wide to leave spacing
             button.tag = i
             button.addTarget(self, action: #selector(handleBarActionClick), for: .touchUpInside)
+
             let barButton = UIBarButtonItem()
             barButton.customView = button
             return barButton
@@ -187,6 +168,49 @@ class NavigationController: UINavigationController, UINavigationControllerDelega
             }
         }
         timeSelector.showInsideViewController(showIn)
+    }
+
+    private func fetchPushedObjectId(id: EntityId, animated: Bool) {
+        let query = QueryBuilder.withId(id).build()
+        self.lastFetchQuery = ExocoreClient.store.query(query: query) { [weak self] (status, results) in
+            guard let this = self,
+                  let results = results,
+                  !results.entities.isEmpty else {
+                return
+            }
+
+            let entity = results.entities[0].entity.toExtension()
+            DispatchQueue.main.async {
+                this.pushObject(.entity(entity: entity), animated: animated)
+            }
+        }
+    }
+
+    private func createViewController(forObject: NavigationObject) -> UIViewController {
+        switch (forObject) {
+        case let .entityId(id: entityId) where entityId == "inbox":
+            let vc = InboxViewController()
+            return vc
+
+        case let .entity(entity: entity) where entity.id == "inbox":
+            let vc = InboxViewController()
+            return vc
+
+        case let .entityId(id: entityId):
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
+            vc.populate(entityId: entityId)
+            return vc
+
+        case let .entity(entity: entity):
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
+            vc.populate(entity: entity)
+            return vc
+
+        case let .entityTrait(entityTrait: et):
+            let vc = objectsStoryboard.instantiateViewController(withIdentifier: "EntityViewController") as! EntityViewController
+            vc.populate(entityTrait: et)
+            return vc
+        }
     }
 }
 

@@ -116,10 +116,10 @@ export class Entity extends React.Component<IProps, IState> {
 
     private renderActions(actions: ListEntityActions): React.ReactNode {
         let limitedButtons = actions.buttons;
-        if (actions.buttons.length > 2) {
-            limitedButtons = actions.buttons.slice(0, 2);
+        if (actions.buttons.length > 3) {
+            limitedButtons = actions.buttons.slice(0, 3);
 
-            limitedButtons.push(new ListEntityAction('More', 'bars', async (action, event) => {
+            limitedButtons.push(new ListEntityAction('More', 'ellipsis-v', async (action, event) => {
                 this.context.session.showMenu({
                     items: actions.toMenuItems(),
                 }, event.currentTarget as HTMLElement);
