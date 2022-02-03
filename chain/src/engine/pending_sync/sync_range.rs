@@ -149,7 +149,7 @@ impl SyncRangeBuilder {
     }
 
     pub(crate) fn write_into_sync_range_builder(
-        self,
+        mut self,
         range_msg_builder: &mut pending_sync_range::Builder,
     ) {
         match self.from_operation {
@@ -207,7 +207,7 @@ impl SyncRangeBuilder {
             }
         }
 
-        match (self.hash, self.hasher) {
+        match (self.hash, self.hasher.as_mut()) {
             (Some(hash), _) => {
                 range_msg_builder.set_operations_hash(hash.to_bytes().as_ref());
             }

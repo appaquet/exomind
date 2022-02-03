@@ -134,6 +134,7 @@ impl<D: MultihashDigestExt, I: FrameBuilder> FrameBuilder for MultihashFrameBuil
 #[cfg(test)]
 mod tests {
     use bytes::BytesMut;
+    use multihash::Sha3_512;
 
     use super::*;
     use crate::{framing::assert_builder_equals, sec::hash::Sha3_256};
@@ -176,7 +177,7 @@ mod tests {
     fn different_hashes() {
         let inner = Bytes::from_static(b"hello");
         let sha3_256 = MultihashFrameBuilder::<Sha3_256, _>::new(inner.clone());
-        let sha2_256 = MultihashFrameBuilder::<multihash::Sha2_256, _>::new(inner);
+        let sha2_256 = MultihashFrameBuilder::<Sha3_512, _>::new(inner);
 
         assert_ne!(sha3_256.as_bytes(), sha2_256.as_bytes());
     }

@@ -1,14 +1,18 @@
 use std::{fs::File, io::Read, path::Path};
 
 use multihash::Code;
-pub use multihash::{Hasher, Multihash, MultihashDigest, Sha3_256, Sha3_512, StatefulHasher};
+pub use multihash::{Hasher, Multihash, MultihashDigest, Sha3_256, Sha3_512};
 
 use crate::framing;
 
 const MULTIHASH_CODE_SIZE: usize = 2;
 
 /// Multihash digest extension.
-pub trait MultihashDigestExt: StatefulHasher + Default {
+pub trait MultihashDigestExt: Hasher + Default {
+    fn size() -> usize;
+
+    fn to_multihash(&mut self) -> Multihash;
+
     fn input_signed_frame<I: framing::FrameReader>(
         &mut self,
         frame: &framing::MultihashFrame<Self, I>,
@@ -17,10 +21,8 @@ pub trait MultihashDigestExt: StatefulHasher + Default {
     }
 
     fn multihash_size() -> usize {
-        MULTIHASH_CODE_SIZE + usize::from(Self::size())
+        MULTIHASH_CODE_SIZE + Self::size()
     }
-
-    fn to_multihash(&self) -> Multihash;
 
     fn update_from_reader<R: Read>(&mut self, mut read: R) -> Result<Multihash, std::io::Error> {
         let mut bytes = Vec::new();
@@ -31,14 +33,25 @@ pub trait MultihashDigestExt: StatefulHasher + Default {
     }
 }
 
-impl<T> MultihashDigestExt for T
-where
-    T: StatefulHasher,
-    Code: for<'a> From<&'a T::Digest>,
-{
-    fn to_multihash(&self) -> Multihash {
+impl MultihashDigestExt for Sha3_256 {
+    fn to_multihash(&mut self) -> Multihash {
         let digest = self.finalize();
-        Code::multihash_from_digest(&digest)
+        Code::Sha3_256.wrap(digest).unwrap()
+    }
+
+    fn size() -> usize {
+        32
+    }
+}
+
+impl MultihashDigestExt for Sha3_512 {
+    fn to_multihash(&mut self) -> Multihash {
+        let digest = self.finalize();
+        Code::Sha3_512.wrap(digest).unwrap()
+    }
+
+    fn size() -> usize {
+        64
     }
 }
 
