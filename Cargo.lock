@@ -1218,7 +1218,7 @@ dependencies = [
  "libp2p",
  "log",
  "log4rs",
- "multihash 0.16.0",
+ "multihash 0.16.1",
  "petname",
  "rand 0.8.4",
  "serde",
@@ -2532,9 +2532,9 @@ dependencies = [
 
 [[package]]
 name = "multihash"
-version = "0.16.0"
+version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "555c27b066e003be703281d408a80243bf7aa5fdeeaacf7098c52802f2d4a518"
+checksum = "7392bffd88bc0c4f8297e36a777ab9f80b7127409c4a1acb8fee99c9f27addcd"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
@@ -3034,9 +3034,9 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.26.1"
+version = "2.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00e95f7417529a121d3c1d0bd831fd86cc5d5bf7b77ae1449259db3d5ff8b3e7"
+checksum = "315b4773dbbe8eda7cc9c15a178b7a5c354030d0ffad360cff41cc748d97eeed"
 
 [[package]]
 name = "psm"
