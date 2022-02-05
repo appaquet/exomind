@@ -4,6 +4,7 @@ import React from 'react';
 import Navigation from '../../../navigation';
 import { ContainerState } from '../../objects/container-state';
 import { EntityComponent } from '../../objects/entity-component';
+import { Selection } from '../../objects/entity-list/selection';
 import './fullscreen.less';
 
 interface IProps {
@@ -31,8 +32,19 @@ export default class Fullscreen extends React.Component<IProps> {
       <div className="fullscreen">
         <EntityComponent
           entityId={this.props.entityId}
-          containerState={this.containerState} />
+          containerState={this.containerState}
+          onSelectionChange={this.onSelectionChange}
+        />
       </div>
     );
   }
+
+  private onSelectionChange = (selection: Selection) => {
+    if (selection.isEmpty) {
+      return;
+    }
+
+    const entityId = selection.items[0].entityId;
+    Navigation.navigatePopup(Navigation.pathForFullscreen(entityId));
+  };
 }

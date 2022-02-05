@@ -6,6 +6,9 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { initNode } from './exocore';
 import Navigation, { BrowserHistory, setupLinkClickNavigation } from "./navigation";
+import { Shortcuts } from "./shortcuts";
+
+Shortcuts.activateContext('browser');
 
 Navigation.initialize({
     history: new BrowserHistory(),

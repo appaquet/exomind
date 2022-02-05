@@ -17,6 +17,7 @@ import { ContainerState } from '../container-state';
 import { observer } from 'mobx-react';
 import classNames from 'classnames';
 import './note.less';
+import { Commands } from '../../../utils/commands';
 
 interface IProps {
     entity: EntityTraits;
@@ -57,6 +58,11 @@ export default class Note extends React.Component<IProps, IState> {
                 callback: this.handleShortcutFocus,
                 disabledContexts: ['input', 'modal', 'text-editor'],
             },
+            {
+                key: ['Mod-n'],
+                callback: this.handleShortcutNewNote,
+                disabledContexts: ['input', 'modal', 'browser'],
+            }
         ], props.containerState?.active ?? false);
     }
 
@@ -175,6 +181,22 @@ export default class Note extends React.Component<IProps, IState> {
 
     private handleShortcutFocus = (): boolean => {
         this.state.editor?.focus();
+        return true;
+    };
+
+    private handleShortcutNewNote = (e: KeyboardEvent): boolean => {
+        e.preventDefault();
+
+        if (!this.props.onSelectionChange) {
+            return false;
+        }
+
+        Commands.createNote('inbox').then((res) => {
+            if (res.entity) {
+                this.props.onSelectionChange(new Selection(SelectedItem.fromEntity(res.entity)));
+            }
+        });
+
         return true;
     };
 

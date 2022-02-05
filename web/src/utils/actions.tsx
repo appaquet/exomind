@@ -245,6 +245,7 @@ export class Actions {
             icon: 'clock-o',
             execute: async () => {
                 await Commands.removeSnooze(et);
+                await Commands.addToParent(et, 'inbox');
                 return {};
             }
         };

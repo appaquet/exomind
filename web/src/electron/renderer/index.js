@@ -30,6 +30,8 @@ Navigation.initialize({
   },
 });
 
+Shortcuts.activateContext('electron');
+
 Shortcuts.register([
   {
     key: "Mod-ArrowLeft",

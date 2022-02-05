@@ -132,6 +132,7 @@ class Actions {
     static func removeSnooze(_ entity: EntityExt) -> Action {
         Action(key: .removeSnooze, label: "Unsnooze", icon: .clock, swipeColor: Stylesheet.collectionSwipeSnoozeBg, swipeSide: .leading) { (cb) in
             Commands.removeSnooze(entity)
+            Commands.addToParent(entity: entity, parentId: "inbox")
             cb(.success)
         }
     }

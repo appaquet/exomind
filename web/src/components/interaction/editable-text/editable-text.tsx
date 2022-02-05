@@ -71,11 +71,11 @@ export default class EditableText extends React.Component<IProps, IState> {
         return this.renderSingleEdit();
       }
     } else {
-      return this.renderRead();
+      return this.renderReadOnly();
     }
   }
 
-  private renderRead(): React.ReactFragment {
+  private renderReadOnly(): React.ReactFragment {
     const placeholder = this.props.placeholder || 'Click to change';
     const singleClick = !this.props.doubleClick;
     const value = !this.state.value ? <span className="empty">{placeholder}</span> : this.state.value;
@@ -129,6 +129,11 @@ export default class EditableText extends React.Component<IProps, IState> {
   }
 
   private handleReadClick = (e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      // prevent click when multi-select
+      return;
+    }
+
     this.setState({
       editing: true,
       value: this.props.editText || this.props.text,

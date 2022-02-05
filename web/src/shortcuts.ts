@@ -3,7 +3,9 @@ export type Context =
     'text-editor' |
     'input' | // automatically inferred if focused on an input element
     'modal' |
-    'contextual-menu';
+    'contextual-menu' |
+    'electron' |
+    'browser';
 export type ListenerToken = number;
 
 export interface IMapping {
