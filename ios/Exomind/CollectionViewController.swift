@@ -42,7 +42,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
                 return []
             }
             let navController = this.navigationController as? NavigationController
-            return Actions.forEntity(entity, parentId: this.collection.id, navController: navController)
+            return Actions.forEntity(entity, parentId: this.entity.id, navController: navController)
         }
 
         self.entityListViewController.actionsForSelectedEntities = { [weak self] entities in
@@ -50,7 +50,7 @@ class CollectionViewController: UIViewController, EntityTraitView {
                 return []
             }
             let navController = this.navigationController as? NavigationController
-            return Actions.forSelectedEntities(entities, parentId: "inbox", section: .inbox, navController: navController)
+            return Actions.forSelectedEntities(entities, parentId: this.entity.id, navController: navController)
         }
 
         self.entityListViewController.loadData(fromChildrenOf: self.entity.id)
