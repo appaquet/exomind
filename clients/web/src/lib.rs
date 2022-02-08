@@ -1,3 +1,5 @@
+#![allow(clippy::unused_unit)] // TODO: Remove me when wasm-bindgen is bumped
+
 #[macro_use]
 extern crate log;
 

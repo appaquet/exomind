@@ -11,7 +11,8 @@ interface IListItem {
 }
 
 interface IListState {
-    items: IListItem[]
+    items: IListItem[];
+    loading: boolean;
 }
 
 export default class List extends React.Component<IListProps, IListState> {
@@ -20,7 +21,10 @@ export default class List extends React.Component<IListProps, IListState> {
     constructor(props: IListProps) {
         super(props);
 
-        this.state = { items: [] };
+        this.state = {
+            items: [],
+            loading: true,
+        };
 
         this.registerQuery();
     }
@@ -29,6 +33,8 @@ export default class List extends React.Component<IListProps, IListState> {
         return (
             <div>
                 <Input onAdd={this.onAdd} />
+
+                {this.state.loading && <div className="loading">Loading...</div>}
 
                 <ul>
                     {this.renderList()}
@@ -43,11 +49,13 @@ export default class List extends React.Component<IListProps, IListState> {
         };
 
         return this.state.items.map(item =>
-            <li key={item.entity.id}>{item.message.string1} (<DeleteButton item={item} />)</li>
+            <li key={item.entity.id} className="item"><span className="text">{item.message.string1}</span> (<DeleteButton item={item} />)</li>
         );
     }
 
     onAdd = async (text: string) => {
+        this.setState({ loading: true });
+
         const mutation = MutationBuilder
             .createEntity()
             .putTrait(new exocore.test.TestMessage({
@@ -83,7 +91,8 @@ export default class List extends React.Component<IListProps, IListState> {
             });
 
             this.setState({
-                items: res
+                items: res,
+                loading: false,
             })
         });
     }
@@ -113,8 +122,8 @@ class Input extends React.Component<IInputProps, IInputState> {
     render() {
         return (
             <div>
-                <input value={this.state.text} onChange={this.onTextChange} />
-                <button onClick={this.onAddClick}>Add</button>
+                <input value={this.state.text} onChange={this.onTextChange} id="input-text" />
+                <button onClick={this.onAddClick} id="input-add">Add</button>
             </div>
         )
     }

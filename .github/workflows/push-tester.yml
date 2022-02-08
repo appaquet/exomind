@@ -149,7 +149,7 @@ jobs:
           command: test
           args: --all --all-features
 
-  web_client_build:
+  web_client_test:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2.4.0
@@ -173,16 +173,34 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Build client
+      - name: Build client & server
         run: |
           cd $GITHUB_WORKSPACE
           yarn build_dev
+          ./tools/install.sh --debug
 
-      - name: Build example project
+      - name: Install example project
         run: |
           cd $GITHUB_WORKSPACE/examples/web
           npm install
-          npm run build
+          npx playwright install --with-deps
+
+      - name: Run end-to-end tests
+        run: |
+          cd $GITHUB_WORKSPACE/examples/web/tests
+          exo -d node daemon &
+
+          sleep 5
+
+          cd $GITHUB_WORKSPACE/examples/web
+          npm exec playwright test
+
+      - uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: playwright-report
+          path: examples/web/playwright-report
+          retention-days: 7
 
   ios_client_build:
     runs-on: macos-11 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions

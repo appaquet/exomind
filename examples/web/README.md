@@ -17,3 +17,11 @@
 * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
     * Copy the displayed discovery PIN.
     * On main node, add node `exo cell node add` and enter paste discovery PIN.
+
+## End to end testing
+
+* Install Playwright dependencies `npx playwright install --with-deps`
+
+* Run test server in background `cd tests && exo -d node daemon &`
+
+* Run tests `cd .. && npm exec playwright test`

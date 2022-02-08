@@ -38,3 +38,5 @@ flamegraph*
 perf.*
 *.tar.gz
 *.tgz
+test-results/
+playwright-report/

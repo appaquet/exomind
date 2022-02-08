@@ -1,5 +1,5 @@
 import { Exocore, exocore, LocalNode } from "exocore";
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, useState } from 'react';
 import ReactDOM from 'react-dom';
 import List from './list';
 
@@ -28,7 +28,7 @@ class App extends React.Component<IAppProps, IAppState> {
 
     render() {
         if (this.state.join_pin) {
-            return <JoinPin pin={this.state.join_pin} />;
+            return <JoinView pin={this.state.join_pin} onConfigChanged={this.setConfig} />;
         }
 
         if (this.state.status === 'connected') {
@@ -51,6 +51,12 @@ class App extends React.Component<IAppProps, IAppState> {
             <button onClick={this.rejoin}>Rejoin</button>
         </div>);
     }
+
+    private setConfig = async (yamlConfig: string) => {
+        const node = Exocore.node.from_yaml(yamlConfig);
+        node.save_to_storage(localStorage);
+        await this.createInstance(node);
+    };
 
     private async configure(rejoin?: boolean) {
         let node: LocalNode;
@@ -107,25 +113,46 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 }
 
-interface IJoinPinProps {
-    pin: string;
+function JoinView(props: { pin: string, onConfigChanged: (config: string) => void }) {
+    return (
+        <div>
+            <JoinPin pin={props.pin} />
+
+            <h4>or enter yaml config:</h4>
+
+            <NodeConfig onConfigChanged={props.onConfigChanged} />
+        </div>
+    )
+
 }
 
-class JoinPin extends React.Component<IJoinPinProps, {}> {
-    constructor(props: IJoinPinProps) {
-        super(props);
-    }
+function JoinPin(props: { pin: string }) {
+    return (
+        <div>
+            <h3>Discovery PIN: {props.pin}</h3>
+            <h4>Enter this pin on host node (see exo cell node add --help)</h4>
+        </div>
+    )
+}
 
-    render() {
-        return (
+function NodeConfig(props: { onConfigChanged: (config: string) => void }) {
+    const [config, setConfig] = useState('');
+
+    return (
+        <div>
             <div>
-                <h3>Discovery PIN: {this.props.pin}</h3>
-                <h4>Enter this pin on host node (see exo cell node add --help)</h4>
+                <textarea
+                    onChange={(e) => setConfig(e.target.value)}
+                    style={{ width: '500px', height: '200px' }}
+                    id="config"
+                    value={config}
+                />
             </div>
-        )
-    }
-}
 
+            <div><button id="config-save" onClick={() => props.onConfigChanged(config)}>Save</button></div>
+        </div>
+    );
+}
 
 ReactDOM.render(
     <App />,
