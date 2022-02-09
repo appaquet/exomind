@@ -35,7 +35,7 @@ bytes = "1.1"
 chrono = "0.4"
 exocore-protos = {version = "0.1.18", path = "../protos"}
 futures = {version = "0.3", features = ["async-await"]}
-libp2p = {version = "0.41", features = ["noise", "secp256k1"], default-features = false}
+libp2p = {version = "=0.41.1", features = ["noise", "secp256k1"], default-features = false}
 log = "0.4"
 log4rs = {version = "1.0", optional = true}
 multihash = "0.16"
@@ -52,12 +52,12 @@ uuid = {version = "0.8", features = ["v4", "wasm-bindgen"]}
 wasm-timer = "0.2"
 
 # web
-web-sys = {version = "0.3", features = ["Storage"], optional = true}
+web-sys = {version = "0.3.56", features = ["Storage"], optional = true}
 
 [target."cfg(target_arch = \"wasm32\")".dependencies]
 getrandom = "0.2"
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
+wasm-bindgen = "0.2.79"
+wasm-bindgen-futures = "0.4.29"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = {version = "1.16", features = ["rt"], default-features = false}

@@ -63,7 +63,7 @@ impl ExocoreBehaviour {
                 let expiration =
                     expiration.unwrap_or_else(|| Instant::now() + DEFAULT_DIALING_MESSAGE_TIMEOUT);
 
-                debug!("Got new message for peer {}, but not connected. Queuing message while dialing.", peer.node);
+                info!("Got new message for peer {}, but not connected. Queuing message while dialing.", peer.node);
 
                 // Node is disconnected, push the event to a queue and try to connect
                 peer.temp_queue.push_back(QueuedPeerEvent {
@@ -115,7 +115,7 @@ impl ExocoreBehaviour {
 
     pub fn report_ping_success(&mut self, peer_id: &PeerId, rtt: Duration) {
         if let Some(peer) = self.peers.get(peer_id) {
-            debug!("Successfully ping peer {}: {:?}", peer.node, rtt);
+            info!("Successfully ping peer {}: {:?}", peer.node, rtt);
             self.inject_connected(peer_id);
         }
     }
@@ -148,7 +148,7 @@ impl ExocoreBehaviour {
                 return;
             }
 
-            debug!(
+            info!(
                 "Triggering dial of peer {} on addresses {:?}",
                 peer.node, peer.addresses
             );

@@ -1,4 +1,4 @@
-import { Exocore, exocore, LocalNode } from "exocore";
+import { Discovery, Exocore, exocore, LocalNode } from "exocore";
 import React, { ChangeEvent, useState } from 'react';
 import ReactDOM from 'react-dom';
 import List from './list';
@@ -12,6 +12,8 @@ interface IAppState {
 }
 
 class App extends React.Component<IAppProps, IAppState> {
+    private disco: Discovery = null;
+
     constructor(props: IAppProps) {
         super(props);
 
@@ -70,17 +72,19 @@ class App extends React.Component<IAppProps, IAppState> {
         }
 
         if (rejoin || !node.has_configured_cell) {
-            const disco = Exocore.discovery.create();
+            // this.disco?.free();
+            this.disco = Exocore.discovery.create();
 
             try {
-                node = await disco.join_cell(node, (pin: string) => {
+                node = await this.disco.join_cell(node, (pin: string) => {
                     this.setState({
                         join_pin: pin,
                     })
                 });
                 node.save_to_storage(localStorage);
             } finally {
-                disco.free();
+                // this.disco?.free();
+                // this.disco = null;
             }
         }
 
@@ -94,6 +98,9 @@ class App extends React.Component<IAppProps, IAppState> {
         instance.onChange = () => {
             this.setState({ status: instance.status });
         }
+
+        // this.disco?.free();
+        // this.disco = null;
 
         this.setState({
             node,

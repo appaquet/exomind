@@ -193,7 +193,7 @@ jobs:
           sleep 5
 
           cd $GITHUB_WORKSPACE/examples/web
-          npm exec playwright test
+          DEBUG=pw:api npm exec playwright test
 
       - uses: actions/upload-artifact@v2
         if: always()
