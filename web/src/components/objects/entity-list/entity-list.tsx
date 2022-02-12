@@ -191,7 +191,6 @@ export class EntityList extends React.Component<IProps, IState> {
                     draggable={false}
                     droppable={this.props.droppable}>
 
-                    This collection is empty
                 </DragAndDrop>
             </div>
         );

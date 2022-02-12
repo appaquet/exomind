@@ -76,11 +76,10 @@ export default class Note extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
-    componentDidUpdate(prevProps: IProps): void {
+    componentDidUpdate(): void {
         // allow incoming changes if we're not focused on note
-        const prevNote = new exomind.base.v1.Note(prevProps.noteTrait.message);
         const newNote = new exomind.base.v1.Note(this.props.noteTrait.message);
-        if (!this.state.focused && !_.isEqual(prevNote, newNote)) {
+        if (!this.state.focused && !_.isEqual(this.state.currentNote, newNote)) {
             this.setState({
                 currentNote: newNote,
             });

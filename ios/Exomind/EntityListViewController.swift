@@ -440,6 +440,9 @@ class EntityListViewController: UITableViewController {
 
             return UIAction(title: action.label, image: image) { _ in
                 action.execute { res in
+                    // we delay incoming changes from server to prevent weird animation glitches
+                    self.query?.inhibitChanges(forDelay: 0.7)
+
                     cb?(action, res)
                 }
             }
