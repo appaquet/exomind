@@ -28,6 +28,9 @@ export class Inbox extends React.Component<IProps> {
             <Children
                 parentId="inbox"
 
+                emptyIcon="sun-o"
+                emptyText="All done! It's time for a break!"
+
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
 

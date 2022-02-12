@@ -24,12 +24,16 @@ interface IProps {
     selection?: Selection;
     onSelectionChange?: (sel: Selection) => void;
 
+    emptyIcon?: string;
+    emptyText?: string;
+
     containerState?: ContainerState;
 }
 
 interface IState {
     parent?: EntityTraits;
     entities?: EntityTraits[],
+    loading?: boolean;
     hovered: boolean;
     error?: string;
     editedEntity?: EntityTraits;
@@ -70,7 +74,7 @@ export class Children extends React.Component<IProps, IState> {
                 return new EntityTraits(res.entity);
             });
 
-            this.setState({ entities });
+            this.setState({ entities, loading: false });
         });
 
         if (!props.parent) {
@@ -97,6 +101,7 @@ export class Children extends React.Component<IProps, IState> {
         this.state = {
             parent: props.parent,
             hovered: false,
+            loading: true,
         };
     }
 
@@ -126,23 +131,26 @@ export class Children extends React.Component<IProps, IState> {
 
                     {this.props.children}
 
-                    <EntityList
-                        entities={this.state.entities}
-                        parentEntity={this.state.parent}
+                    {!this.state.loading &&
+                        <EntityList
+                            entities={this.state.entities}
+                            parentEntity={this.state.parent}
 
-                        onLoadMore={this.handleLoadMore}
+                            onLoadMore={this.handleLoadMore}
 
-                        selection={this.props.selection}
-                        onSelectionChange={this.props.onSelectionChange}
+                            selection={this.props.selection}
+                            onSelectionChange={this.props.onSelectionChange}
 
-                        actionsForEntity={this.actionsForEntity}
-                        editedEntity={this.state.editedEntity}
+                            actionsForEntity={this.actionsForEntity}
+                            editedEntity={this.state.editedEntity}
 
-                        onDropIn={this.handleDropInEntity}
-                        containerState={this.props.containerState}
-                    />
+                            onDropIn={this.handleDropInEntity}
+                            containerState={this.props.containerState}
+                        />}
 
-                    {this.renderBottomMenu()}
+                    {!this.state.loading && this.renderBottomMenu()}
+
+                    {!this.state.loading && this.state.entities.length == 0 && this.renderEmpty()}
                 </div>
             );
 
@@ -202,6 +210,22 @@ export class Children extends React.Component<IProps, IState> {
                 onExecuted={handleExecuted}
             />
         );
+    }
+
+    private renderEmpty(): React.ReactNode {
+        if (!this.props.emptyIcon && !this.props.emptyText) {
+            return null;
+        }
+
+        const iconClass = classNames({
+            'fa': true,
+            [`fa-${this.props.emptyIcon}`]: true,
+        });
+
+        return <div className="empty">
+            {this.props.emptyIcon && <div className="icon"><i className={iconClass} /></div>}
+            {this.props.emptyText && <div className="text">{this.props.emptyText}</div>}
+        </div>;
     }
 
     private handleLoadMore = () => {

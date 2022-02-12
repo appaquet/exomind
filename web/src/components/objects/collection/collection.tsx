@@ -34,8 +34,13 @@ export default class Collection extends React.Component<IProps> {
         return (
             <Children
                 parent={this.props.entity}
+
+                emptyIcon="folder-o"
+                emptyText="This collection is empty"
+
                 selection={this.props.selection}
                 onSelectionChange={this.props.onSelectionChange}
+
                 containerState={this.props.containerState}
             >
 
