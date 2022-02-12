@@ -60,7 +60,8 @@ export default class Column extends React.Component<IProps, IState> {
         const colKey = `column-${this.props.columnId}`;
         const classes = classNames({
             column: true,
-            [colKey]: true
+            [colKey]: true,
+            active: this.props.active,
         });
 
         let title, editableTitle, titleRenameHandler;
