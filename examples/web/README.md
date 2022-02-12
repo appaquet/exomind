@@ -12,16 +12,16 @@
 
   `npm install && npm run start`
 
-  Note: `npm` is used here instead of `yarn` because we depend on `exocore` via its path and that `yarn` as the bad habit of copying all files in the `exocore` directory, including its massive target directory, because it bypass ignored files. See [this issue](https://github.com/yarnpkg/yarn/issues/2822).
+  Note: `npm` is used here instead of `yarn` because we depend on `exocore` via its path and that `yarn` has the bad habit of copying all files in the `exocore` directory, including its massive target directory, because it bypasses ignored files. See [this issue](https://github.com/yarnpkg/yarn/issues/2822).
 
 * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
     * Copy the displayed discovery PIN.
-    * On main node, add node `exo cell node add` and enter paste discovery PIN.
+    * On the main node, add node `exo cell node add` and enter paste discovery PIN.
 
 ## End to end testing
 
 * Install Playwright dependencies `npx playwright install --with-deps`
 
-* Run test server in background `cd tests && exo -d node daemon &`
+* Run test server in background `exo -d tests/node daemon &`
 
-* Run tests `cd .. && npm exec playwright test`
+* Run tests `./tools/e2e.sh`

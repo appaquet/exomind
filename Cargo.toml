@@ -40,7 +40,7 @@ transport-p2p = ["exocore-transport/p2p-full"]
 transport-p2p-web = ["exocore-transport/p2p-web"]
 
 [dependencies]
-anyhow = { version = "1.0.53", optional = true }
+anyhow = { version = "1.0", optional = true }
 exocore-apps-sdk = {version = "0.1.18", path = "./apps/sdk", default-features = false, optional = true}
 exocore-chain = {version = "0.1.18", path = "./chain", default-features = false, optional = true}
 exocore-core = {version = "0.1.18", path = "./core", default-features = false, optional = true}
@@ -48,7 +48,7 @@ exocore-discovery = {version = "0.1.18", path = "./discovery", default-features 
 exocore-protos = {version = "0.1.18", path = "./protos", default-features = false, optional = true}
 exocore-store = {version = "0.1.18", path = "./store", default-features = false, optional = true}
 exocore-transport = {version = "0.1.18", path = "./transport", default-features = false, optional = true}
-log = "0.4.14"
+log = "0.4"
 
 [dev-dependencies]
 exocore-core = {version = "0.1.18", path = "./core", features = ["tests-utils"]}

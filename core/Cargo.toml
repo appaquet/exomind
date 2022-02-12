@@ -52,12 +52,12 @@ uuid = {version = "0.8", features = ["v4", "wasm-bindgen"]}
 wasm-timer = "0.2"
 
 # web
-web-sys = {version = "0.3.56", features = ["Storage"], optional = true}
+web-sys = {version = "0.3", features = ["Storage"], optional = true}
 
 [target."cfg(target_arch = \"wasm32\")".dependencies]
 getrandom = "0.2"
-wasm-bindgen = "0.2.79"
-wasm-bindgen-futures = "0.4.29"
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = {version = "1.16", features = ["rt"], default-features = false}

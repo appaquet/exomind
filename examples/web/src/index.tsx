@@ -72,7 +72,7 @@ class App extends React.Component<IAppProps, IAppState> {
         }
 
         if (rejoin || !node.has_configured_cell) {
-            // this.disco?.free();
+            this.disco?.free();
             this.disco = Exocore.discovery.create();
 
             try {
@@ -83,8 +83,8 @@ class App extends React.Component<IAppProps, IAppState> {
                 });
                 node.save_to_storage(localStorage);
             } finally {
-                // this.disco?.free();
-                // this.disco = null;
+                this.disco?.free();
+                this.disco = null;
             }
         }
 

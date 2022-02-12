@@ -2,9 +2,9 @@
 [![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
 ![Build](https://github.com/appaquet/exocore/workflows/Push%20tester/badge.svg)
 
-**Warning: Exocore is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
+**Warning: Exocore is at a very early development stage, hence incomplete, unstable, and probably totally unsafe. Use at your own risk.**
 
-Exocore is a distributed applications framework with private and encrypted data storage. Think of it like an infrastructure that allows
+Exocore is a distributed applications framework with private and encrypted data storage. Think of it as an infrastructure that allows
 a user to own his own personal cloud that is extensible via WebAssembly applications and accessible via Web/Mobile/Backend SDKs. It is
 designed to be resilient to failures and will eventually allow offline usage (ex: on mobile). 
 
@@ -14,8 +14,8 @@ to this project. Exocore is the application framework for Exomind.
 The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data.
 
 A cell consists of:
-* Chain nodes managing replication and storage by using a blockchain data structure.
-* Store nodes managing indexation, querying and mutation of the data (collocated with chain node).
+* Chain nodes manage replication and storage by using a blockchain data structure.
+* Store nodes manage indexation, querying, and mutation of the data (collocated with chain node).
 * Application host nodes run applications written in WebAssembly (collocated with store nodes)
 
 ## Roadmap
@@ -58,9 +58,9 @@ A cell consists of:
   * `./tools/install.sh` or `cd exo && cargo install --path .` or grab latest released binary.
 
 * Configuration
-    * Most commands requires a node configuration file, for which an example can be found in here: [`./examples/node.yaml`].
+    * Most commands require a node configuration file, for which an example can be found here: [`./examples/node.yaml`].
       `exo` can also generate and manage configurations. See [Quick start](#quick-start).
-    * At minimum, the config requires 2 keypair: one for the node, one for the cell.
+    * At a minimum, the config requires 2 keypairs: one for the node, one for the cell.
     * The node keypair is unique per node, while the cell keypair is shared among servers that host the cell.
     * See [Quick start](#quick-start) section for example 2 nodes setup.
     
