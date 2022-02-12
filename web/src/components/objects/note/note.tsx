@@ -78,9 +78,7 @@ export default class Note extends React.Component<IProps, IState> {
 
     componentDidUpdate(): void {
         // allow incoming changes if we're not focused on note
-        // const prevNote = new exomind.base.v1.Note(prevProps.noteTrait.message);
         const newNote = new exomind.base.v1.Note(this.props.noteTrait.message);
-        console.log(this.state.currentNote, newNote);
         if (!this.state.focused && !_.isEqual(this.state.currentNote, newNote)) {
             this.setState({
                 currentNote: newNote,
