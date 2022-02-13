@@ -27,7 +27,7 @@ members = [
 [profile.production]
 inherits = "release"
 codegen-units = 1
-lto = "thin"
+lto = true
 
 # [patch.crates-io]
 # exocore = {path = "../exocore"}
