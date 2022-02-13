@@ -12,8 +12,10 @@ if [[ "$MODE" == "release" ]]; then
     CARGO_ARGS="--release"
 elif [[ "$MODE" == "debug" ]]; then
     CARGO_ARGS=""
+elif [[ "$MODE" == "production" ]]; then
+    CARGO_ARGS="--profile production"
 else
-    echo "syntax: $0 [release|debug]"
+    echo "syntax: $0 [release|debug|production]"
     exit 1
 fi
 
