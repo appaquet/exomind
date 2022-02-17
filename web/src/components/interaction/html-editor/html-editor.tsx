@@ -2,7 +2,7 @@ import React, { MouseEvent, UIEvent } from "react";
 import { BangleEditor } from '@bangle.dev/react';
 import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
 import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, image, } from '@bangle.dev/base-components';
-import { toHTMLString } from '@bangle.dev/utils';
+import { safeInsert, toHTMLString } from '@bangle.dev/utils';
 import { EditorState, EditorView, NodeSelection, Selection, setBlockType } from "@bangle.dev/pm";
 import { queryIsItalicActive, toggleItalic } from "@bangle.dev/base-components/dist/italic";
 import { queryIsBoldActive, toggleBold } from "@bangle.dev/base-components/dist/bold";
@@ -21,11 +21,11 @@ import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-compone
 import { createPopper, Instance } from '@popperjs/core';
 import { CancellableEvent } from "../../../utils/events";
 import { Shortcuts } from "../../../shortcuts";
+import DragAndDrop from "../drag-and-drop/drag-and-drop";
+import { EntityTraits, isEntityTraits } from "../../../utils/entities";
 
 import './html-editor.less';
 import '@bangle.dev/core/style.css';
-import DragAndDrop from "../drag-and-drop/drag-and-drop";
-import { EntityTraits, isEntityTraits } from "../../../utils/entities";
 
 const defaultInitialFocus = false;
 
@@ -63,6 +63,9 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     private popperRef: React.RefObject<HTMLDivElement> = React.createRef();
     private popper?: Instance;
     private popperElement?: unknown;
+
+    private focusOverride = false;
+    private inhibitIncomingUntil: Date | null = null;
 
     constructor(props: IProps) {
         super(props);
@@ -202,8 +205,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                             return false;
                         }
 
+                        const coordinates = view.posAtCoords({
+                            left: event.clientX,
+                            top: event.clientY,
+                        });
+
                         const et = data.object as EntityTraits;
-                        this.toggleLink(`entity://${et.id}`, et.priorityTrait?.displayName);
+                        this.toggleLink(`entity://${et.id}`, et.priorityTrait?.displayName, coordinates?.pos);
 
                         return true;
                     }
@@ -310,13 +318,13 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
     }
 
-    async toggleLink(url: string | null = null, title: string | null = null): Promise<void> {
+    async toggleLink(url: string | null = null, title: string | null = null, pos: number | null = null): Promise<void> {
         const cursor = this.getCursor();
 
         if (url) {
             const state = this.editor.view.state;
             const dispatch = this.editor.view.dispatch;
-            if (cursor.selection.empty && !cursor.link) {
+            if (cursor.selection.empty) {
                 if (!title) {
                     title = url;
                 }
@@ -325,7 +333,12 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     href: url,
                 });
                 const linkNode = state.schema.text(title).mark([linkMark]);
-                dispatch(state.tr.replaceSelectionWith(linkNode, false));
+
+                if (pos !== null && pos !== undefined) {
+                    dispatch(safeInsert(linkNode, pos)(state.tr));
+                } else {
+                    dispatch(state.tr.replaceSelectionWith(linkNode, false));
+                }
             } else {
                 createLink(url)(state, dispatch);
             }
@@ -334,7 +347,10 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         }
 
         if (this.props.linkSelector) {
+            this.focusOverride = true; // override focus to prevent state change while we're selecting link
             const selectedLink = await this.props.linkSelector(cursor);
+            this.focusOverride = false;
+
             if (selectedLink) {
                 if (selectedLink.canceled) {
                     this.focus();
@@ -390,7 +406,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     get hasFocus(): boolean {
-        return this.editor?.view.hasFocus() ?? false;
+        return this.focusOverride || (this.editor?.view.hasFocus() ?? false);
     }
 
     get isEmpty(): boolean {
