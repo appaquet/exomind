@@ -1,6 +1,7 @@
 import { Exocore, exocore, fromProtoTimestamp, MutationBuilder } from 'exocore';
 import Emojis from '../utils/emojis';
 import { exomind } from '../protos';
+import _ from 'lodash';
 
 export class EntityTraits {
     public entity: exocore.store.IEntity;
@@ -220,11 +221,14 @@ export class EntityTrait<T> {
             return;
         }
 
-        this.constants.rename(this.message, newName);
+
+        const newMsg = _.clone(this.message);
+        this.constants.rename(newMsg, newName);
+
         await Exocore.store.mutate(
             MutationBuilder
                 .updateEntity(this.et.id)
-                .putTrait(this.message, this.id)
+                .putTrait(newMsg, this.id)
                 .build()
         );
     }

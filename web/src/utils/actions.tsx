@@ -184,9 +184,7 @@ export class Actions {
             icon: 'arrow-up',
             execute: async () => {
                 await Commands.addToParent(et, parent);
-                return {
-                    remove: true,
-                };
+                return {};
             }
         };
     }

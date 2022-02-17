@@ -132,6 +132,7 @@ export class EntityList extends React.Component<IProps, IState> {
         if (this.props.entities.length == 0) {
             return this.renderEmptyList();
         }
+
         const count = this.props.entities.length;
         const items = this.props.entities.map((entity, idx) => {
             const selected = this.props.selection?.contains(SelectedItem.fromEntity(entity)) ?? false;
@@ -228,7 +229,7 @@ export class EntityList extends React.Component<IProps, IState> {
             idx = 0;
         }
 
-        this.hoverEntityIndex(idx, 'up');
+        this.changeActiveEntityIndex(idx, 'up');
 
         return true;
     };
@@ -241,22 +242,22 @@ export class EntityList extends React.Component<IProps, IState> {
             idx = this.props.entities.length - 1;
         }
 
-        this.hoverEntityIndex(idx, 'down');
+        this.changeActiveEntityIndex(idx, 'down');
 
         return true;
     };
 
     private handleShortcutTop = (): boolean => {
-        this.hoverEntityIndex(0);
+        this.changeActiveEntityIndex(0);
         return true;
     };
 
     private handleShortcutBottom = (): boolean => {
-        this.hoverEntityIndex(this.props.entities.length - 1);
+        this.changeActiveEntityIndex(this.props.entities.length - 1);
         return true;
     };
 
-    private hoverEntityIndex(idx: number, dir: 'up' | 'down' | null = null): void {
+    private changeActiveEntityIndex(idx: number, dir: 'up' | 'down' | null = null): void {
         const entity = this.props.entities[idx];
         if (!entity) {
             return;

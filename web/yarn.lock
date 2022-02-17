@@ -1217,7 +1217,7 @@
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
-"@bangle.dev/utils@0.28.5":
+"@bangle.dev/utils@0.28.5", "@bangle.dev/utils@^0.28.5":
   version "0.28.5"
   resolved "https://registry.npmjs.org/@bangle.dev/utils/-/utils-0.28.5.tgz"
   integrity sha512-PIhPjjpGXNrCoRRtrBTugzYobxPtkk8A2S1NI14owtx+yl52tf9pG+TDjix8RL7jDrwTZ1vbWU95ybpU0A/yRg==
