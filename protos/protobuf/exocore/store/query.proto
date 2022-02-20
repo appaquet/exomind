@@ -34,10 +34,15 @@ message EntityQuery {
     // `skipped_hash` field set to `true`.
     uint64 result_hash = 9;
 
-    // Include deleted mutations matches. Can be used to return recently modified entities that
-    // also include deletions. Deleted traits will be included in the results, but will have a
+    // Include deleted mutations matches. This can be used to return recently modified entities that
+    // also include deletions. Deleted traits will be included in the results but will have a
     // `deletion_date` field with the date of the deletion.
     bool include_deleted = 12;
+
+    // Indicates that the query comes from an automated / programmatic logic. 
+    // This is used since chain indexation may be deferred until no user queries
+    // got received for a while.
+    bool programmatic = 13;
 }
 
 message Projection {

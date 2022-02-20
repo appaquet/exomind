@@ -148,6 +148,7 @@ async fn get_snoozed(store: &Arc<Store>) -> anyhow::Result<Vec<Entity>> {
     let query = QueryBuilder::with_trait::<Snoozed>()
         .count(100)
         .order_by_field("until_date", true)
+        .programmatic()
         .build();
 
     let results = store.query(query).await?;

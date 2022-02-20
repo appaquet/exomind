@@ -34,10 +34,11 @@ impl ExomindClient {
     }
 
     pub async fn get_accounts(&self, only_gmail: bool) -> anyhow::Result<Vec<GmailAccount>> {
-        let results = self
-            .store
-            .query(QueryBuilder::with_trait::<Account>().count(1000).build())
-            .await?;
+        let query = QueryBuilder::with_trait::<Account>()
+            .count(1000)
+            .programmatic()
+            .build();
+        let results = self.store.query(query).await?;
 
         let account_any_url = Account::protobuf_any_url();
         let gmail_account_type: i32 = AccountType::Gmail.into();
@@ -78,6 +79,7 @@ impl ExomindClient {
             .project(ProjectionBuilder::for_trait::<Unread>().return_field_groups(vec![1]))
             .project(ProjectionBuilder::for_all().skip())
             .count(100)
+            .programmatic()
             .build();
 
         let results = self.store.query(query).await?;
@@ -91,7 +93,7 @@ impl ExomindClient {
     }
 
     pub async fn get_entity(&self, entity_id: &str) -> anyhow::Result<Option<Entity>> {
-        let query = QueryBuilder::with_id(entity_id).build();
+        let query = QueryBuilder::with_id(entity_id).programmatic().build();
         let results = self.store.query(query).await?;
         let entity = results.entities.into_iter().flat_map(|e| e.entity).next();
 
@@ -115,6 +117,7 @@ impl ExomindClient {
             .project(ProjectionBuilder::for_all().skip())
             .count(100)
             .order_by_operations(false)
+            .programmatic()
             .build();
 
         let after_timestamp = ConsistentTimestamp::from(after_operation_id);
