@@ -13,7 +13,10 @@ use exocore_chain::{
     operation::{Operation, OperationId},
     pending, EngineHandle, EngineOperationStatus,
 };
-use exocore_core::{cell::FullCell, time::Clock, time::Instant};
+use exocore_core::{
+    cell::FullCell,
+    time::{Clock, Instant},
+};
 use exocore_protos::{
     generated::exocore_store::{
         entity_mutation::Mutation, Entity, EntityMutation, EntityQuery,
@@ -231,6 +234,12 @@ where
         }
 
         Ok((affected_operations, index_operations_count))
+    }
+
+    pub fn maybe_index_chain_blocks(&mut self) -> Result<Vec<OperationId>, Error> {
+        let mut affected_operations = Vec::new();
+        self.index_chain_new_blocks(Some(&mut affected_operations))?;
+        Ok(affected_operations)
     }
 
     /// Executes a search query on the indices, and returning all entities
@@ -631,23 +640,25 @@ where
                 index_ops
             });
 
+        let before_apply = Instant::now();
         self.chain_index.apply_operations(chain_index_mutations)?;
 
         let index_operations_count = pending_index_mutations.len();
         if index_operations_count > 0 {
-            info!(
-                "Indexed in chain, and deleted from pending {} operations (from offset {:?}). New chain index last offset is {:?}.",
-                index_operations_count,
-                offset_from,
-                new_highest_block_offset
-            );
-
             self.pending_index
                 .apply_operations(pending_index_mutations.into_iter())?;
 
             if let Some(new_highest_block_offset) = new_highest_block_offset {
                 self.chain_index_last_block = Some(new_highest_block_offset);
             }
+
+            info!(
+                "Indexed in chain, and deleted from pending {} operations (from offset {:?}) in {:?}. New chain index last offset is {:?}.",
+                index_operations_count,
+                offset_from,
+                before_apply.elapsed(),
+                new_highest_block_offset
+            );
         }
 
         Ok(index_operations_count)

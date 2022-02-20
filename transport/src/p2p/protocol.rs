@@ -34,9 +34,9 @@ type InboundStreamFuture = BoxFuture<
 type OutboundStreamFuture =
     BoxFuture<'static, Result<Option<WrappedStream<NegotiatedSubstream>>, io::Error>>;
 
-/// Protocol handler for Exocore protocol. This handles protocols and substreams to
-/// with a connection with a remote peer. This sends and receives messages from the
-/// substreams for the behaviour.
+/// Protocol handler for Exocore protocol. This handles protocols and substreams
+/// to with a connection with a remote peer. This sends and receives messages
+/// from the substreams for the behaviour.
 ///
 /// It handles:
 ///   * Outgoing message requests from the behaviour.
@@ -47,7 +47,6 @@ type OutboundStreamFuture =
 ///   * When an incoming stream is open to us, it reads the incoming message
 ///     from it. Since this is asynchronous, we keep the futures and poll to
 ///     completion.
-///
 pub struct ExocoreProtoHandler {
     listen_protocol: SubstreamProtocol<ExocoreProtoConfig, ()>,
     inbound_stream_futures: Vec<InboundStreamFuture>,

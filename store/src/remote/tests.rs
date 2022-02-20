@@ -3,7 +3,7 @@ use std::{sync::Arc, time::Duration};
 use exocore_core::{
     cell::{CellNodeRole, LocalNode},
     futures::spawn_future,
-    tests_utils::{async_expect_eventually, expect_eventually},
+    tests_utils::{assert_equal_res, async_expect_eventually, expect_eventually},
 };
 use exocore_protos::generated::exocore_store::{EntityQuery, EntityResults, MutationResult};
 use exocore_transport::{testing::MockTransportServiceHandle, ServiceType};
@@ -39,7 +39,7 @@ async fn mutation_and_query() -> anyhow::Result<()> {
             let mut test_remote_store = test_remote_store.lock().await;
             let query = QueryBuilder::matches("hello").build();
             let results = test_remote_store.send_and_await_query(query).await.unwrap();
-            results.entities.len() == 1
+            assert_equal_res(results.entities.len(), 1)
         })
         .await;
     }

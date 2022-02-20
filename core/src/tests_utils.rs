@@ -34,7 +34,7 @@ where
 pub async fn async_expect_eventually<F, T>(cb: F)
 where
     F: FnMut() -> T,
-    T: Future<Output = bool>,
+    T: Future<Output = Result<(), anyhow::Error>>,
 {
     async_expect_eventually_fallible(cb).await.unwrap()
 }
@@ -42,23 +42,25 @@ where
 pub async fn async_expect_eventually_fallible<F, T>(mut cb: F) -> anyhow::Result<()>
 where
     F: FnMut() -> T,
-    T: Future<Output = bool>,
+    T: Future<Output = Result<(), anyhow::Error>>,
 {
     let begin = Instant::now();
     let timeout = Duration::from_secs(10);
     loop {
-        if cb().await {
-            return Ok(());
-        } else {
-            if begin.elapsed() > timeout {
-                return Err(anyhow!(
-                    "Expected result within {:?}, but waited {:?} without result",
-                    timeout,
-                    begin.elapsed()
-                ));
-            }
+        match cb().await {
+            Ok(_) => return Ok(()),
+            Err(err) => {
+                if begin.elapsed() > timeout {
+                    return Err(anyhow!(
+                        "Expected result within {:?}, but waited {:?} without success (got {:?})",
+                        timeout,
+                        begin.elapsed(),
+                        err,
+                    ));
+                }
 
-            crate::futures::sleep(Duration::from_millis(100)).await;
+                crate::futures::sleep(Duration::from_millis(100)).await;
+            }
         }
     }
 }
@@ -89,7 +91,7 @@ where
     }
 }
 
-pub fn result_assert_equal<A: PartialEq + Debug>(left: A, right: A) -> anyhow::Result<()> {
+pub fn assert_equal_res<A: PartialEq + Debug>(left: A, right: A) -> anyhow::Result<()> {
     if left == right {
         Ok(())
     } else {
@@ -97,19 +99,11 @@ pub fn result_assert_equal<A: PartialEq + Debug>(left: A, right: A) -> anyhow::R
     }
 }
 
-pub fn result_assert_true(value: bool) -> anyhow::Result<()> {
+pub fn assert_res(value: bool) -> anyhow::Result<()> {
     if value {
         Ok(())
     } else {
         Err(anyhow!("value is not true"))
-    }
-}
-
-pub fn result_assert_false(value: bool) -> anyhow::Result<()> {
-    if value {
-        Err(anyhow!("value is not false"))
-    } else {
-        Ok(())
     }
 }
 

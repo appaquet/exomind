@@ -114,6 +114,30 @@ pub struct EntityIndexConfig {
     #[prost(message, optional, tag = "2")]
     #[serde(default)]
     pub chain_index_depth_leeway: ::core::option::Option<u64>,
+    /// Specifies the interval at which new blocks in the chain get indexed.
+    /// New blocks may not necessarily get immediately indexed if they don't
+    /// fall in the interval of `chain_index_min_depth` and
+    /// `chain_index_depth_leeway`.
+    ///
+    /// Indexation can also be prevented if user queries were recently executed
+    /// (see `chain_index_deferred_query_secs`)
+    ///
+    /// If '0' is specified, deferred indexation is disabled and blocks are
+    /// indexed when the chain layer emits events.
+    #[prost(message, optional, tag = "6")]
+    #[serde(default)]
+    pub chain_index_deferred_interval_secs: ::core::option::Option<u64>,
+    /// Specifies the minimum interval to wait before indexing chain blocks
+    /// after receiving a user query. It prevents potential slow downs caused
+    /// by chain indexation if a user query get executed frequently.
+    #[prost(message, optional, tag = "7")]
+    #[serde(default)]
+    pub chain_index_deferred_query_secs: ::core::option::Option<u64>,
+    /// Specifies the maximum interval for which indexation may be blocked by
+    /// incoming user queries.
+    #[prost(message, optional, tag = "8")]
+    #[serde(default)]
+    pub chain_index_deferred_max_secs: ::core::option::Option<u64>,
     /// Configuration for the in-memory traits index that are in the pending
     /// store
     #[prost(message, optional, tag = "3")]

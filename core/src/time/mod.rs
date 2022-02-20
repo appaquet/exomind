@@ -1,8 +1,10 @@
+mod atomic_instant;
 mod clock;
 mod consistent_timestamp;
 
 pub use std::time::Duration;
 
+pub use atomic_instant::AtomicInstant;
 pub use chrono::prelude::*;
 pub use clock::Clock;
 pub use consistent_timestamp::ConsistentTimestamp;

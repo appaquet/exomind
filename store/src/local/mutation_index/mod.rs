@@ -162,13 +162,13 @@ impl MutationIndex {
     /// at each operation, so `apply_operations` should be used for multiple
     /// operations.
     #[cfg(test)]
-    fn apply_operation(&mut self, operation: IndexOperation) -> Result<usize, Error> {
+    fn apply_operation(&self, operation: IndexOperation) -> Result<usize, Error> {
         self.apply_operations(Some(operation).into_iter())
     }
 
     /// Apply an iterator of operations on the index, with a single atomic
     /// commit at the end of the iteration.
-    pub fn apply_operations<T>(&mut self, operations: T) -> Result<usize, Error>
+    pub fn apply_operations<T>(&self, operations: T) -> Result<usize, Error>
     where
         T: Iterator<Item = IndexOperation>,
     {

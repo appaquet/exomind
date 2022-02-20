@@ -1,5 +1,7 @@
+use std::sync::Mutex;
+
 use exocore_core::tests_utils::{
-    expect_result_eventually, result_assert_equal, result_assert_true,
+    assert_equal_res, assert_res, async_expect_eventually_fallible, async_test_retry,
 };
 use exocore_protos::{
     generated::{exocore_store::Paging, exocore_test::TestMessage},
@@ -18,54 +20,61 @@ use crate::{
 
 #[tokio::test(flavor = "multi_thread")]
 async fn index_full_pending_to_chain() -> anyhow::Result<()> {
-    let config = EntityIndexConfig {
-        chain_index_min_depth: 1, // index when block is at depth 1 or more
-        ..TestEntityIndex::test_config()
-    };
-    let mut test_index = TestEntityIndex::new_with_config(config).await?;
-    test_index.handle_engine_events()?;
+    async_test_retry(|| async {
+        let config = EntityIndexConfig {
+            chain_index_min_depth: 1, // index when block is at depth 1 or more
+            ..TestEntityIndex::test_config()
+        };
+        let mut test_index = TestEntityIndex::new_with_config(config).await?;
+        test_index.handle_engine_events()?;
 
-    // index a few traits, they should now be available from pending index
-    let first_ops_id = test_index.put_test_traits(0..=4)?;
-    test_index.wait_operations_emitted(&first_ops_id);
-    test_index.handle_engine_events()?;
-    let res = test_index
-        .index
-        .search(Q::with_trait::<TestMessage>().build())?;
-    let pending_res = count_results_source(&res, EntityResultSource::Pending);
-    let chain_res = count_results_source(&res, EntityResultSource::Chain);
-    assert_eq!(pending_res + chain_res, 5);
-
-    // index a few traits, wait for first block to be committed
-    let second_ops_id = test_index.put_test_traits(5..=9)?;
-    test_index.wait_operations_emitted(&second_ops_id);
-    test_index.wait_operations_committed(&first_ops_id);
-    test_index.handle_engine_events()?;
-    let res = test_index
-        .index
-        .search(Q::with_trait::<TestMessage>().build())?;
-    let pending_res = count_results_source(&res, EntityResultSource::Pending);
-    let chain_res = count_results_source(&res, EntityResultSource::Chain);
-    assert_eq!(pending_res + chain_res, 10);
-
-    // wait for second block to be committed, first operations should now be indexed
-    // in chain
-    test_index.wait_operations_committed(&second_ops_id);
-    expect_result_eventually(|| -> anyhow::Result<()> {
+        // index a few traits, they should now be available from pending index
+        let first_ops_id = test_index.put_test_traits(0..=4)?;
+        test_index.wait_operations_emitted(&first_ops_id);
         test_index.handle_engine_events()?;
         let res = test_index
             .index
             .search(Q::with_trait::<TestMessage>().build())?;
         let pending_res = count_results_source(&res, EntityResultSource::Pending);
         let chain_res = count_results_source(&res, EntityResultSource::Chain);
+        assert_eq!(pending_res + chain_res, 5);
 
-        result_assert_equal(pending_res + chain_res, 10)?;
-        result_assert_true(chain_res >= 5)?;
+        // index a few traits, wait for first block to be committed
+        let second_ops_id = test_index.put_test_traits(5..=9)?;
+        test_index.wait_operations_emitted(&second_ops_id);
+        test_index.wait_operations_committed(&first_ops_id);
+        test_index.handle_engine_events()?;
+        let res = test_index
+            .index
+            .search(Q::with_trait::<TestMessage>().build())?;
+        let pending_res = count_results_source(&res, EntityResultSource::Pending);
+        let chain_res = count_results_source(&res, EntityResultSource::Chain);
+        assert_eq!(pending_res + chain_res, 10);
+
+        // wait for second block to be committed, first operations should now be indexed
+        // in chain
+        test_index.wait_operations_committed(&second_ops_id);
+
+        let test_index = Arc::new(Mutex::new(test_index)); // needed sync we pass to async FnMut
+        async_expect_eventually_fallible(|| async {
+            let mut test_index = test_index.lock().unwrap();
+            test_index.handle_engine_events()?;
+
+            let res = test_index
+                .index
+                .search(Q::with_trait::<TestMessage>().build())?;
+            let pending_res = count_results_source(&res, EntityResultSource::Pending);
+            let chain_res = count_results_source(&res, EntityResultSource::Chain);
+
+            assert_equal_res(pending_res + chain_res, 10)?;
+            assert_res(chain_res >= 5)?;
+            Ok(())
+        })
+        .await?;
 
         Ok(())
-    });
-
-    Ok(())
+    })
+    .await
 }
 
 #[tokio::test(flavor = "multi_thread")]

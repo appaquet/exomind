@@ -20,7 +20,7 @@ use crate::{
 fn fetch_entity_mutations() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1),
@@ -102,7 +102,7 @@ fn fetch_entity_mutations() -> anyhow::Result<()> {
 fn search_query_matches() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let now = Utc::now();
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
@@ -174,7 +174,7 @@ fn search_query_matches() -> anyhow::Result<()> {
 fn search_query_matches_no_fuzzy() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(1),
@@ -224,7 +224,7 @@ fn search_query_matches_no_fuzzy() -> anyhow::Result<()> {
 fn search_query_matches_recent_boost() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let now = Utc::now();
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
@@ -308,7 +308,7 @@ fn search_query_matches_recent_boost() -> anyhow::Result<()> {
 fn search_query_matches_paging() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let traits = (0..30).map(|i| {
         let text = "foo ".repeat((i + 1) as usize);
@@ -387,7 +387,7 @@ fn search_query_matches_paging() -> anyhow::Result<()> {
 fn search_query_by_trait_type() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
@@ -498,7 +498,7 @@ fn search_query_by_trait_type() -> anyhow::Result<()> {
 fn search_query_by_trait_type_paging() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let traits = (0..30).map(|i| {
         IndexOperation::PutTrait(PutTraitMutation {
@@ -563,7 +563,7 @@ fn search_query_by_trait_type_paging() -> anyhow::Result<()> {
 fn sort_by_field() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let traits = (0..20).map(|i| {
         IndexOperation::PutTrait(PutTraitMutation {
@@ -614,7 +614,7 @@ fn sort_by_field() -> anyhow::Result<()> {
 fn search_by_reference() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let et1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
@@ -753,7 +753,7 @@ fn search_by_reference() -> anyhow::Result<()> {
 fn search_by_operations() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let et1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
@@ -834,7 +834,7 @@ fn search_by_operations() -> anyhow::Result<()> {
 fn search_by_ids() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let et1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
@@ -911,7 +911,7 @@ fn search_by_ids() -> anyhow::Result<()> {
 fn search_by_trait_field() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let et1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
@@ -970,7 +970,7 @@ fn search_by_trait_field() -> anyhow::Result<()> {
 fn search_all() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let mut mutations = Vec::new();
     for i in 0..10 {
@@ -1014,7 +1014,7 @@ fn search_all() -> anyhow::Result<()> {
 fn highest_indexed_block() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     assert_eq!(index.highest_indexed_block()?, None);
 
@@ -1079,7 +1079,7 @@ fn highest_indexed_block() -> anyhow::Result<()> {
 fn put_unregistered_trait() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     assert_eq!(index.highest_indexed_block()?, None);
 
@@ -1108,7 +1108,7 @@ fn put_unregistered_trait() -> anyhow::Result<()> {
 fn delete_entity_operation_id_mutation() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let trait1 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: None,
@@ -1148,7 +1148,7 @@ fn delete_entity_operation_id_mutation() -> anyhow::Result<()> {
 fn put_trait_tombstone() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let contact_mutation = IndexOperation::PutTraitTombstone(PutTraitTombstoneMutation {
         block_offset: None,
@@ -1191,7 +1191,7 @@ fn put_trait_tombstone() -> anyhow::Result<()> {
 fn put_entity_tombstone() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let trait1 = IndexOperation::PutEntityTombstone(PutEntityTombstoneMutation {
         block_offset: None,
@@ -1211,7 +1211,7 @@ fn put_entity_tombstone() -> anyhow::Result<()> {
 fn trait_dates() -> anyhow::Result<()> {
     let registry = Arc::new(Registry::new_with_exocore_types());
     let config = test_config();
-    let mut index = MutationIndex::create_in_memory(config, registry)?;
+    let index = MutationIndex::create_in_memory(config, registry)?;
 
     let creation_date = "2019-08-01T12:00:00Z".parse::<DateTime<Utc>>()?;
     let modification_date = "2019-12-03T12:00:00Z".parse::<DateTime<Utc>>()?;

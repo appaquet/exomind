@@ -28,6 +28,9 @@ store:
   index:
     chain_index_min_depth: 3
     chain_index_depth_leeway: 10
+    chain_index_deferred_interval_secs: 5
+    chain_index_deferred_query_interval: 15
+    chain_index_deferred_max_interval: 300
 
     pending_index:
       indexer_num_threads: 2

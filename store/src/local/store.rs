@@ -2,13 +2,15 @@ use std::{
     pin::Pin,
     sync::{Arc, Mutex, RwLock, Weak},
     task::{Context, Poll},
+    time::Instant,
 };
 
 use async_trait::async_trait;
+use exocore_chain::engine::Event;
 use exocore_core::{
     cell::Cell,
     futures::{interval, spawn_blocking, BatchingStream},
-    time::Clock,
+    time::{AtomicInstant, Clock},
     utils::handle_set::{Handle, HandleSet},
 };
 use exocore_protos::{
@@ -65,6 +67,7 @@ where
             mpsc::channel::<QueryRequest>(config.query_channel_size);
 
         let inner = Arc::new(RwLock::new(Inner {
+            config,
             cell,
             clock,
             index,
@@ -97,15 +100,21 @@ where
         let incoming_queries_receiver = self.incoming_queries_receiver;
         let weak_inner1 = Arc::downgrade(&self.inner);
         let weak_inner2 = Arc::downgrade(&self.inner);
+        let last_user_query_shared = Arc::new(AtomicInstant::new());
+        let last_user_query = last_user_query_shared.clone();
         let queries_executor = async move {
             let mut executed_queries = incoming_queries_receiver
-                .map(move |watch_request: QueryRequest| {
+                .map(move |query_request: QueryRequest| {
+                    if !query_request.query.programmatic {
+                        last_user_query.update_now();
+                    }
+
                     let weak_inner = weak_inner1.clone();
                     async move {
                         let result =
-                            Inner::execute_query_async(weak_inner, watch_request.query.clone())
+                            Inner::execute_query_async(weak_inner, query_request.query.clone())
                                 .await;
-                        (result, watch_request)
+                        (result, query_request)
                     }
                 })
                 .buffer_unordered(config.query_parallelism);
@@ -207,6 +216,60 @@ where
             Ok::<(), Error>(())
         };
 
+        // Index chain at interval when idling
+        let last_user_query = last_user_query_shared.clone();
+        let weak_inner = Arc::downgrade(&self.inner);
+        let chain_indexer = async move {
+            let interval_dur = if let Some(dur) = self.config.chain_index_deferred_interval {
+                dur
+            } else {
+                future::pending::<()>().await; // deferred disabled, wait forever
+                return Ok(());
+            };
+
+            let mut chain_index_interval = interval(interval_dur);
+            let mut last_index_attempt = Instant::now();
+            loop {
+                chain_index_interval.tick().await;
+
+                if last_user_query.elapsed() < self.config.chain_index_deferred_query_interval
+                    && last_index_attempt.elapsed() < self.config.chain_index_deferred_max_interval
+                {
+                    debug!(
+                        "Skipping indexing because of recent query (last_query={:?} last_index_attempt={:?})",
+                        last_user_query.elapsed(),
+                        last_index_attempt.elapsed(),
+                    );
+                    continue;
+                }
+
+                let weak_inner = weak_inner.clone();
+                spawn_blocking(move || {
+                    let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
+                    let mut inner = inner.write()?;
+
+                    let affected_operations = inner.index.maybe_index_chain_blocks()?;
+                    if !affected_operations.is_empty() {
+                        inner
+                            .mutation_tracker
+                            .handle_indexed_operations(affected_operations.as_slice());
+                    }
+
+                    Ok::<(), Error>(())
+                })
+                .await
+                .map_err(|err| {
+                    Error::Other(anyhow!("Couldn't launch indexation operation: {:?}", err))
+                })??;
+
+                last_index_attempt = Instant::now();
+            }
+
+            // types the async block
+            #[allow(unreachable_code)]
+            Ok::<(), Error>(())
+        };
+
         // Runs a garbage collection pass on entity index, which will only get executed
         // if entities to be collected got flagged in a previous search query and added
         // to the garbage collector queue.
@@ -251,6 +314,7 @@ where
             _ = queries_executor.fuse() => {},
             _ = chain_events_handler.fuse() => {},
             _ = watched_queries_checker.fuse() => {},
+            _ = chain_indexer.fuse() => {},
             _ = garbage_collector.fuse() => {},
         }
 
@@ -263,6 +327,7 @@ where
     CS: exocore_chain::chain::ChainStore,
     PS: exocore_chain::pending::PendingStore,
 {
+    config: StoreConfig,
     cell: Cell,
     clock: Clock,
     index: EntityIndex<CS, PS>,
@@ -352,8 +417,15 @@ where
             let inner = weak_inner.upgrade().ok_or(Error::Dropped)?;
             let mut inner = inner.write()?;
 
+            // if deferred commit is enabled, we don't forward new chain block events to the
+            // entity index
+            let deferred_commit = inner.config.chain_index_deferred_interval.is_some();
+            let filtered_events = events
+                .into_iter()
+                .filter(|event| !deferred_commit || !matches!(event, Event::NewChainBlock(_)));
+
             let (affected_operations, indexed_operations) =
-                inner.index.handle_chain_engine_events(events.into_iter())?;
+                inner.index.handle_chain_engine_events(filtered_events)?;
             inner
                 .mutation_tracker
                 .handle_indexed_operations(affected_operations.as_slice());
@@ -777,6 +849,7 @@ pub mod tests {
         async_test_retry(|| async {
             let store_config = StoreConfig {
                 garbage_collect_interval: Duration::from_millis(300),
+                chain_index_deferred_interval: None, // commit as blocks get committed
                 ..Default::default()
             };
             let index_config = EntityIndexConfig {
@@ -817,16 +890,16 @@ pub mod tests {
                 .build();
             async_expect_eventually_fallible(|| async {
                 let query = QueryBuilder::with_id("entity1").include_deleted().build();
-                let res = store_handle.query(query).await.unwrap();
+                let res = store_handle.query(query).await?;
                 let is_deleted = res.entities.is_empty();
 
                 if !is_deleted {
                     // if not yet deleted, we create a new mutation on another entity to make sure
                     // entity deletion is in chain
                     store_handle.mutate(ent2_mut.clone()).await.unwrap();
-                    false
+                    Err(anyhow!("entities still not deleted"))
                 } else {
-                    true
+                    Ok(())
                 }
             })
             .await?;

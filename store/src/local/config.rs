@@ -28,6 +28,26 @@ pub struct StoreConfig {
     /// often than less. `GarbageCollectorConfig::queue_size` can be tweaked
     /// to control rate of collection.
     pub garbage_collect_interval: Duration,
+
+    /// Specifies the interval at which new blocks in the chain get indexed.
+    /// New blocks may not necessarily get immediately indexed if they don't
+    /// fall in the interval of `chain_index_min_depth` and `chain_index_depth_leeway`.
+    ///
+    /// Indexation can also be prevented if user queries were recently executed
+    /// (see `chain_index_deferred_query_secs`)
+    ///
+    /// If '0' is specified, deferred indexation is disabled and blocks are indexed
+    /// when the chain layer emits events.
+    pub chain_index_deferred_interval: Option<Duration>,
+
+    /// Specifies the minimum interval to wait before indexing chain blocks
+    /// after receiving a user query. It prevents potential slow downs caused
+    /// by chain indexation if a user query get executed frequently.
+    pub chain_index_deferred_query_interval: Duration,
+
+    /// Specifies the maximum interval for which indexation may be blocked by
+    /// incoming user queries.
+    pub chain_index_deferred_max_interval: Duration,
 }
 
 impl Default for StoreConfig {
@@ -39,6 +59,9 @@ impl Default for StoreConfig {
             chain_events_batch_size: 50,
             mutation_tracker_timeout: Duration::from_secs(5),
             garbage_collect_interval: Duration::from_secs(13),
+            chain_index_deferred_interval: Some(Duration::from_secs(5)),
+            chain_index_deferred_query_interval: Duration::from_secs(15),
+            chain_index_deferred_max_interval: Duration::from_secs(5 * 60),
         }
     }
 }
@@ -56,6 +79,18 @@ impl From<NodeStoreConfig> for StoreConfig {
                 if let Some(v) = gc.run_interval_secs {
                     config.garbage_collect_interval = Duration::from_secs(v as u64);
                 }
+            }
+
+            if let Some(secs) = index.chain_index_deferred_interval_secs {
+                config.chain_index_deferred_interval = Some(Duration::from_secs(secs));
+            }
+
+            if let Some(secs) = index.chain_index_deferred_query_secs {
+                config.chain_index_deferred_query_interval = Duration::from_secs(secs);
+            }
+
+            if let Some(secs) = index.chain_index_deferred_max_secs {
+                config.chain_index_deferred_max_interval = Duration::from_secs(secs);
             }
         }
 

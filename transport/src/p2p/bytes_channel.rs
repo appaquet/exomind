@@ -103,10 +103,10 @@ impl AsyncRead for BytesChannelReceiver {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use exocore_core::futures::spawn_future;
     use futures::{AsyncReadExt, AsyncWriteExt};
+
+    use super::*;
 
     #[tokio::test(flavor = "multi_thread")]
     async fn test_bytes_channel() {

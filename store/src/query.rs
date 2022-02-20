@@ -233,6 +233,11 @@ impl QueryBuilder {
         self
     }
 
+    pub fn programmatic(mut self) -> Self {
+        self.query.programmatic = true;
+        self
+    }
+
     pub fn build(self) -> EntityQuery {
         self.query
     }
