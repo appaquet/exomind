@@ -101,7 +101,7 @@
     "less": "^4.1.2",
     "linkifyjs": "^3.0.4",
     "lodash": "^4.17.21",
-    "mobx": "^6.4.0",
+    "mobx": "^6.4.1",
     "mobx-react": "^7.3.0",
     "prop-types": "15.8.1",
     "protobufjs": "^6.10.2",
