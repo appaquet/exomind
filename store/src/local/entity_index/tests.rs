@@ -1,18 +1,21 @@
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
+use exocore_chain::engine::Event;
 use exocore_core::tests_utils::{
     assert_equal_res, assert_res, async_expect_eventually_fallible, async_test_retry,
 };
 use exocore_protos::{
     generated::{exocore_store::Paging, exocore_test::TestMessage},
-    store::Reference,
+    prost::Message,
+    store::{EntityResult, EntityResultSource, EntityResults, Reference, Trait},
     test::TestMessage2,
 };
-use test_index::*;
+use itertools::Itertools;
 
-use super::*;
 use crate::{
-    local::mutation_index::MutationType,
+    local::{
+        entity_index::test_index::TestEntityIndex, mutation_index::MutationType, EntityIndexConfig,
+    },
     mutation::MutationBuilder,
     ordering::{value_from_u64, value_max},
     query::{ProjectionBuilder, QueryBuilder as Q},
@@ -816,7 +819,7 @@ fn extract_results_entities_id(res: &EntityResults) -> Vec<&str> {
         .collect_vec()
 }
 
-fn extract_result_messages(res: &EntityResultProto) -> Vec<(Trait, TestMessage)> {
+fn extract_result_messages(res: &EntityResult) -> Vec<(Trait, TestMessage)> {
     let traits = res.entity.as_ref().unwrap().traits.clone();
     traits
         .into_iter()

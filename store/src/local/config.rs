@@ -31,13 +31,14 @@ pub struct StoreConfig {
 
     /// Specifies the interval at which new blocks in the chain get indexed.
     /// New blocks may not necessarily get immediately indexed if they don't
-    /// fall in the interval of `chain_index_min_depth` and `chain_index_depth_leeway`.
+    /// fall in the interval of `chain_index_min_depth` and
+    /// `chain_index_depth_leeway`.
     ///
     /// Indexation can also be prevented if user queries were recently executed
     /// (see `chain_index_deferred_query_secs`)
     ///
-    /// If '0' is specified, deferred indexation is disabled and blocks are indexed
-    /// when the chain layer emits events.
+    /// If '0' is specified, deferred indexation is disabled and blocks are
+    /// indexed when the chain layer emits events.
     pub chain_index_deferred_interval: Option<Duration>,
 
     /// Specifies the minimum interval to wait before indexing chain blocks
