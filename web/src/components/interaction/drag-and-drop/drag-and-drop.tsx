@@ -4,6 +4,7 @@ import * as React from 'react';
 import './drag-and-drop.less';
 
 interface IProps {
+  children?: React.ReactNode;
   object?: unknown;
   parentObject?: unknown;
   draggable: boolean;

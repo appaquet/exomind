@@ -236,7 +236,7 @@ impl ExomindClient {
             .and_then(|email| email.proto.received_date.clone());
         let thread_last_date = modification_date
             .as_ref()
-            .or_else(|| creation_date.as_ref())
+            .or(creation_date.as_ref())
             .map(|t| t.to_chrono_datetime())
             .unwrap_or_else(Utc::now);
 

@@ -25,7 +25,7 @@ pub fn parse_thread(thread: google_gmail1::api::Thread) -> Result<ParsedThread, 
         }
     }
 
-    let mut messages = thread.messages.unwrap_or_else(Vec::new);
+    let mut messages = thread.messages.unwrap_or_default();
     messages.sort_by_key(|m| {
         m.internal_date
             .as_ref()
