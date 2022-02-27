@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 
 
 interface IProps {
+    children?: React.ReactNode;
     nbItems: number;
     onNeedMore?: () => void;
     loadMoreItems: number,

@@ -18,6 +18,8 @@ import { IEntityCreateResult } from "../../../utils/commands";
 import './children.less';
 
 interface IProps {
+    children?: React.ReactNode;
+
     parent?: EntityTraits;
     parentId?: string;
 

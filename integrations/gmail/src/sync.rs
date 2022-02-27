@@ -447,7 +447,7 @@ impl SynchronizedThread {
             .and_then(|email| email.proto.received_date.clone());
         let thread_last_date = thread_modification_date
             .as_ref()
-            .or_else(|| thread_create_date.as_ref())
+            .or(thread_create_date.as_ref())
             .map(|t| t.to_chrono_datetime())
             .unwrap_or_else(Utc::now);
 
