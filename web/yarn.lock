@@ -1915,10 +1915,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-flatpickr@^3.8.4":
-  version "3.8.5"
-  resolved "https://registry.npmjs.org/@types/react-flatpickr/-/react-flatpickr-3.8.5.tgz"
-  integrity sha512-oW1oUmZHAhdqNhK0V+U0a2FzgD6C18ZFpgKgsUyNri852PnKsyPwBx3PSU1ffmD5R2M/rhHfaYzb0PO5TYT46Q==
+"@types/react-flatpickr@^3.8.6":
+  version "3.8.6"
+  resolved "https://registry.yarnpkg.com/@types/react-flatpickr/-/react-flatpickr-3.8.6.tgz#5ecd5ba47d4f32a20d9045b41e047e6e16cc2e69"
+  integrity sha512-EhlqO1P0jnlTyYMHgaXRcuWxBqdVtmepl5j9FxoZS8jBxyx1z6AN8K4/WyYS4ijiMsBNDGyagjRXQbAfgvao4w==
   dependencies:
     "@types/react" "*"
     flatpickr "^4.0.6"
