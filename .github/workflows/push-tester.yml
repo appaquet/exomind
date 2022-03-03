@@ -195,7 +195,7 @@ jobs:
           cd $GITHUB_WORKSPACE/examples/web
           DEBUG=pw:api npm exec playwright test
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: playwright-report
