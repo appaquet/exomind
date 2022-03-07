@@ -171,6 +171,14 @@ impl TestEntityIndex {
         self.write_mutation(mutation)
     }
 
+    pub fn delete_entity<E: Into<EntityId>>(
+        &mut self,
+        entity_id: E,
+    ) -> Result<OperationId, anyhow::Error> {
+        let mutation = MutationBuilder::new().delete_entity(entity_id.into());
+        self.write_mutation(mutation)
+    }
+
     pub fn write_mutation<M: Into<MutationRequestLike>>(
         &mut self,
         mutation: M,

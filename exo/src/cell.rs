@@ -1,4 +1,4 @@
-use std::{io::Write, path::PathBuf, time::Duration};
+use std::{collections::HashSet, io::Write, path::PathBuf, time::Duration};
 
 use bytes::Bytes;
 use console::style;
@@ -15,13 +15,20 @@ use exocore_core::{
     },
     framing::{sized::SizedFrameReaderIterator, FrameReader},
     sec::{auth_token::AuthToken, keys::Keypair},
-    time::Clock,
+    time::{Clock, DateTime, Utc},
 };
 use exocore_protos::{
     core::{cell_node_config, CellConfig, CellNodeConfig, LocalNodeConfig, NodeCellConfig},
     generated::data_chain_capnp::{block_header, chain_operation},
-    prost::Message,
-    store::EntityMutation,
+    prost::{Message, ProstTimestampExt},
+    reflect::ReflectMessage,
+    registry::Registry,
+    serde_derive, serde_json,
+    store::{Entity, EntityMutation, Trait},
+};
+use exocore_store::{
+    entity::{EntityId, EntityIdRef, TraitId},
+    local::ChainEntityIterator,
 };
 
 use crate::{app::AppPackage, disco::prompt_discovery_pin, utils::edit_string, Context, *};
@@ -88,6 +95,9 @@ enum CellChainCommand {
 
     /// Exports the chain's data.
     Export(ChainExportOptions),
+
+    /// Exports the chain's entities.
+    ExportEntities(ChainExportEntitiesOptions),
 
     /// Imports the chain's data.
     Import(ChainImportOptions),
@@ -174,6 +184,24 @@ struct ChainExportOptions {
     /// Drop index operation deletions used for index garbage collection.
     #[clap(long)]
     drop_operation_deletions: bool,
+
+    /// Export the chain data in a JSON line format.
+    #[clap(long)]
+    json: bool,
+
+    /// Treat errors as warnings.
+    #[clap(long)]
+    warning: bool,
+
+    /// Limit export to the given list of entity ids.
+    #[clap(long)]
+    entities: Vec<String>,
+}
+
+#[derive(clap::Parser, Clone)]
+struct ChainExportEntitiesOptions {
+    /// File in which chain entities will be exported.
+    file: PathBuf,
 }
 
 #[derive(clap::Parser, Clone)]
@@ -273,6 +301,9 @@ pub async fn handle_cmd(ctx: &Context, cell_opts: &CellOptions) -> anyhow::Resul
             CellChainCommand::Init => cmd_create_genesis_block(ctx, cell_opts),
             CellChainCommand::Check => cmd_check_chain(ctx, cell_opts),
             CellChainCommand::Export(export_opts) => cmd_export_chain(ctx, cell_opts, export_opts),
+            CellChainCommand::ExportEntities(export_opts) => {
+                cmd_export_chain_entities(ctx, cell_opts, export_opts)
+            }
             CellChainCommand::Import(import_opts) => cmd_import_chain(ctx, cell_opts, import_opts),
         },
         CellCommand::GenerateAuthToken(gen_opts) => {
@@ -756,6 +787,7 @@ fn cmd_export_chain(
     export_opts: &ChainExportOptions,
 ) -> anyhow::Result<()> {
     let (local_node, cell) = get_cell(ctx, cell_opts);
+    let schemas = cell.cell().schemas().as_ref();
 
     let chain_dir = cell
         .cell()
@@ -772,8 +804,9 @@ fn cmd_export_chain(
     let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)
         .expect("Couldn't open chain");
 
-    let mut operations_count = 0;
-    let mut blocks_count = 0;
+    let mut operation_count = 0;
+    let mut warning_count = 0;
+    let mut block_count = 0;
 
     let file = std::fs::File::create(&export_opts.file).expect("Couldn't open exported file");
     let mut file_buf = std::io::BufWriter::new(file);
@@ -791,12 +824,14 @@ fn cmd_export_chain(
     print_spacer();
     let bar = indicatif::ProgressBar::new(last_block.get_height()?);
 
+    let opts: ExportOptions = export_opts.into();
+
     for block in chain_store.blocks_iter(0) {
         let block = block?;
 
-        blocks_count += 1;
+        block_count += 1;
 
-        {
+        if !export_opts.json {
             // create a block proposal to delimitate blocks
             let proposal = OperationBuilder::new_block_proposal_from_data(0, local_node.id(), &[])?;
             let proposal = proposal.sign_and_build(&local_node)?;
@@ -810,51 +845,278 @@ fn cmd_export_chain(
             .operations_iter()
             .expect("Couldn't iterate operations from block");
         for operation in operations {
-            {
-                let reader = operation
-                    .get_reader()
-                    .expect("Couldn't get reader on operation");
+            let res = if export_opts.json {
+                export_operation_json(operation, &mut file_buf, schemas, &opts)
+            } else {
+                export_operation_frame(operation, &mut file_buf, &opts)
+            };
 
-                // only export entry operations (actual data, not chain maintenance related
-                // operations)
-                let data = match reader.get_operation().which()? {
-                    chain_operation::operation::Entry(entry) => entry?.get_data()?,
-                    _ => continue,
-                };
-
-                // don't keep deleted operations since they were part of the index management
-                if export_opts.drop_operation_deletions {
-                    let mutation = EntityMutation::decode(data)?;
-
-                    use exocore_protos::store::entity_mutation::Mutation;
-                    match mutation.mutation {
-                        Some(Mutation::DeleteOperations(_del)) => continue,
-                        None => continue,
-                        _ => {}
-                    }
+            if let Err(err) = res {
+                warning_count += 1;
+                if !export_opts.warning {
+                    panic!("Failed to write operation: {}", err);
                 }
             }
 
-            operations_count += 1;
-            operation
-                .copy_to(&mut file_buf)
-                .expect("Couldn't write operation to file buffer");
+            operation_count += 1;
         }
 
-        bar.set_position(blocks_count);
+        bar.set_position(block_count);
     }
 
     file_buf.flush().expect("Couldn't flush file buffer");
 
-    bar.finish();
+    bar.finish_and_clear();
+
     print_success(format!(
-        "Exported {} operations from {} blocks from chain to {}",
-        style_value(operations_count),
-        style_value(blocks_count),
-        style_value(&export_opts.file)
+        "Exported {} operations from {} blocks from chain to {} ({} warnings)",
+        style_value(operation_count),
+        style_value(block_count),
+        style_value(&export_opts.file),
+        style_value(warning_count),
     ));
 
     Ok(())
+}
+
+struct ExportOptions<'o> {
+    opts: &'o ChainExportOptions,
+    entities: HashSet<EntityId>,
+}
+
+impl<'o> From<&'o ChainExportOptions> for ExportOptions<'o> {
+    fn from(opts: &'o ChainExportOptions) -> Self {
+        let entities = opts.entities.iter().cloned().collect::<HashSet<_>>();
+        ExportOptions { opts, entities }
+    }
+}
+
+impl<'o> ExportOptions<'o> {
+    fn can_export(&self, entity: EntityIdRef) -> bool {
+        if self.entities.is_empty() {
+            true
+        } else {
+            self.entities.contains(entity)
+        }
+    }
+}
+
+fn export_operation_frame(
+    operation: OperationFrame<&[u8]>,
+    out: &mut impl Write,
+    opts: &ExportOptions<'_>,
+) -> anyhow::Result<()> {
+    {
+        let reader = operation
+            .get_reader()
+            .expect("Couldn't get reader on operation");
+
+        // only export entry operations (actual data, not chain maintenance related
+        // operations)
+        let data = match reader.get_operation().which()? {
+            chain_operation::operation::Entry(entry) => entry?.get_data()?,
+            _ => return Ok(()),
+        };
+
+        let mutation = EntityMutation::decode(data)?;
+
+        if !opts.can_export(&mutation.entity_id) {
+            return Ok(());
+        }
+
+        // don't keep deleted operations since they were part of the index management
+        if opts.opts.drop_operation_deletions {
+            use exocore_protos::store::entity_mutation::Mutation;
+            match mutation.mutation {
+                Some(Mutation::DeleteOperations(_del)) => return Ok(()),
+                None => return Ok(()),
+                _ => {}
+            }
+        }
+    }
+
+    operation
+        .copy_to(out)
+        .expect("Couldn't write operation to file buffer");
+
+    Ok(())
+}
+
+fn export_operation_json(
+    operation: OperationFrame<&[u8]>,
+    mut out: &mut impl Write,
+    schemas: &Registry,
+    opts: &ExportOptions<'_>,
+) -> anyhow::Result<()> {
+    let reader = operation
+        .get_reader()
+        .expect("Couldn't get reader on operation");
+
+    // only export entry operations (actual data, not chain maintenance related
+    // operations)
+    let data = match reader.get_operation().which()? {
+        chain_operation::operation::Entry(entry) => entry?.get_data()?,
+        _ => return Ok(()),
+    };
+
+    let mutation = EntityMutation::decode(data)?;
+
+    if !opts.can_export(&mutation.entity_id) {
+        return Ok(());
+    }
+
+    use exocore_protos::store::entity_mutation::Mutation;
+    match mutation.mutation {
+        Some(Mutation::PutTrait(put)) => {
+            let trt = put.r#trait.unwrap();
+            let msg = trt.message.unwrap();
+            let msg_dyn = exocore_protos::reflect::from_prost_any(schemas, &msg)?;
+            let msg_json_val = msg_dyn.encode_json(schemas)?;
+
+            let out_obj = serde_json::json!({
+                "type": "put_trait",
+                "entity_id": mutation.entity_id,
+                "trait_id": trt.id,
+                "message": msg_json_val,
+            });
+            serde_json::to_writer(&mut out, &out_obj)?;
+        }
+        Some(Mutation::DeleteTrait(del)) => {
+            let out_obj = serde_json::json!({
+                "type": "delete_trait",
+                "entity_id": mutation.entity_id,
+                "trait_id": del.trait_id,
+            });
+            serde_json::to_writer(&mut out, &out_obj)?;
+        }
+        Some(Mutation::DeleteEntity(_del)) => {
+            let out_obj = serde_json::json!({
+                "type": "delete_entity",
+                "entity_id": mutation.entity_id,
+            });
+            serde_json::to_writer(&mut out, &out_obj)?;
+        }
+        None | Some(Mutation::DeleteOperations(_)) | Some(Mutation::Test(_)) => {
+            return Ok(());
+        }
+    }
+
+    out.write_all("\n".as_bytes())?;
+
+    Ok(())
+}
+
+fn cmd_export_chain_entities(
+    ctx: &Context,
+    cell_opts: &CellOptions,
+    export_opts: &ChainExportEntitiesOptions,
+) -> anyhow::Result<()> {
+    let (local_node, cell) = get_cell(ctx, cell_opts);
+    let schemas = cell.cell().schemas().as_ref();
+
+    let chain_dir = cell
+        .cell()
+        .chain_directory()
+        .as_os_path()
+        .expect("Cell is not stored in an OS directory");
+
+    let chain_config = local_node
+        .config()
+        .chain
+        .as_ref()
+        .cloned()
+        .unwrap_or_default();
+    let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)
+        .expect("Couldn't open chain");
+
+    let file = std::fs::File::create(&export_opts.file).expect("Couldn't open exported file");
+    let mut file_buf = std::io::BufWriter::new(file);
+
+    print_step(format!(
+        "Exporting entities to {}",
+        style_value(&export_opts.file)
+    ));
+
+    let bar = indicatif::ProgressBar::new_spinner();
+
+    print_step("Sorting mutations...".to_string());
+    let entity_iter = ChainEntityIterator::new(&chain_store).unwrap();
+    print_step("Mutations sorted, writing entities...".to_string());
+
+    let mut entity_count = 0;
+    for (i, entity) in entity_iter.enumerate() {
+        let entity = entity.expect("failed to read next entity");
+
+        if entity.deletion_date.is_some() {
+            continue;
+        }
+
+        let exp = ExportedEntity::from(entity, schemas);
+        serde_json::to_writer(&mut file_buf, &exp).unwrap();
+        file_buf.write_all("\n".as_bytes()).unwrap();
+
+        entity_count = i;
+        bar.set_message(format!("{i}"));
+        bar.set_position(i as u64);
+    }
+
+    bar.finish_and_clear();
+
+    file_buf.flush().expect("Couldn't flush file buffer");
+
+    print_success(format!("Exported {} entities", style_value(entity_count)));
+
+    Ok(())
+}
+
+#[derive(serde_derive::Serialize)]
+struct ExportedEntity {
+    entity_id: EntityId,
+    creation_date: Option<DateTime<Utc>>,
+    modification_date: Option<DateTime<Utc>>,
+    deletion_date: Option<DateTime<Utc>>,
+    traits: Vec<ExportedTrait>,
+}
+
+impl ExportedEntity {
+    fn from(entity: Entity, schemas: &Registry) -> Self {
+        Self {
+            entity_id: entity.id,
+            creation_date: entity.creation_date.map(|d| d.to_chrono_datetime()),
+            modification_date: entity.modification_date.map(|d| d.to_chrono_datetime()),
+            deletion_date: entity.deletion_date.map(|d| d.to_chrono_datetime()),
+            traits: entity
+                .traits
+                .into_iter()
+                .map(|e| ExportedTrait::from(e, schemas))
+                .collect(),
+        }
+    }
+}
+
+#[derive(serde_derive::Serialize)]
+struct ExportedTrait {
+    trait_id: TraitId,
+    creation_date: Option<DateTime<Utc>>,
+    modification_date: Option<DateTime<Utc>>,
+    deletion_date: Option<DateTime<Utc>>,
+    value: serde_json::Value,
+}
+
+impl ExportedTrait {
+    fn from(trt: Trait, schemas: &Registry) -> Self {
+        let msg = trt.message.unwrap();
+        let msg_dyn = exocore_protos::reflect::from_prost_any(schemas, &msg).unwrap();
+        let msg_json_val = msg_dyn.encode_json(schemas).unwrap();
+
+        Self {
+            trait_id: trt.id,
+            creation_date: trt.creation_date.map(|d| d.to_chrono_datetime()),
+            modification_date: trt.modification_date.map(|d| d.to_chrono_datetime()),
+            deletion_date: trt.deletion_date.map(|d| d.to_chrono_datetime()),
+            value: msg_json_val,
+        }
+    }
 }
 
 fn cmd_import_chain(

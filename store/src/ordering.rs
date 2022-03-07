@@ -7,7 +7,7 @@ use crate::mutation::OperationId;
 /// Wraps a trait or entities search result's ordering value so that it can be
 /// easily reversed when required or ignored if it's outside of the requested
 /// paging.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct OrderingValueWrapper {
     pub value: OrderingValue,
     pub reverse: bool,

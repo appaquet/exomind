@@ -13,7 +13,7 @@ pub use protobuf::{descriptor::FileDescriptorSet, Message};
 use super::{registry::Registry, Error};
 use crate::generated::exocore_store::Reference;
 
-pub trait ReflectMessage: Debug {
+pub trait ReflectMessage: Debug + Sized {
     fn descriptor(&self) -> &ReflectMessageDescriptor;
 
     fn full_name(&self) -> &str {
@@ -39,6 +39,69 @@ pub trait ReflectMessage: Debug {
             value: bytes,
         })
     }
+
+    fn encode_json(&self, registry: &Registry) -> Result<serde_json::Value, Error> {
+        reflect_message_to_json(self, registry)
+    }
+}
+
+fn reflect_message_to_json<M: ReflectMessage>(
+    msg: &M,
+    registry: &Registry,
+) -> Result<serde_json::Value, Error> {
+    use serde_json::Value;
+
+    let mut values = serde_json::Map::<String, serde_json::Value>::new();
+    for (id, desc) in msg.fields() {
+        let name = desc.name.clone();
+        match msg.get_field_value(*id) {
+            Ok(value) => match value {
+                FieldValue::String(v) => {
+                    values.insert(name, Value::String(v));
+                }
+                FieldValue::Int32(v) => {
+                    values.insert(name, Value::Number(v.into()));
+                }
+                FieldValue::Uint32(v) => {
+                    values.insert(name, Value::Number(v.into()));
+                }
+                FieldValue::Int64(v) => {
+                    values.insert(name, Value::Number(v.into()));
+                }
+                FieldValue::Uint64(v) => {
+                    values.insert(name, Value::Number(v.into()));
+                }
+                FieldValue::Reference(reference) => {
+                    let mut obj = serde_json::Map::new();
+                    obj.insert("entity_id".to_string(), Value::String(reference.entity_id));
+                    obj.insert("trait_id".to_string(), Value::String(reference.trait_id));
+                    values.insert(name, Value::Object(obj));
+                }
+                FieldValue::DateTime(v) => {
+                    values.insert(name, Value::String(v.to_rfc3339()));
+                }
+                FieldValue::Message(typ, msg) => {
+                    if let Ok(msg) = FieldValue::Message(typ, msg).into_message(registry) {
+                        let msg_val = msg.encode_json(registry)?;
+                        values.insert(name, msg_val);
+                    }
+                }
+            },
+            Err(Error::NoSuchField(_)) => {
+                // field is not set
+            }
+            Err(other) => return Err(other),
+        }
+    }
+
+    let mut obj = serde_json::Map::new();
+    obj.insert(
+        "type".to_string(),
+        Value::String(msg.full_name().to_string()),
+    );
+    obj.insert("value".to_string(), Value::Object(values));
+
+    Ok(serde_json::Value::Object(obj))
 }
 
 pub trait MutableReflectMessage: ReflectMessage {
@@ -65,7 +128,7 @@ impl ReflectMessage for DynamicMessage {
             .get(field_id)
             .ok_or(Error::NoSuchField(field_id))?;
 
-        match field.field_type {
+        match &field.field_type {
             FieldType::String => {
                 let value = ProtobufTypeString::get_from_unknown(value)
                     .ok_or(Error::NoSuchField(field_id))?;
@@ -119,7 +182,11 @@ impl ReflectMessage for DynamicMessage {
                     trait_id,
                 }))
             }
-            _ => Err(Error::NoSuchField(field_id)),
+            FieldType::Message(typ) => {
+                let ref_msg = ProtobufTypeMessage::<Empty>::get_from_unknown(value)
+                    .ok_or(Error::NoSuchField(field_id))?;
+                Ok(FieldValue::Message(typ.clone(), ref_msg))
+            }
         }
     }
 
@@ -192,7 +259,7 @@ pub enum FieldValue {
     Uint64(u64),
     Reference(Reference),
     DateTime(chrono::DateTime<chrono::Utc>),
-    Message(Box<dyn ReflectMessage>),
+    Message(String, Empty),
 }
 
 impl FieldValue {
@@ -215,6 +282,18 @@ impl FieldValue {
     pub fn as_reference(&self) -> Result<&Reference, Error> {
         if let FieldValue::Reference(value) = self {
             Ok(value)
+        } else {
+            Err(Error::InvalidFieldType)
+        }
+    }
+
+    pub fn into_message(self, registry: &Registry) -> Result<DynamicMessage, Error> {
+        if let FieldValue::Message(typ, message) = self {
+            let descriptor = registry.get_message_descriptor(&typ)?;
+            Ok(DynamicMessage {
+                message,
+                descriptor,
+            })
         } else {
             Err(Error::InvalidFieldType)
         }
@@ -271,6 +350,7 @@ mod tests {
     use crate::{
         generated::exocore_test::TestMessage,
         prost::{ProstAnyPackMessageExt, ProstDateTimeExt},
+        test::TestStruct,
     };
 
     #[test]
@@ -288,6 +368,9 @@ mod tests {
             ref2: Some(Reference {
                 entity_id: "et2".to_string(),
                 trait_id: String::new(),
+            }),
+            struct1: Some(TestStruct {
+                string1: "str1".to_string(),
             }),
             ..Default::default()
         };
@@ -318,6 +401,14 @@ mod tests {
         let value_ref = field_value.as_reference()?;
         assert_eq!(value_ref.entity_id, "et2");
         assert_eq!(value_ref.trait_id, "");
+
+        let field3 = dyn_msg.get_field(3).unwrap();
+        assert_eq!(
+            field3.field_type,
+            FieldType::Message("exocore.test.TestStruct".to_string())
+        );
+        let dyn_struct = dyn_msg.get_field_value(3)?.into_message(&registry)?;
+        assert_eq!(dyn_struct.get_field_value(1)?.as_str()?, "str1");
 
         Ok(())
     }
@@ -360,6 +451,54 @@ mod tests {
 
         let prost_any = dyn_msg.encode_to_prost_any()?;
         assert_eq!(bytes, prost_any.value);
+
+        Ok(())
+    }
+
+    #[test]
+    fn dyn_message_encode_json() -> anyhow::Result<()> {
+        let registry = Registry::new_with_exocore_types();
+
+        let date = "2022-02-25T02:11:27.793936+00:00";
+        let date = chrono::DateTime::parse_from_rfc3339(date)?;
+        let msg = TestMessage {
+            string1: "val1".to_string(),
+            int1: 1,
+            date1: Some(date.to_proto_timestamp()),
+            ref1: Some(Reference {
+                entity_id: "et1".to_string(),
+                trait_id: "trt1".to_string(),
+            }),
+            struct1: Some(TestStruct {
+                string1: "str1".to_string(),
+            }),
+            ..Default::default()
+        };
+
+        let msg_any = msg.pack_to_stepan_any()?;
+        let dyn_msg = from_stepan_any(&registry, &msg_any)?;
+
+        let value = dyn_msg.encode_json(&registry)?;
+        let expected = serde_json::json!({
+            "type": "exocore.test.TestMessage",
+            "value": {
+                "string1": "val1",
+                "int1": 1,
+                "date1": "2022-02-25T02:11:27.793936+00:00",
+                "ref1": {
+                    "entity_id": "et1",
+                    "trait_id": "trt1"
+                },
+                "struct1": {
+                    "type": "exocore.test.TestStruct",
+                    "value": {
+                        "string1": "str1"
+                    },
+                },
+            }
+        });
+
+        assert_eq!(value, expected);
 
         Ok(())
     }

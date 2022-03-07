@@ -22,4 +22,7 @@ pub enum Error {
 
     #[error("Protobuf decode error: {0}")]
     ProstDecodeError(#[from] prost::DecodeError),
+
+    #[error("Error: {0}")]
+    Other(anyhow::Error),
 }

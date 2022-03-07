@@ -21,6 +21,14 @@ pub enum Error {
     #[error("Chain engine error: {0}")]
     ChainEngine(#[from] exocore_chain::engine::EngineError),
 
+    #[cfg(feature = "local")]
+    #[error("Chain error: {0}")]
+    Chain(#[from] exocore_chain::chain::Error),
+
+    #[cfg(feature = "local")]
+    #[error("Chain block error: {0}")]
+    ChainBlock(#[from] exocore_chain::block::Error),
+
     #[cfg(feature = "remote")]
     #[error("Transport error: {0}")]
     Transport(#[from] exocore_transport::Error),

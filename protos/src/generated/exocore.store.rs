@@ -1,5 +1,3 @@
-// TODO: Renumber
-
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Entity {
     #[prost(string, tag = "1")]
@@ -436,4 +434,14 @@ pub struct DeleteOperationsMutation {
 pub struct TestMutation {
     #[prost(bool, tag = "1")]
     pub success: bool,
+}
+/// Internal message used by entity iterator for external sorting.
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CommittedEntityMutation {
+    #[prost(uint64, tag = "1")]
+    pub block_offset: u64,
+    #[prost(uint64, tag = "2")]
+    pub operation_id: u64,
+    #[prost(message, optional, tag = "3")]
+    pub mutation: ::core::option::Option<EntityMutation>,
 }

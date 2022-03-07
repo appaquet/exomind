@@ -5,7 +5,7 @@ package exocore;
 import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.FieldOptions {
-    // Indicates that the value of this field is to be indexed and queriable.
+    // Indicates that the value of this field is to be indexed and queryable.
     // For full-text indexation, see `text`.
     bool indexed = 1373;
 

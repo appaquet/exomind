@@ -34,12 +34,14 @@ mod config;
 pub use config::*;
 
 mod aggregator;
-pub(crate) use aggregator::*;
+pub use aggregator::*;
 
 mod gc;
 pub use gc::GarbageCollectorConfig;
 
 mod searcher;
+
+pub mod iterator;
 
 #[cfg(test)]
 pub(crate) mod test_index;

@@ -246,7 +246,7 @@ impl RequestType {
 
     fn parse_path_pin(method: &Method, path: &str) -> Result<Pin, RequestError> {
         let pin: Pin = path
-            .replace("/", "")
+            .replace('/', "")
             .parse::<u32>()
             .map_err(|err| {
                 debug!("Couldn't parse path '{}': {}", path, err);
