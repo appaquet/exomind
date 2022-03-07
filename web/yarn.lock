@@ -1179,10 +1179,10 @@
   dependencies:
     "@bangle.dev/utils" "0.28.5"
 
-"@bangle.dev/pm@^0.28.5":
-  version "0.28.5"
-  resolved "https://registry.npmjs.org/@bangle.dev/pm/-/pm-0.28.5.tgz"
-  integrity sha512-79H4PaQHdSWlOj6DdAISyo7Ri9Q5DC31Z8gfEWRqXulcm8U46WSXod1J2xTmrTDOi//KbLjXUZ/qI/L89X506g==
+"@bangle.dev/pm@^0.28.7":
+  version "0.28.7"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/pm/-/pm-0.28.7.tgz#c2afeffcd3eb6df5e92f6b738eb5a78c5eab2b26"
+  integrity sha512-5p/LB2vgJtXkXpQTRqpzRdASq4p76B9A8zzF9dUSCd4Npf4POzOADcbH2JsWAcv+VXqANfGCxxA8kLNf7cZj3g==
   dependencies:
     "@types/prosemirror-commands" "1.x"
     "@types/prosemirror-dropcursor" "1.x"

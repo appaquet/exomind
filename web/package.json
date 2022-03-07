@@ -83,7 +83,7 @@
   "dependencies": {
     "@bangle.dev/base-components": "^0.28.5",
     "@bangle.dev/core": "^0.28.5",
-    "@bangle.dev/pm": "^0.28.5",
+    "@bangle.dev/pm": "^0.28.7",
     "@bangle.dev/react": "^0.28.5",
     "@bangle.dev/utils": "^0.28.5",
     "@popperjs/core": "^2.11.0",
