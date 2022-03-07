@@ -1217,10 +1217,19 @@
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
-"@bangle.dev/utils@0.28.5", "@bangle.dev/utils@^0.28.5":
+"@bangle.dev/utils@0.28.5":
   version "0.28.5"
   resolved "https://registry.npmjs.org/@bangle.dev/utils/-/utils-0.28.5.tgz"
   integrity sha512-PIhPjjpGXNrCoRRtrBTugzYobxPtkk8A2S1NI14owtx+yl52tf9pG+TDjix8RL7jDrwTZ1vbWU95ybpU0A/yRg==
+  dependencies:
+    prosemirror-model "^1.1.0"
+    prosemirror-state "^1.0.1"
+    prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@^0.28.7":
+  version "0.28.7"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.7.tgz#1b8b14393ff3dc035465e2c946858f07d9a37259"
+  integrity sha512-ijY81iPlJCBesuWbQAo7I0qDfIpFffGknOhmt353mxVx9Xh1KLRTpp4LBLPDQQ6b7PtQDhet08U/yxaGtKx2Cg==
   dependencies:
     prosemirror-model "^1.1.0"
     prosemirror-state "^1.0.1"
