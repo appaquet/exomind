@@ -1208,19 +1208,28 @@
     prosemirror-transform "^1.1.0"
     prosemirror-view "^1.10.0"
 
-"@bangle.dev/react@^0.28.5":
-  version "0.28.5"
-  resolved "https://registry.npmjs.org/@bangle.dev/react/-/react-0.28.5.tgz"
-  integrity sha512-mBOj6ILogpKA3N4fxdpmzXllP9cphHe0kHiPmXcpu+mWEEuj4fmsUojUrQN3WhVPWDfKI+9f90McqD4txO0VdQ==
+"@bangle.dev/react@^0.28.7":
+  version "0.28.7"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.28.7.tgz#b68b72df826bd8e162f1894b04ded4cf20df4c87"
+  integrity sha512-H6KK0cMsf0XLmmrt2pJ4bsG3rqqj8Pk+4+QRn/Kzvih/y7XALuCz9Wb6MY/JSl4aYMx6+Zk4GJJCS9MhmQUK6w==
   dependencies:
-    "@bangle.dev/utils" "0.28.5"
+    "@bangle.dev/utils" "0.28.7"
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
-"@bangle.dev/utils@0.28.5", "@bangle.dev/utils@^0.28.5":
+"@bangle.dev/utils@0.28.5":
   version "0.28.5"
   resolved "https://registry.npmjs.org/@bangle.dev/utils/-/utils-0.28.5.tgz"
   integrity sha512-PIhPjjpGXNrCoRRtrBTugzYobxPtkk8A2S1NI14owtx+yl52tf9pG+TDjix8RL7jDrwTZ1vbWU95ybpU0A/yRg==
+  dependencies:
+    prosemirror-model "^1.1.0"
+    prosemirror-state "^1.0.1"
+    prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@0.28.7", "@bangle.dev/utils@^0.28.5":
+  version "0.28.7"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.7.tgz#1b8b14393ff3dc035465e2c946858f07d9a37259"
+  integrity sha512-ijY81iPlJCBesuWbQAo7I0qDfIpFffGknOhmt353mxVx9Xh1KLRTpp4LBLPDQQ6b7PtQDhet08U/yxaGtKx2Cg==
   dependencies:
     prosemirror-model "^1.1.0"
     prosemirror-state "^1.0.1"
