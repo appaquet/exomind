@@ -751,7 +751,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "structopt",
- "yup-oauth2",
+ "yup-oauth2 5.1.0",
 ]
 
 [[package]]
@@ -961,9 +961,9 @@ dependencies = [
 
 [[package]]
 name = "google-gmail1"
-version = "2.0.9+20210322"
+version = "3.0.0+20220228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b040ebc5ad85578e127f057fd1cf0a4161d50e2a8a69106e3353f2e0333f5d34"
+checksum = "76171157779879aad8671162603e25c2d9ea0227130711d45e919a914e06b2fd"
 dependencies = [
  "hyper",
  "hyper-rustls",
@@ -973,7 +973,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "url 1.7.2",
- "yup-oauth2",
+ "yup-oauth2 6.3.1",
 ]
 
 [[package]]
@@ -3365,6 +3365,31 @@ dependencies = [
  "http",
  "hyper",
  "hyper-rustls",
+ "log 0.4.14",
+ "percent-encoding 2.1.0",
+ "rustls 0.19.1",
+ "seahash",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url 2.2.2",
+]
+
+[[package]]
+name = "yup-oauth2"
+version = "6.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df0647712324d99fab8977022a015feeab311cecd8630ce2cd1e74643b651cf1"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64",
+ "chrono",
+ "futures",
+ "http",
+ "hyper",
+ "hyper-rustls",
+ "itertools",
  "log 0.4.14",
  "percent-encoding 2.1.0",
  "rustls 0.19.1",
