@@ -1,12 +1,12 @@
 use crate::config::Config;
 use exomind_protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::api::{ModifyMessageRequest, ModifyThreadRequest};
+use google_gmail1::oauth2::{self, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use std::{
     collections::HashSet,
     path::PathBuf,
     time::{Duration, Instant},
 };
-use yup_oauth2::{InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 
 const CLIENT_REFRESH_INTERVAL: Duration = Duration::from_secs(5 * 60);
 const FULL_ACCESS_SCOPE: &str = "https://mail.google.com/";
@@ -39,7 +39,7 @@ impl GmailClient {
         info!("Creating gmail client for account {}", account.email());
 
         let token_file = account_token_file(config, account.email())?;
-        let app_secret = yup_oauth2::read_application_secret(&config.client_secret).await?;
+        let app_secret = oauth2::read_application_secret(&config.client_secret).await?;
         let auth =
             InstalledFlowAuthenticator::builder(app_secret, InstalledFlowReturnMethod::Interactive)
                 .persist_tokens_to_disk(token_file)
