@@ -16,7 +16,6 @@
     "useDefineForClassFields": true,
     "lib": [
       "es2017",
-      "esnext.array",
       "dom"
     ]
   }
