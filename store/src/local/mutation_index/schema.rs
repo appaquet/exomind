@@ -104,7 +104,7 @@ pub(crate) fn build_tantivy_schema(
     let block_offset = schema_builder.add_u64_field("block_offset", STORED | FAST);
     let operation_id = schema_builder.add_u64_field(
         "operation_id",
-        IntOptions::default()
+        NumericOptions::default()
             .set_indexed()
             .set_stored()
             .set_fast(Cardinality::SingleValue),

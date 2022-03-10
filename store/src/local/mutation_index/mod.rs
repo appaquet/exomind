@@ -193,7 +193,7 @@ impl MutationIndex {
                     self.entity_cache.remove(&trait_put.entity_id);
 
                     let doc = self.trait_put_to_document(&trait_put)?;
-                    index_writer.add_document(doc);
+                    index_writer.add_document(doc)?;
                 }
                 IndexOperation::PutTraitTombstone(trait_tombstone) => {
                     trace!(
@@ -206,7 +206,7 @@ impl MutationIndex {
                     self.entity_cache.remove(&trait_tombstone.entity_id);
 
                     let doc = self.trait_tombstone_to_document(&trait_tombstone);
-                    index_writer.add_document(doc);
+                    index_writer.add_document(doc)?;
                 }
                 IndexOperation::PutEntityTombstone(entity_tombstone) => {
                     trace!(
@@ -218,7 +218,7 @@ impl MutationIndex {
                     self.entity_cache.remove(&entity_tombstone.entity_id);
 
                     let doc = self.entity_tombstone_to_document(&entity_tombstone);
-                    index_writer.add_document(doc);
+                    index_writer.add_document(doc)?;
                 }
                 IndexOperation::PendingDeletionMarker(entity_id, operation_id) => {
                     trace!(
@@ -230,7 +230,7 @@ impl MutationIndex {
                     self.entity_cache.remove(&entity_id);
 
                     let doc = self.pending_deletion_marker_to_document(&entity_id, operation_id);
-                    index_writer.add_document(doc);
+                    index_writer.add_document(doc)?;
                 }
                 IndexOperation::DeleteEntityOperation(entity_id, operation_id) => {
                     trace!(
