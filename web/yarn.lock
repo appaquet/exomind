@@ -8706,10 +8706,10 @@ react-dom@^17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
-react-flatpickr@^3.10.6:
-  version "3.10.7"
-  resolved "https://registry.npmjs.org/react-flatpickr/-/react-flatpickr-3.10.7.tgz"
-  integrity sha512-dJ7cZAayefqWJnX4Xe8Piy13oK2h4aeGCH9tz+D2iSNh+kbezUAWVMVCKdTqjsNBqTMS4v0DkfMy2CP2atNCTQ==
+react-flatpickr@^3.10.8:
+  version "3.10.8"
+  resolved "https://registry.yarnpkg.com/react-flatpickr/-/react-flatpickr-3.10.8.tgz#2f6330429a798c8c0b750c5550e8d0bc9f58b6f4"
+  integrity sha512-YbEqEIaIF3YyO00oAUMnEGJjTUoEDNMZrsxc1pnS+aJB/D9noNaGPss/fjK63BKQWk9C3uHEvYnQDAQPiLrtXg==
   dependencies:
     flatpickr "^4.6.2"
     prop-types "^15.5.10"
