@@ -65,3 +65,12 @@ message DeleteOperationsMutation {
 message TestMutation {
     bool success = 1;
 }
+
+// Internal message used by entity iterator for external sorting.
+message CommittedEntityMutation {
+    uint64 block_offset = 1;
+
+    uint64 operation_id = 2;
+
+    EntityMutation mutation = 3;
+}

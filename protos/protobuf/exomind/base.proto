@@ -66,7 +66,7 @@ message Email {
     exocore.store.Reference account = 1 [(exocore.field_group) = 1];
     string source_id = 2 [(exocore.field_group) = 1];
 
-    Contact from = 3 [(exocore.field_group) = 1];
+    Contact from = 3 [(exocore.field_group) = 1, (exocore.indexed) = true];
     google.protobuf.Timestamp received_date = 4 [(exocore.field_group) = 1];
     repeated Contact to = 5;
     repeated Contact cc = 6;
@@ -117,7 +117,7 @@ message Note {
 
 message Contact {
     string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
-    string email = 2;
+    string email = 2 [(exocore.text) = true];
 }
 
 message Task {
