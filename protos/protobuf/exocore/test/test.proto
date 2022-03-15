@@ -13,7 +13,7 @@ message TestMessage {
 
     string string3 = 12 [(exocore.indexed) = true];
 
-    TestStruct struct1 = 3 [(exocore.indexed) = true];
+    TestStruct struct1 = 3;
 
     oneof fields {
         string oneof_string1 = 4;
@@ -45,12 +45,10 @@ message TestMessage {
     string grouped1 = 20 [(exocore.field_group) = 1];
 
     string grouped2 = 21 [(exocore.field_group) = 1, (exocore.field_group) = 2];
-
-    map<string, string> map1 = 22;
 }
 
 message TestStruct {
-    string string1 = 1 [(exocore.text) = true];
+    string string1 = 1;
 }
 
 message TestMessage2 {
