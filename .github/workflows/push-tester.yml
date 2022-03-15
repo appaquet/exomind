@@ -185,20 +185,15 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Build app
-        run: |
-          cd $GITHUB_WORKSPACE
-          ./app/tools/build.sh
-
       - name: Download exo
         run: |
           wget https://github.com/appaquet/exocore/releases/download/v0.1.19/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
-      - name: Package app
+      - name: Build & package app
         run: |
-          cd $GITHUB_WORKSPACE/
-          exo app package
+          cd $GITHUB_WORKSPACE
+          ./app/tools/build.sh
 
   markdown_links_check:
     runs-on: ubuntu-latest
