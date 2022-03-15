@@ -10,8 +10,8 @@ use futures::{future::BoxFuture, prelude::*, AsyncReadExt, AsyncWriteExt};
 use libp2p::{
     core::{InboundUpgrade, OutboundUpgrade, UpgradeInfo},
     swarm::{
-        protocols_handler::{
-            KeepAlive, ProtocolsHandler, ProtocolsHandlerEvent, ProtocolsHandlerUpgrErr,
+        handler::{
+            ConnectionHandler, ConnectionHandlerEvent, ConnectionHandlerUpgrErr, KeepAlive,
             SubstreamProtocol,
         },
         NegotiatedSubstream,
@@ -24,7 +24,7 @@ const MAX_MESSAGE_SIZE: usize = 20 * 1024 * 1024; // 20MB
 const STREAM_CLOSE_ZERO_NEEDED: usize = 3;
 const STREAM_BUFFER_SIZE: usize = 1024;
 
-type HandlerEvent = ProtocolsHandlerEvent<ExocoreProtoConfig, (), MessageData, io::Error>;
+type HandlerEvent = ConnectionHandlerEvent<ExocoreProtoConfig, (), MessageData, io::Error>;
 
 // TODO: Remove dyn dispatched future once type_alias_impl_trait lands: https://github.com/rust-lang/rust/issues/63063
 type InboundStreamFuture = BoxFuture<
@@ -71,7 +71,7 @@ impl Default for ExocoreProtoHandler {
     }
 }
 
-impl ProtocolsHandler for ExocoreProtoHandler {
+impl ConnectionHandler for ExocoreProtoHandler {
     type InEvent = MessageData;
     type OutEvent = MessageData;
     type Error = io::Error;
@@ -111,7 +111,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
     fn inject_dial_upgrade_error(
         &mut self,
         _out_info: (),
-        _err: ProtocolsHandlerUpgrErr<io::Error>,
+        _err: ConnectionHandlerUpgrErr<io::Error>,
     ) {
         debug!("Upgrade error. Dropping stream.");
         self.outbound_dialing = false;
@@ -132,7 +132,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
             trace!("Asking to open outbound stream");
 
             self.outbound_dialing = true; // only one dialing at the time
-            return Poll::Ready(ProtocolsHandlerEvent::OutboundSubstreamRequest {
+            return Poll::Ready(ConnectionHandlerEvent::OutboundSubstreamRequest {
                 protocol: self.listen_protocol.clone(),
             });
         }
@@ -172,7 +172,7 @@ impl ProtocolsHandler for ExocoreProtoHandler {
                     }
                     Poll::Ready(Err(err)) => {
                         debug!("Error sending message: {}", err);
-                        return Poll::Ready(ProtocolsHandlerEvent::Close(err));
+                        return Poll::Ready(ConnectionHandlerEvent::Close(err));
                     }
                     Poll::Pending => {
                         self.outbound_stream_futures.push(fut);
@@ -194,12 +194,12 @@ impl ProtocolsHandler for ExocoreProtoHandler {
                         // copying data to a stream consumed by the application
                         if let Some(message) = opt_msg {
                             trace!("Successfully read a message on substream");
-                            return Poll::Ready(ProtocolsHandlerEvent::Custom(message));
+                            return Poll::Ready(ConnectionHandlerEvent::Custom(message));
                         }
                     }
                     Poll::Ready(Err(err)) => {
                         debug!("Error receiving on substream (it may have closed): {}", err);
-                        return Poll::Ready(ProtocolsHandlerEvent::Close(err));
+                        return Poll::Ready(ConnectionHandlerEvent::Close(err));
                     }
                     Poll::Pending => {
                         self.inbound_stream_futures.push(fut);

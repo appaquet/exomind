@@ -6,11 +6,11 @@ use std::{
 use exocore_core::{cell::Node, time::Instant};
 use futures::task::{Context, Poll};
 use libp2p::{
-    core::{connection::ConnectionId, Multiaddr, PeerId},
+    core::{connection::ConnectionId, ConnectedPoint, Multiaddr, PeerId},
     swarm::{
         dial_opts::{DialOpts, PeerCondition},
-        CloseConnection, DialError, NetworkBehaviour, NetworkBehaviourAction, NotifyHandler,
-        PollParameters,
+        CloseConnection, DialError, IntoConnectionHandler, NetworkBehaviour,
+        NetworkBehaviourAction, NotifyHandler, PollParameters,
     },
 };
 
@@ -116,7 +116,7 @@ impl ExocoreBehaviour {
     pub fn report_ping_success(&mut self, peer_id: &PeerId, rtt: Duration) {
         if let Some(peer) = self.peers.get(peer_id) {
             debug!("Successfully ping peer {}: {:?}", peer.node, rtt);
-            self.inject_connected(peer_id);
+            self.mark_peer_connected(peer_id);
         }
     }
 
@@ -161,26 +161,8 @@ impl ExocoreBehaviour {
             });
         }
     }
-}
 
-impl NetworkBehaviour for ExocoreBehaviour {
-    type ProtocolsHandler = ExocoreProtoHandler;
-    type OutEvent = ExocoreBehaviourEvent;
-
-    fn new_handler(&mut self) -> Self::ProtocolsHandler {
-        // We use OneShot protocol handler that opens a new stream for every message
-        // (stream, not connection)
-        Default::default()
-    }
-
-    fn addresses_of_peer(&mut self, peer_id: &PeerId) -> Vec<Multiaddr> {
-        self.peers
-            .get(peer_id)
-            .map(|p| p.addresses.clone())
-            .unwrap_or_else(Vec::new)
-    }
-
-    fn inject_connected(&mut self, peer_id: &PeerId) {
+    fn mark_peer_connected(&mut self, peer_id: &PeerId) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             if peer.status == PeerStatus::Connected {
                 return;
@@ -204,8 +186,44 @@ impl NetworkBehaviour for ExocoreBehaviour {
             warn!("Got connection from unknown peer {}", peer_id);
         }
     }
+}
 
-    fn inject_disconnected(&mut self, peer_id: &PeerId) {
+impl NetworkBehaviour for ExocoreBehaviour {
+    type ConnectionHandler = ExocoreProtoHandler;
+    type OutEvent = ExocoreBehaviourEvent;
+
+    fn new_handler(&mut self) -> Self::ConnectionHandler {
+        // We use OneShot protocol handler that opens a new stream for every message
+        // (stream, not connection)
+        Default::default()
+    }
+
+    fn addresses_of_peer(&mut self, peer_id: &PeerId) -> Vec<Multiaddr> {
+        self.peers
+            .get(peer_id)
+            .map(|p| p.addresses.clone())
+            .unwrap_or_else(Vec::new)
+    }
+
+    fn inject_connection_established(
+        &mut self,
+        peer_id: &PeerId,
+        _connection_id: &ConnectionId,
+        _endpoint: &ConnectedPoint,
+        _failed_addresses: Option<&Vec<Multiaddr>>,
+        _other_established: usize,
+    ) {
+        self.mark_peer_connected(peer_id);
+    }
+
+    fn inject_connection_closed(
+        &mut self,
+        peer_id: &PeerId,
+        _: &ConnectionId,
+        _: &ConnectedPoint,
+        _: <Self::ConnectionHandler as IntoConnectionHandler>::Handler,
+        _remaining_established: usize,
+    ) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             info!("Disconnected from peer {}", peer.node);
 
