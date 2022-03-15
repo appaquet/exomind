@@ -8,3 +8,8 @@ EXOMIND_ROOT="$APP_DIR/../"
 pushd $APP_DIR
 cargo build --target wasm32-unknown-unknown --release
 cp $EXOMIND_ROOT/target/wasm32-unknown-unknown/release/exomind_app.wasm $EXOMIND_ROOT/app.wasm
+popd
+
+pushd $EXOMIND_ROOT
+exo app package
+popd
