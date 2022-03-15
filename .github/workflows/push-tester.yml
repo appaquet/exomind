@@ -177,6 +177,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: |
+          sudo apt install -yq protobuf-compiler
+
       - uses: actions-rs/toolchain@v1.0.7
         with:
           toolchain: stable
