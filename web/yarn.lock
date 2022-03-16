@@ -8757,10 +8757,10 @@ react-dom@^17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
-react-flatpickr@^3.10.8:
-  version "3.10.8"
-  resolved "https://registry.yarnpkg.com/react-flatpickr/-/react-flatpickr-3.10.8.tgz#2f6330429a798c8c0b750c5550e8d0bc9f58b6f4"
-  integrity sha512-YbEqEIaIF3YyO00oAUMnEGJjTUoEDNMZrsxc1pnS+aJB/D9noNaGPss/fjK63BKQWk9C3uHEvYnQDAQPiLrtXg==
+react-flatpickr@^3.10.9:
+  version "3.10.9"
+  resolved "https://registry.yarnpkg.com/react-flatpickr/-/react-flatpickr-3.10.9.tgz#88cf987b58e9502593a9e478d5e77eaa94d4ec53"
+  integrity sha512-n151Q1eXeQ8vycz7rTDaZy4VApbcNz5BUtj9exlkSft1JSSGlzzcPXrjdF3CUhnftRvE0LYV51drkonkjVogBQ==
   dependencies:
     flatpickr "^4.6.2"
     prop-types "^15.5.10"
