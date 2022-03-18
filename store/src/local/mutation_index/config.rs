@@ -35,13 +35,13 @@ impl Default for MutationIndexConfig {
             iterator_max_pages: 5,
             entity_mutations_cache_size: 5000,
 
-            dynamic_reference_fields: 5,
-            dynamic_string_fields: 5,
-            dynamic_text_fields: 5,
-            dynamic_i64_fields: 2,
-            dynamic_i64_sortable_fields: 2,
-            dynamic_u64_fields: 2,
-            dynamic_u64_sortable_fields: 2,
+            dynamic_reference_fields: 10,
+            dynamic_string_fields: 10,
+            dynamic_text_fields: 10,
+            dynamic_i64_fields: 10,
+            dynamic_i64_sortable_fields: 10,
+            dynamic_u64_fields: 10,
+            dynamic_u64_sortable_fields: 10,
         }
     }
 }

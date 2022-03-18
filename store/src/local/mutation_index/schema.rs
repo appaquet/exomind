@@ -1,6 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
-use exocore_protos::{reflect::FieldType, registry::Registry};
+use exocore_protos::{
+    reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor},
+    registry::Registry,
+};
 use tantivy::{schema::*, tokenizer::*, Document};
 
 use super::MutationIndexConfig;
@@ -37,14 +40,9 @@ impl Fields {
         trait_name: &str,
         field_name: &str,
     ) -> Result<&MappedDynamicField, Error> {
-        let fields_mapping = self.dynamic_mappings.get(trait_name).ok_or_else(|| {
-            Error::QueryParsing(anyhow!(
-                "Trait '{}' doesn\'t have any dynamic fields",
-                trait_name
-            ))
-        })?;
+        let trait_fields = self.trait_fields(trait_name)?;
 
-        let field = fields_mapping.get(field_name).ok_or_else(|| {
+        let field = trait_fields.get(field_name).ok_or_else(|| {
             Error::QueryParsing(anyhow!(
                 "Trait '{}' doesn\'t have any dynamic field with name '{}'",
                 trait_name,
@@ -55,15 +53,49 @@ impl Fields {
         Ok(field)
     }
 
+    pub fn get_dynamic_trait_field_prefix(
+        &self,
+        trait_name: &str,
+        field_or_prefix: &str,
+    ) -> Result<Vec<&MappedDynamicField>, Error> {
+        let trait_fields = self.trait_fields(trait_name)?;
+
+        let field_or_prefix_clone = field_or_prefix.to_string();
+        let field_prefix = format!("{}.", field_or_prefix);
+
+        trait_fields
+            .range(field_or_prefix_clone..)
+            .take_while(|field| field.0 == field_or_prefix || field.0.starts_with(&field_prefix))
+            .map(|(_field_name, field)| Ok(field))
+            .collect()
+    }
+
     pub fn register_tokenizers(&self, index: &tantivy::Index) {
         index
             .tokenizers()
             .register("references", self.references_tokenizer.clone());
     }
+
+    fn trait_fields(
+        &self,
+        trait_name: &str,
+    ) -> Result<&BTreeMap<String, MappedDynamicField>, Error> {
+        let trait_fields = self.dynamic_mappings.get(trait_name).ok_or_else(|| {
+            Error::QueryParsing(anyhow!(
+                "Trait '{}' doesn\'t have any dynamic fields",
+                trait_name
+            ))
+        })?;
+
+        Ok(trait_fields)
+    }
 }
 
-pub(crate) type DynamicFieldsMapping = HashMap<String, HashMap<String, MappedDynamicField>>;
+pub(crate) type DynamicFieldsMapping = HashMap<String, BTreeMap<String, MappedDynamicField>>;
 
+/// Dynamic fields reused across trait types. Tantivy doesn't allow adding new
+/// fields once the index has been created. We pre-alloc a certain number of
+/// fields for each field type and reuse them across trait types.
 #[derive(Default)]
 pub(crate) struct DynamicFields {
     reference: Vec<Field>,
@@ -73,6 +105,55 @@ pub(crate) struct DynamicFields {
     i64_fast: Vec<Field>,
     u64: Vec<Field>,
     u64_fast: Vec<Field>,
+}
+
+impl DynamicFields {
+    fn new(
+        index_config: &MutationIndexConfig,
+        schema_builder: &mut SchemaBuilder,
+        references_options: TextOptions,
+    ) -> DynamicFields {
+        let mut dyn_fields = DynamicFields::default();
+
+        for i in 0..index_config.dynamic_reference_fields {
+            dyn_fields.reference.push(
+                schema_builder
+                    .add_text_field(&format!("references_{}", i), references_options.clone()),
+            );
+        }
+        for i in 0..index_config.dynamic_text_fields {
+            dyn_fields
+                .text
+                .push(schema_builder.add_text_field(&format!("text_{}", i), TEXT));
+        }
+        for i in 0..index_config.dynamic_string_fields {
+            dyn_fields
+                .string
+                .push(schema_builder.add_text_field(&format!("string_{}", i), STRING));
+        }
+        for i in 0..index_config.dynamic_i64_fields {
+            dyn_fields
+                .i64
+                .push(schema_builder.add_i64_field(&format!("i64_{}", i), STORED));
+        }
+        for i in 0..index_config.dynamic_i64_sortable_fields {
+            dyn_fields
+                .i64_fast
+                .push(schema_builder.add_i64_field(&format!("i64_fast_{}", i), STORED | FAST));
+        }
+        for i in 0..index_config.dynamic_u64_fields {
+            dyn_fields
+                .u64
+                .push(schema_builder.add_u64_field(&format!("u64_{}", i), STORED));
+        }
+        for i in 0..index_config.dynamic_u64_sortable_fields {
+            dyn_fields
+                .u64_fast
+                .push(schema_builder.add_u64_field(&format!("u64_fast_{}", i), STORED | FAST));
+        }
+
+        dyn_fields
+    }
 }
 
 #[derive(Debug)]
@@ -163,154 +244,174 @@ pub(crate) fn build_tantivy_schema(
 /// messages and creates a mapping of registered messages' fields to dynamic
 /// fields.
 fn build_dynamic_fields_tantivy_schema(
-    config: &MutationIndexConfig,
+    index_config: &MutationIndexConfig,
     registry: &Registry,
-    builder: &mut SchemaBuilder,
+    schema_builder: &mut SchemaBuilder,
     references_options: TextOptions,
 ) -> (DynamicFields, DynamicFieldsMapping) {
-    let mut dyn_fields = DynamicFields::default();
-
-    // create dynamic fields that will be usable by defined messages
-    for i in 0..config.dynamic_reference_fields {
-        dyn_fields
-            .reference
-            .push(builder.add_text_field(&format!("references_{}", i), references_options.clone()));
-    }
-    for i in 0..config.dynamic_text_fields {
-        dyn_fields
-            .text
-            .push(builder.add_text_field(&format!("text_{}", i), TEXT));
-    }
-    for i in 0..config.dynamic_string_fields {
-        dyn_fields
-            .string
-            .push(builder.add_text_field(&format!("string_{}", i), STRING));
-    }
-    for i in 0..config.dynamic_i64_fields {
-        dyn_fields
-            .i64
-            .push(builder.add_i64_field(&format!("i64_{}", i), STORED));
-    }
-    for i in 0..config.dynamic_i64_sortable_fields {
-        dyn_fields
-            .i64_fast
-            .push(builder.add_i64_field(&format!("i64_fast_{}", i), STORED | FAST));
-    }
-    for i in 0..config.dynamic_u64_fields {
-        dyn_fields
-            .u64
-            .push(builder.add_u64_field(&format!("u64_{}", i), STORED));
-    }
-    for i in 0..config.dynamic_u64_sortable_fields {
-        dyn_fields
-            .u64_fast
-            .push(builder.add_u64_field(&format!("u64_fast_{}", i), STORED | FAST));
-    }
+    let mut dyn_fields = DynamicFields::new(index_config, schema_builder, references_options);
 
     // map fields of each message in registry that need to be indexed / sortable to
     // dynamic fields
     let mut dyn_mappings = HashMap::new();
     let message_descriptors = registry.message_descriptors();
     for message_descriptor in message_descriptors {
-        let mut ref_fields_count = 0;
-        let mut text_fields_count = 0;
-        let mut string_fields_count = 0;
-        let mut i64_fields_count = 0;
-        let mut i64_fast_fields_count = 0;
-        let mut u64_fields_count = 0;
-        let mut u64_fast_fields_count = 0;
-        let mut field_mapping = HashMap::new();
+        let mut msg_fields = MsgFields::default();
 
         for field in message_descriptor.fields.values() {
-            if !field.indexed_flag && !field.text_flag && !field.sorted_flag {
-                continue;
-            }
-
-            let ft = field.field_type.clone();
-            if ft == FieldType::Uint64 || ft == FieldType::Uint32 || ft == FieldType::DateTime {
-                if field.sorted_flag && u64_fast_fields_count < dyn_fields.u64_fast.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.u64_fast[u64_fast_fields_count],
-                        field_type: ft,
-                        is_fast_field: true,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    u64_fast_fields_count += 1;
-                    continue;
-                } else if field.indexed_flag && u64_fields_count < dyn_fields.u64.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.u64[u64_fields_count],
-                        field_type: ft,
-                        is_fast_field: false,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    u64_fields_count += 1;
-                    continue;
-                }
-            } else if ft == FieldType::Int64 || ft == FieldType::Int32 {
-                if field.sorted_flag && i64_fast_fields_count < dyn_fields.i64_fast.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.i64_fast[i64_fast_fields_count],
-                        field_type: ft,
-                        is_fast_field: true,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    i64_fast_fields_count += 1;
-                    continue;
-                } else if field.indexed_flag && i64_fields_count < dyn_fields.i64.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.i64[i64_fields_count],
-                        field_type: ft,
-                        is_fast_field: false,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    i64_fields_count += 1;
-                    continue;
-                }
-            } else if ft == FieldType::Reference {
-                if field.indexed_flag && ref_fields_count < dyn_fields.reference.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.reference[ref_fields_count],
-                        field_type: ft,
-                        is_fast_field: false,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    ref_fields_count += 1;
-                    continue;
-                }
-            } else if ft == FieldType::String {
-                if field.text_flag && text_fields_count < dyn_fields.text.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.text[text_fields_count],
-                        field_type: ft,
-                        is_fast_field: false,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    text_fields_count += 1;
-                    continue;
-                } else if field.indexed_flag && string_fields_count < dyn_fields.string.len() {
-                    let mapped_field = MappedDynamicField {
-                        field: dyn_fields.string[string_fields_count],
-                        field_type: ft,
-                        is_fast_field: false,
-                    };
-                    field_mapping.insert(field.name.clone(), mapped_field);
-                    string_fields_count += 1;
-                    continue;
-                }
-            }
-
-            error!(
-                "Invalid index option / type for field {:?} of message {} or ran out of fields",
-                field, message_descriptor.name
-            );
+            msg_fields.add_field(None, registry, &mut dyn_fields, &message_descriptor, field);
         }
 
-        if !field_mapping.is_empty() {
-            dyn_mappings.insert(message_descriptor.name.clone(), field_mapping);
+        if !msg_fields.mapping.is_empty() {
+            dyn_mappings.insert(message_descriptor.name.clone(), msg_fields.mapping);
         }
     }
+
     (dyn_fields, dyn_mappings)
+}
+
+// Fields mapping for a trait.
+#[derive(Default)]
+struct MsgFields {
+    mapping: BTreeMap<String, MappedDynamicField>,
+    ref_count: usize,
+    text_count: usize,
+    string_count: usize,
+    i64_count: usize,
+    i64_fast_count: usize,
+    u64_count: usize,
+    u64_fast_count: usize,
+}
+
+impl MsgFields {
+    fn add_field(
+        &mut self,
+        prefix: Option<&str>,
+        registry: &Registry,
+        dyn_fields: &mut DynamicFields,
+        msg_desc: &ReflectMessageDescriptor,
+        field_desc: &FieldDescriptor,
+    ) {
+        if !field_desc.indexed_flag && !field_desc.text_flag && !field_desc.sorted_flag {
+            return;
+        }
+
+        let field_name = if let Some(prefix) = prefix {
+            format!("{}.{}", prefix, field_desc.name)
+        } else {
+            field_desc.name.to_string()
+        };
+
+        let ft = field_desc.field_type.clone();
+        match ft {
+            FieldType::Uint64 | FieldType::Uint32 | FieldType::DateTime => {
+                if field_desc.sorted_flag && self.u64_fast_count < dyn_fields.u64_fast.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.u64_fast[self.u64_fast_count],
+                        field_type: ft,
+                        is_fast_field: true,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.u64_fast_count += 1;
+                    return;
+                } else if field_desc.indexed_flag && self.u64_count < dyn_fields.u64.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.u64[self.u64_count],
+                        field_type: ft,
+                        is_fast_field: false,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.u64_count += 1;
+                    return;
+                }
+            }
+
+            FieldType::Int64 | FieldType::Int32 => {
+                if field_desc.sorted_flag && self.i64_fast_count < dyn_fields.i64_fast.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.i64_fast[self.i64_fast_count],
+                        field_type: ft,
+                        is_fast_field: true,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.i64_fast_count += 1;
+                    return;
+                } else if field_desc.indexed_flag && self.i64_count < dyn_fields.i64.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.i64[self.i64_count],
+                        field_type: ft,
+                        is_fast_field: false,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.i64_count += 1;
+                    return;
+                }
+            }
+
+            FieldType::Reference => {
+                if field_desc.indexed_flag && self.ref_count < dyn_fields.reference.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.reference[self.ref_count],
+                        field_type: ft,
+                        is_fast_field: false,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.ref_count += 1;
+                    return;
+                }
+            }
+
+            FieldType::String => {
+                if field_desc.text_flag && self.text_count < dyn_fields.text.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.text[self.text_count],
+                        field_type: ft,
+                        is_fast_field: false,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.text_count += 1;
+                    return;
+                } else if field_desc.indexed_flag && self.string_count < dyn_fields.string.len() {
+                    let mapped_field = MappedDynamicField {
+                        field: dyn_fields.string[self.string_count],
+                        field_type: ft,
+                        is_fast_field: false,
+                    };
+                    self.mapping.insert(field_name, mapped_field);
+                    self.string_count += 1;
+                    return;
+                }
+            }
+
+            FieldType::Message(msg_type) => match registry.get_message_descriptor(&msg_type) {
+                Ok(sub_msg_desc) => {
+                    for field in sub_msg_desc.fields.values() {
+                        self.add_field(
+                            Some(&field_name),
+                            registry,
+                            dyn_fields,
+                            msg_desc, /* we add field onto main msg mapping so that we can
+                                       * `field.field_sub` */
+                            field,
+                        );
+                    }
+                    return;
+                }
+                Err(err) => {
+                    error!("Error getting message descriptor for {}: {}", msg_type, err);
+                }
+            },
+
+            FieldType::Repeated(_) => {
+                // not supported
+            }
+        }
+
+        error!(
+            "Invalid index option / type for field {field_desc:?} of message {} or ran out of fields",
+            msg_desc.name,
+        );
+    }
 }
 
 /// Extracts string value from Tantivy document

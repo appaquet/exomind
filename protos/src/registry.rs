@@ -5,8 +5,8 @@ use std::{
 
 use protobuf::{
     descriptor::{
-        DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Type, FileDescriptorProto,
-        FileDescriptorSet,
+        DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label,
+        FieldDescriptorProto_Type, FileDescriptorProto, FileDescriptorSet,
     },
     types::{ProtobufType, ProtobufTypeBool},
     Message,
@@ -78,9 +78,14 @@ impl Registry {
         full_name: String,
         msg_descriptor: DescriptorProto,
     ) -> Arc<ReflectMessageDescriptor> {
+        for sub_msg in msg_descriptor.get_nested_type() {
+            let sub_full_name = format!("{}.{}", full_name, sub_msg.get_name());
+            self.register_message_descriptor(sub_full_name, sub_msg.clone());
+        }
+
         let mut fields = HashMap::new();
         for field in msg_descriptor.get_field() {
-            let field_type = match field.get_field_type() {
+            let mut field_type = match field.get_field_type() {
                 FieldDescriptorProto_Type::TYPE_STRING => FieldType::String,
                 FieldDescriptorProto_Type::TYPE_INT32 => FieldType::Int32,
                 FieldDescriptorProto_Type::TYPE_UINT32 => FieldType::Uint32,
@@ -96,6 +101,10 @@ impl Registry {
                 }
                 _ => continue,
             };
+
+            if field.get_label() == FieldDescriptorProto_Label::LABEL_REPEATED {
+                field_type = FieldType::Repeated(Box::new(field_type));
+            }
 
             let id = field.get_number() as u32;
             fields.insert(

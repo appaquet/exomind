@@ -1,5 +1,6 @@
 use std::{
     borrow::Borrow,
+    collections::BTreeMap,
     ops::Deref,
     path::Path,
     result::Result,
@@ -20,7 +21,7 @@ use exocore_protos::{
     },
     prost::{Any, ProstTimestampExt},
     reflect,
-    reflect::{FieldValue, ReflectMessage},
+    reflect::{DynamicMessage, FieldDescriptor, FieldValue, ReflectMessage},
     registry::Registry,
     store::AllPredicate,
 };
@@ -589,79 +590,136 @@ impl MutationIndex {
         message_any: &Any,
         message_full_name: String,
     ) {
-        let message_dyn = match reflect::from_prost_any(self.schemas.as_ref(), message_any) {
-            Ok(message_dyn) => message_dyn,
+        let dyn_message = match reflect::from_prost_any(self.schemas.as_ref(), message_any) {
+            Ok(dyn_message) => dyn_message,
             Err(err) => {
                 error!(
-                    "Error reflecting message of type '{}'. No fields will be indexed. Error: {}",
-                    message_full_name, err
+                    "Error reflecting message of type '{message_full_name}'. No fields will be indexed. Error: {err}",
                 );
                 return;
             }
         };
 
-        let message_mappings = self.fields.dynamic_mappings.get(message_dyn.full_name());
+        let message_mappings = if let Some(message_mappings) =
+            self.fields.dynamic_mappings.get(dyn_message.full_name())
+        {
+            message_mappings
+        } else {
+            // field is not indexed if we don't have a mapping for it
+            return;
+        };
+
         let mut has_reference = false;
-        for (field_id, field) in message_dyn.fields() {
-            let field_value = match message_dyn.get_field_value(*field_id) {
-                Ok(fv) => fv,
-                Err(err) => {
-                    trace!("Couldn't get value of field {:?}: {}", field, err);
-                    continue;
-                }
-            };
 
-            let field_mapping =
-                if let Some(field_mapping) = message_mappings.and_then(|m| m.get(&field.name)) {
-                    field_mapping
-                } else {
-                    // field is not indexed if we don't have a mapping for it
-                    continue;
-                };
-
-            match field_value {
-                FieldValue::String(value) if field.text_flag => {
-                    doc.add_text(field_mapping.field, &value);
-                    doc.add_text(self.fields.all_text, &value);
-                }
-                FieldValue::String(value) if field.indexed_flag => {
-                    doc.add_text(field_mapping.field, &value);
-                }
-                FieldValue::Reference(value) if field.indexed_flag => {
-                    let ref_value = format!("entity{} trait{}", value.entity_id, value.trait_id);
-                    doc.add_text(field_mapping.field, &ref_value);
-                    doc.add_text(self.fields.all_refs, &ref_value);
-                    has_reference = true;
-                }
-                FieldValue::DateTime(value) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_u64(field_mapping.field, value.timestamp_nanos() as u64);
-                }
-                FieldValue::Int64(value) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_i64(field_mapping.field, value);
-                }
-                FieldValue::Int32(value) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_i64(field_mapping.field, i64::from(value));
-                }
-                FieldValue::Uint64(value) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_u64(field_mapping.field, value);
-                }
-                FieldValue::Uint32(value) if field.indexed_flag || field.sorted_flag => {
-                    doc.add_u64(field_mapping.field, u64::from(value));
-                }
-                other => {
-                    warn!(
-                        "Unsupported indexed field type / value: type={:?} value={:?} mapping={:?}",
-                        field.field_type, other, field_mapping
-                    );
-                }
-            }
+        for field in dyn_message.fields().values() {
+            self.add_trait_message_document_field(
+                doc,
+                &dyn_message,
+                None,
+                field,
+                message_mappings,
+                &mut has_reference,
+            );
         }
 
+        // the message has at least one reference field
         if has_reference {
             doc.add_u64(
                 self.fields.has_reference,
                 schema::bool_to_u64(has_reference),
             );
+        }
+    }
+
+    fn add_trait_message_document_field(
+        &self,
+        doc: &mut Document,
+        dyn_message: &DynamicMessage,
+        prefix: Option<&str>,
+        field_desc: &FieldDescriptor,
+        message_mappings: &BTreeMap<String, schema::MappedDynamicField>,
+        has_reference: &mut bool,
+    ) {
+        let field_value = match dyn_message.get_field_value(field_desc.id) {
+            Ok(fv) => fv,
+            Err(err) => {
+                trace!("Couldn't get value of field {:?}: {}", field_desc, err);
+                return;
+            }
+        };
+
+        let field_name = if let Some(prefix) = prefix {
+            format!("{}.{}", prefix, field_desc.name)
+        } else {
+            field_desc.name.to_string()
+        };
+
+        // special case for fields of type message. we always recurse into them even if
+        // they don't have a mapping directly since mapping is done on
+        // sub-fields (ex: mapped into `field.sub_field`)
+        if let FieldValue::Message(_, _) = &field_value {
+            match field_value.into_message(&self.schemas) {
+                Ok(dyn_msg) => {
+                    for sub_field in dyn_msg.fields().values() {
+                        self.add_trait_message_document_field(
+                            doc,
+                            &dyn_msg,
+                            Some(&field_name),
+                            sub_field,
+                            message_mappings,
+                            has_reference,
+                        );
+                    }
+                }
+                Err(err) => {
+                    error!("Error getting message descriptor for sub field: {err}");
+                }
+            }
+            return;
+        }
+
+        let mapped_field = if let Some(mapped_field) = message_mappings.get(&field_name) {
+            mapped_field
+        } else {
+            // field is not indexed if we don't have a mapping for it
+            return;
+        };
+
+        match field_value {
+            FieldValue::String(value) if field_desc.text_flag => {
+                doc.add_text(mapped_field.field, &value);
+                doc.add_text(self.fields.all_text, &value);
+            }
+            FieldValue::String(value) if field_desc.indexed_flag => {
+                doc.add_text(mapped_field.field, &value);
+            }
+            FieldValue::Reference(value) if field_desc.indexed_flag => {
+                let ref_value = format!("entity{} trait{}", value.entity_id, value.trait_id);
+                doc.add_text(mapped_field.field, &ref_value);
+                doc.add_text(self.fields.all_refs, &ref_value);
+                *has_reference = true;
+            }
+            FieldValue::DateTime(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
+                doc.add_u64(mapped_field.field, value.timestamp_nanos() as u64);
+            }
+            FieldValue::Int64(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
+                doc.add_i64(mapped_field.field, value);
+            }
+            FieldValue::Int32(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
+                doc.add_i64(mapped_field.field, i64::from(value));
+            }
+            FieldValue::Uint64(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
+                doc.add_u64(mapped_field.field, value);
+            }
+            FieldValue::Uint32(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
+                doc.add_u64(mapped_field.field, u64::from(value));
+            }
+            other => {
+                warn!(
+                    "Unsupported indexed field type / value: type={:?} value={:?} mapping={:?}",
+                    field_desc.field_type, other, mapped_field
+                );
+            }
         }
     }
 
@@ -769,30 +827,37 @@ impl MutationIndex {
         trait_name: &str,
         predicate: &TraitFieldPredicate,
     ) -> Result<Box<dyn tantivy::query::Query>, Error> {
-        let field = self
-            .fields
-            .get_dynamic_trait_field(trait_name, &predicate.field)?;
-
         use reflect::FieldType as FT;
         use trait_field_predicate::Value as PV;
-        match (&field.field_type, &predicate.value) {
-            (FT::String, Some(PV::String(value))) => {
-                let term = Term::from_field_text(field.field, value);
-                Ok(Box::new(TermQuery::new(term, IndexRecordOption::Basic)))
-            }
-            (ft, pv) => {
-                Err(
-                    Error::QueryParsing(
-                        anyhow!(
-                            "Incompatible field type vs field value in predicate: trait_name={} field={}, field_type={:?}, value={:?}",
-                            trait_name,
-                            predicate.field,
-                            ft,
-                            pv,
-                        ))
-                )
+
+        let fields = self
+            .fields
+            .get_dynamic_trait_field_prefix(trait_name, &predicate.field)?;
+
+        let mut queries: Vec<(Occur, Box<dyn Query>)> = Vec::new();
+        for field in fields {
+            match (&field.field_type, &predicate.value) {
+                (FT::String, Some(PV::String(value))) => {
+                    let term = Term::from_field_text(field.field, value);
+
+                    queries.push((Occur::Should, Box::new(TermQuery::new(term, IndexRecordOption::Basic))));
+                }
+                (ft, pv) => {
+                    return Err(
+                        Error::QueryParsing(
+                            anyhow!(
+                                "Incompatible field type vs field value in predicate: trait_name={} field={}, field_type={:?}, value={:?}",
+                                trait_name,
+                                predicate.field,
+                                ft,
+                                pv,
+                            ))
+                    )
+                }
             }
         }
+
+        Ok(Box::new(BooleanQuery::from(queries)))
     }
 
     /// Transforms a trait's field reference predicate to Tantivy query.

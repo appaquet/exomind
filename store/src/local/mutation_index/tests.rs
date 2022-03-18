@@ -7,6 +7,7 @@ use exocore_protos::{
     },
     prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt},
     store::{entity_query, TraitDetails},
+    test::TestStruct,
 };
 use itertools::Itertools;
 
@@ -962,6 +963,93 @@ fn search_by_trait_field() -> anyhow::Result<()> {
     let res = index.search(query.build())?;
     assert_eq!(res.mutations.len(), 1);
     find_put_trait(&res, "trt2");
+
+    Ok(())
+}
+
+#[test]
+fn search_by_trait_sub_message_fields() -> anyhow::Result<()> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let index = MutationIndex::create_in_memory(config, registry)?;
+
+    let et1 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 1,
+        entity_id: "et1".to_string(),
+        trt: Trait {
+            id: "trt1".to_string(),
+            message: Some(
+                TestMessage {
+                    struct1: Some(TestStruct {
+                        string1: "foo".to_string(),
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    let et2 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: None,
+        operation_id: 2,
+        entity_id: "et2".to_string(),
+        trt: Trait {
+            id: "trt2".to_string(),
+            message: Some(
+                TestMessage {
+                    struct1: Some(TestStruct {
+                        string1: "bar".to_string(),
+                    }),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    index.apply_operations(vec![et1, et2].into_iter())?;
+
+    {
+        // match on any trait should match the sub fields
+        let query = Q::matches("foo");
+        let res = index.search(query.build())?;
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt1");
+
+        let query = Q::matches("bar");
+        let res = index.search(query.build())?;
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt2");
+    }
+
+    {
+        // can search by field.subfield
+        let query = Q::with_trait_name_query(
+            "exocore.test.TestMessage",
+            TQ::field_equals("struct1.string1", "foo").build(),
+        );
+        let res = index.search(query.build())?;
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt1");
+
+        // can search by field prefix
+        let query = Q::with_trait_name_query(
+            "exocore.test.TestMessage",
+            TQ::field_equals("struct1", "foo").build(),
+        );
+        let res = index.search(query.build())?;
+        assert_eq!(res.mutations.len(), 1);
+        find_put_trait(&res, "trt1");
+
+        let query = Q::with_trait_name_query(
+            "exocore.test.TestMessage",
+            TQ::field_equals("struct1", "doesn't exist").build(),
+        );
+        let res = index.search(query.build())?;
+        assert_eq!(res.mutations.len(), 0);
+    }
 
     Ok(())
 }
