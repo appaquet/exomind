@@ -109,19 +109,18 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Build app
-        run: |
-          cd $GITHUB_WORKSPACE
-          ./app/tools/build.sh
-
       - name: Download exo
         run: |
           wget https://github.com/appaquet/exocore/releases/download/v0.1.20/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
+      - name: Build app
+        run: |
+          cd $GITHUB_WORKSPACE
+          ./app/tools/build.sh
+
       - name: Build app package
         run: |
-          exo app package
           mv exomind.zip exomind-app.zip
 
       - name: Upload build artifacts
