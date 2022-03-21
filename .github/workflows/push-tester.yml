@@ -154,7 +154,7 @@ jobs:
         run: |
           HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: ios/Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
