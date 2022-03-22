@@ -581,7 +581,7 @@ dependencies = [
  "exocore",
  "exomind-gmail",
  "exomind-protos",
- "log 0.4.14",
+ "log 0.4.16",
  "structopt",
  "tokio",
 ]
@@ -598,7 +598,7 @@ dependencies = [
  "exocore-protos",
  "exocore-store",
  "exocore-transport",
- "log 0.4.14",
+ "log 0.4.16",
 ]
 
 [[package]]
@@ -609,7 +609,7 @@ checksum = "60c756624a379948e1721ce00ab4bbb3f036cbabd8b7642724ab322db1d3ae34"
 dependencies = [
  "anyhow",
  "futures",
- "log 0.4.14",
+ "log 0.4.16",
  "quote",
  "syn",
  "thiserror",
@@ -628,7 +628,7 @@ dependencies = [
  "exocore-store",
  "futures",
  "lazy_static",
- "log 0.4.14",
+ "log 0.4.16",
  "quote",
  "thiserror",
 ]
@@ -648,7 +648,7 @@ dependencies = [
  "futures",
  "getrandom 0.2.5",
  "libp2p",
- "log 0.4.14",
+ "log 0.4.16",
  "log4rs",
  "multihash",
  "petname",
@@ -703,7 +703,7 @@ dependencies = [
  "exocore-transport",
  "futures",
  "itertools",
- "log 0.4.14",
+ "log 0.4.16",
  "smallvec",
  "thiserror",
 ]
@@ -721,7 +721,7 @@ dependencies = [
  "exocore-protos",
  "futures",
  "libp2p",
- "log 0.4.14",
+ "log 0.4.16",
  "pin-project 1.0.10",
  "thiserror",
 ]
@@ -741,7 +741,7 @@ dependencies = [
  "exocore",
  "exomind-protos",
  "futures",
- "log 0.4.14",
+ "log 0.4.16",
 ]
 
 [[package]]
@@ -757,7 +757,7 @@ dependencies = [
  "google-gmail1",
  "hyper",
  "hyper-rustls",
- "log 0.4.14",
+ "log 0.4.16",
  "mailparse",
  "serde",
  "serde_derive",
@@ -1145,7 +1145,7 @@ dependencies = [
  "ct-logs",
  "futures-util",
  "hyper",
- "log 0.4.14",
+ "log 0.4.16",
  "rustls 0.19.1",
  "rustls-native-certs",
  "tokio",
@@ -1318,7 +1318,7 @@ dependencies = [
  "instant",
  "lazy_static",
  "libsecp256k1",
- "log 0.4.14",
+ "log 0.4.16",
  "multiaddr",
  "multihash",
  "multistream-select",
@@ -1345,7 +1345,7 @@ checksum = "7838647d33978b77f943687412f4a39e74234c8342cbfdad14282b465b272cb4"
 dependencies = [
  "futures",
  "libp2p-core",
- "log 0.4.14",
+ "log 0.4.16",
  "smallvec",
  "trust-dns-resolver",
 ]
@@ -1360,7 +1360,7 @@ dependencies = [
  "futures-timer",
  "libp2p-core",
  "libp2p-swarm",
- "log 0.4.14",
+ "log 0.4.16",
  "lru",
  "prost",
  "prost-build",
@@ -1390,7 +1390,7 @@ dependencies = [
  "bytes",
  "futures",
  "libp2p-core",
- "log 0.4.14",
+ "log 0.4.16",
  "nohash-hasher",
  "parking_lot 0.12.0",
  "rand 0.7.3",
@@ -1409,7 +1409,7 @@ dependencies = [
  "futures",
  "lazy_static",
  "libp2p-core",
- "log 0.4.14",
+ "log 0.4.16",
  "prost",
  "prost-build",
  "rand 0.8.5",
@@ -1431,7 +1431,7 @@ dependencies = [
  "instant",
  "libp2p-core",
  "libp2p-swarm",
- "log 0.4.14",
+ "log 0.4.16",
  "rand 0.7.3",
  "void",
 ]
@@ -1448,7 +1448,7 @@ dependencies = [
  "futures-timer",
  "instant",
  "libp2p-core",
- "log 0.4.14",
+ "log 0.4.16",
  "pin-project 1.0.10",
  "rand 0.7.3",
  "smallvec",
@@ -1478,7 +1478,7 @@ dependencies = [
  "ipnet",
  "libc",
  "libp2p-core",
- "log 0.4.14",
+ "log 0.4.16",
  "socket2 0.4.4",
  "tokio",
 ]
@@ -1493,7 +1493,7 @@ dependencies = [
  "futures",
  "futures-rustls",
  "libp2p-core",
- "log 0.4.14",
+ "log 0.4.16",
  "quicksink",
  "rw-stream-sink",
  "soketto",
@@ -1594,14 +1594,14 @@ version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e19e8d5c34a3e0e2223db8e060f9e8264aeeb5c5fc64a4ee9965c062211c024b"
 dependencies = [
- "log 0.4.14",
+ "log 0.4.16",
 ]
 
 [[package]]
 name = "log"
-version = "0.4.14"
+version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
+checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
 dependencies = [
  "cfg-if",
  "serde",
@@ -1626,7 +1626,7 @@ dependencies = [
  "fnv",
  "humantime",
  "libc",
- "log 0.4.14",
+ "log 0.4.16",
  "log-mdc",
  "parking_lot 0.11.2",
  "regex",
@@ -1713,7 +1713,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52da4364ffb0e4fe33a9841a98a3f3014fb964045ce4f7a45a398243c8d6b0c9"
 dependencies = [
  "libc",
- "log 0.4.14",
+ "log 0.4.16",
  "miow",
  "ntapi",
  "wasi 0.11.0+wasi-snapshot-preview1",
@@ -1792,7 +1792,7 @@ checksum = "363a84be6453a70e63513660f4894ef815daf88e3356bffcda9ca27d810ce83b"
 dependencies = [
  "bytes",
  "futures",
- "log 0.4.14",
+ "log 0.4.16",
  "pin-project 1.0.10",
  "smallvec",
  "unsigned-varint",
@@ -2147,7 +2147,7 @@ dependencies = [
  "heck 0.3.3",
  "itertools",
  "lazy_static",
- "log 0.4.14",
+ "log 0.4.16",
  "multimap",
  "petgraph",
  "prost",
@@ -2371,7 +2371,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
 dependencies = [
  "base64",
- "log 0.4.14",
+ "log 0.4.16",
  "ring",
  "sct 0.6.1",
  "webpki 0.21.4",
@@ -2383,7 +2383,7 @@ version = "0.20.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fbfeb8d0ddb84706bc597a5574ab8912817c52a397f819e5b614e2265206921"
 dependencies = [
- "log 0.4.14",
+ "log 0.4.16",
  "ring",
  "sct 0.7.0",
  "webpki 0.22.0",
@@ -2666,7 +2666,7 @@ dependencies = [
  "flate2",
  "futures",
  "httparse",
- "log 0.4.14",
+ "log 0.4.16",
  "rand 0.8.5",
  "sha-1",
 ]
@@ -2886,7 +2886,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
- "log 0.4.14",
+ "log 0.4.16",
  "pin-project-lite 0.2.8",
  "tokio",
 ]
@@ -2948,7 +2948,7 @@ dependencies = [
  "idna 0.2.3",
  "ipnet",
  "lazy_static",
- "log 0.4.14",
+ "log 0.4.16",
  "rand 0.8.5",
  "smallvec",
  "thiserror",
@@ -2967,7 +2967,7 @@ dependencies = [
  "futures-util",
  "ipconfig",
  "lazy_static",
- "log 0.4.14",
+ "log 0.4.16",
  "lru-cache",
  "parking_lot 0.11.2",
  "resolv-conf",
@@ -3128,7 +3128,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1ce8a968cb1cd110d136ff8b819a556d6fb6d919363c61534f6860c7eb172ba0"
 dependencies = [
- "log 0.4.14",
+ "log 0.4.16",
  "try-lock",
 ]
 
@@ -3168,7 +3168,7 @@ checksum = "8b21c0df030f5a177f3cba22e9bc4322695ec43e7257d865302900290bcdedca"
 dependencies = [
  "bumpalo",
  "lazy_static",
- "log 0.4.14",
+ "log 0.4.16",
  "proc-macro2",
  "quote",
  "syn",
@@ -3388,7 +3388,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c0608f53c1dc0bad505d03a34bbd49fbf2ad7b51eb036123e896365532745a1"
 dependencies = [
  "futures",
- "log 0.4.14",
+ "log 0.4.16",
  "nohash-hasher",
  "parking_lot 0.12.0",
  "rand 0.8.5",
@@ -3409,7 +3409,7 @@ dependencies = [
  "hyper",
  "hyper-rustls",
  "itertools",
- "log 0.4.14",
+ "log 0.4.16",
  "percent-encoding 2.1.0",
  "rustls 0.19.1",
  "seahash",
