@@ -26,7 +26,7 @@ exocore-protos = {version = "0.1.20", path = "../protos"}
 futures = "0.3"
 gloo-timers = {version = "=0.2.2", optional = true}# force version because of wasm setTimeout bug: https://github.com/rustwasm/gloo/issues/187
 hyper = {version = "0.14", features = ["full"], optional = true}
-libp2p = {version = "0.43", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"]}
+libp2p = {version = "0.44", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"]}
 log = "0.4"
 pin-project = "1.0"
 thiserror = "1.0"
