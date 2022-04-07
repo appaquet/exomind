@@ -83,6 +83,8 @@ jobs:
 
     runs-on: ${{ matrix.pair.os }}
 
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v3
 
@@ -101,6 +103,9 @@ jobs:
 
   rust_tests_coverage:
     runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v3
 
@@ -128,6 +133,9 @@ jobs:
 
   apps_sdk_runtime_tests:
     runs-on: ubuntu-latest
+
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v3
 
@@ -151,6 +159,9 @@ jobs:
 
   web_client_test:
     runs-on: ubuntu-20.04
+
+    timeout-minutes: 30
+
     steps:
       - uses: actions/checkout@v3
 
