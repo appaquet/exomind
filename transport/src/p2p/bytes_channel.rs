@@ -120,7 +120,7 @@ mod tests {
                 for _ in 0..size {
                     data.push(size);
                 }
-                sender.write(&data).await.unwrap();
+                let _ = sender.write(&data).await.unwrap();
             }
         });
 
