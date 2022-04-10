@@ -2,18 +2,18 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2021"
 name = "exocore-client-c"
-version = "0.1.20"
+version = "0.1.21"
 
 [lib]
 crate-type = ["staticlib", "cdylib"]
 name = "exocore"
 
 [dependencies]
-exocore-core = {version = "0.1.20", path = "../../core", features = ["runtime", "logger"]}
-exocore-discovery = {version = "0.1.20", path = "../../discovery", default-features = false}
-exocore-protos = {version = "0.1.20", path = "../../protos"}
-exocore-store = {version = "0.1.20", path = "../../store", default-features = false, features = ["remote"]}
-exocore-transport = {version = "0.1.20", path = "../../transport", features = ["p2p-full"]}
+exocore-core = {version = "0.1.21", path = "../../core", features = ["runtime", "logger"]}
+exocore-discovery = {version = "0.1.21", path = "../../discovery", default-features = false}
+exocore-protos = {version = "0.1.21", path = "../../protos"}
+exocore-store = {version = "0.1.21", path = "../../store", default-features = false, features = ["remote"]}
+exocore-transport = {version = "0.1.21", path = "../../transport", features = ["p2p-full"]}
 weak-table = "0.3"
 futures = "0.3"
 libc = "0.2"

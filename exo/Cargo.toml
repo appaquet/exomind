@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exo"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.20"
+version = "0.1.21"
 
 [dependencies]
 anyhow = "1.0"
@@ -16,13 +16,13 @@ clap = {version = "3.1.8", features = ["derive", "env"]}
 console = "0.15"
 dialoguer = "0.10"
 dirs-next = "2.0"
-exocore-apps-host = {version = "0.1.20", path = "../apps/host"}
-exocore-chain = {version = "0.1.20", path = "../chain"}
-exocore-core = {version = "0.1.20", path = "../core", features = ["runtime", "logger"]}
-exocore-discovery = {version = "0.1.20", path = "../discovery", features = ["server"]}
-exocore-protos = {version = "0.1.20", path = "../protos"}
-exocore-store = {version = "0.1.20", path = "../store"}
-exocore-transport = {version = "0.1.20", path = "../transport", features = ["http-server"]}
+exocore-apps-host = {version = "0.1.21", path = "../apps/host"}
+exocore-chain = {version = "0.1.21", path = "../chain"}
+exocore-core = {version = "0.1.21", path = "../core", features = ["runtime", "logger"]}
+exocore-discovery = {version = "0.1.21", path = "../discovery", features = ["server"]}
+exocore-protos = {version = "0.1.21", path = "../protos"}
+exocore-store = {version = "0.1.21", path = "../store"}
+exocore-transport = {version = "0.1.21", path = "../transport", features = ["http-server"]}
 futures = "0.3"
 indicatif = "0.16"
 log = "0.4"
