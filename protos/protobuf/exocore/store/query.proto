@@ -14,6 +14,8 @@ message EntityQuery {
         ReferencePredicate reference = 4;
         OperationsPredicate operations = 10;
         AllPredicate all = 11;
+        BooleanPredicate boolean = 14;
+        QueryStringPredicate query_string = 15;
 
         TestPredicate test = 99;
     }
@@ -89,6 +91,31 @@ message TestPredicate {
     bool success = 1;
 }
 
+// Boolean query constructed of different sub queries with occurrence logic.
+message BooleanPredicate {
+    enum Occur {
+        SHOULD = 0;
+        MUST = 1;
+        MUST_NOT = 2;
+    }
+
+    message SubQuery {
+        Occur occur = 1;
+
+        oneof predicate {
+            MatchPredicate match = 2;
+            TraitPredicate trait = 3;
+            IdsPredicate ids = 4;
+            ReferencePredicate reference = 5;
+            OperationsPredicate operations = 6;
+            AllPredicate all = 7;
+            BooleanPredicate boolean = 8;
+        }
+    }
+
+    repeated SubQuery queries = 1;
+}
+
 // Query entities that have a specified trait and optionally matching a trait query.
 message TraitPredicate {
     string trait_name = 1;
@@ -101,6 +128,7 @@ message TraitQuery {
         MatchPredicate match = 1;
         TraitFieldPredicate field = 2;
         TraitFieldReferencePredicate reference = 3;
+        QueryStringPredicate query_string = 4;
     }
 }
 
@@ -139,6 +167,10 @@ message ReferencePredicate {
     string trait_id = 2;
 }
 
+message QueryStringPredicate {
+    string query = 1;
+}
+
 message Paging {
     // Returns results after this given ordering value.
     OrderingValue after_ordering_value = 1;
@@ -159,6 +191,8 @@ message Ordering {
         bool score = 1;         // by match score + date boost
         bool operation_id = 2;  // by operation id
         string field = 3;       // by field value
+        bool created_at = 7;    // by creation date
+        bool updated_at = 8;    // by update date
     }
 
     // Direction of ordering.

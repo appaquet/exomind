@@ -6,7 +6,10 @@ use exocore_protos::{
     },
     message::NamedMessage,
     reflect::FieldId,
-    store::{AllPredicate, IdsPredicate, OperationsPredicate, Projection, Reference},
+    store::{
+        AllPredicate, IdsPredicate, OperationsPredicate, Projection, QueryStringPredicate,
+        Reference,
+    },
 };
 
 use crate::{
@@ -110,6 +113,17 @@ impl QueryBuilder {
             query: EntityQuery {
                 predicate: Some(entity_query::Predicate::Ids(IdsPredicate {
                     ids: ids.into_iter().map(|i| i.into()).collect(),
+                })),
+                ..Default::default()
+            },
+        }
+    }
+
+    pub fn from_query_string<T: Into<String>>(query: T) -> QueryBuilder {
+        QueryBuilder {
+            query: EntityQuery {
+                predicate: Some(entity_query::Predicate::QueryString(QueryStringPredicate {
+                    query: query.into(),
                 })),
                 ..Default::default()
             },
@@ -286,6 +300,16 @@ impl TraitQueryBuilder {
                         reference: Some(reference.into().0),
                     },
                 )),
+            },
+        }
+    }
+
+    pub fn from_query_string<S: Into<String>>(query: S) -> TraitQueryBuilder {
+        TraitQueryBuilder {
+            query: TraitQuery {
+                predicate: Some(trait_query::Predicate::QueryString(QueryStringPredicate {
+                    query: query.into(),
+                })),
             },
         }
     }

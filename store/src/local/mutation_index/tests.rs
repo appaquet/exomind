@@ -6,7 +6,7 @@ use exocore_protos::{
         exocore_test::{TestMessage, TestMessage2},
     },
     prost::{Any, ProstAnyPackMessageExt, ProstDateTimeExt},
-    store::{entity_query, TraitDetails},
+    store::{entity_query, MatchPredicate, TraitDetails},
     test::TestStruct,
 };
 use itertools::Itertools;
@@ -301,6 +301,98 @@ fn search_query_matches_recent_boost() -> anyhow::Result<()> {
     assert_eq!(res.mutations[0].entity_id, "entity_id3"); // operation id is score breaker
     assert_eq!(res.mutations[1].entity_id, "entity_id2");
     assert_eq!(res.mutations[2].entity_id, "entity_id1");
+
+    Ok(())
+}
+
+#[test]
+fn search_query_string() -> anyhow::Result<()> {
+    let registry = Arc::new(Registry::new_with_exocore_types());
+    let config = test_config();
+    let index = MutationIndex::create_in_memory(config, registry)?;
+
+    let now = Utc::now();
+    let trait1 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: Some(1),
+        operation_id: 10,
+        entity_id: "entity_id1".to_string(),
+        trt: Trait {
+            id: "foo1".to_string(),
+            modification_date: Some(now.to_proto_timestamp()),
+            message: Some(
+                TestMessage {
+                    string1: "Foo Bar One".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+
+    let trait2 = IndexOperation::PutTrait(PutTraitMutation {
+        block_offset: Some(2),
+        operation_id: 20,
+        entity_id: "entity_id2".to_string(),
+        trt: Trait {
+            id: "foo2".to_string(),
+            modification_date: Some(now.to_proto_timestamp()),
+            message: Some(
+                TestMessage {
+                    string1: "Foo Bar Two".to_string(),
+                    ..Default::default()
+                }
+                .pack_to_any()?,
+            ),
+            ..Default::default()
+        },
+    });
+    index.apply_operations(vec![trait1, trait2].into_iter())?;
+
+    // should
+    let query = Q::from_query_string("foo").build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations.len(), 2);
+
+    // must not
+    let query = Q::from_query_string("-foo").build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations.len(), 0);
+
+    // should & not
+    let query = Q::from_query_string("foo -two").build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations.len(), 1);
+    assert_eq!(res.mutations[0].entity_id, "entity_id1");
+
+    // must
+    let query = Q::from_query_string("foo +one").build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations.len(), 1);
+    assert_eq!(res.mutations[0].entity_id, "entity_id1");
+
+    // field value
+    let trait_query = TQ::from_query_string("string1:two").build();
+    let query = Q::with_trait_query::<TestMessage>(trait_query).build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations.len(), 1);
+    assert_eq!(res.mutations[0].entity_id, "entity_id2");
+
+    // type
+    let query = Q::from_query_string("type:test").build();
+    let res = index.search(query)?;
+    assert_eq!(res.mutations.len(), 2);
+
+    // sort
+    let query = Q::from_query_string("sort:created").build();
+    let res1 = index.search(query)?;
+    assert_eq!(res1.mutations.len(), 2);
+
+    let query = Q::from_query_string("-sort:created").build();
+    let res2 = index.search(query)?;
+
+    // inverted from res1 to res2
+    assert_eq!(res1.mutations[0].entity_id, res2.mutations[1].entity_id);
 
     Ok(())
 }

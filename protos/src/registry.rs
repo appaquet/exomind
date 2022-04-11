@@ -8,7 +8,7 @@ use protobuf::{
         DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label,
         FieldDescriptorProto_Type, FileDescriptorProto, FileDescriptorSet,
     },
-    types::{ProtobufType, ProtobufTypeBool},
+    types::{ProtobufType, ProtobufTypeBool, ProtobufTypeString},
     Message,
 };
 
@@ -16,6 +16,7 @@ use super::{
     reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor},
     Error,
 };
+use crate::reflect::iter_repeated_unknown_value;
 
 type MessageDescriptorsMap = HashMap<String, Arc<ReflectMessageDescriptor>>;
 
@@ -123,10 +124,14 @@ impl Registry {
             );
         }
 
+        let short_names = Registry::get_message_strings_option(&msg_descriptor, 1377);
         let descriptor = Arc::new(ReflectMessageDescriptor {
             name: full_name.clone(),
             fields,
             message: msg_descriptor,
+
+            // see exocore/store/options.proto
+            short_names,
         });
 
         let mut message_descriptors = self.message_descriptors.write().unwrap();
@@ -185,6 +190,21 @@ impl Registry {
             vec![]
         }
     }
+
+    fn get_message_strings_option(msg_desc: &DescriptorProto, option_field_id: u32) -> Vec<String> {
+        if let Some(unknown_value) = msg_desc.get_options().unknown_fields.get(option_field_id) {
+            let mut values = Vec::new();
+            let _ = iter_repeated_unknown_value(unknown_value, |uk| {
+                if let Some(value) = ProtobufTypeString::get_from_unknown(&uk) {
+                    values.push(value);
+                }
+                Ok(())
+            });
+            values
+        } else {
+            vec![]
+        }
+    }
 }
 
 impl Default for Registry {
@@ -209,12 +229,14 @@ mod tests {
     }
 
     #[test]
-    fn field_options() -> anyhow::Result<()> {
+    fn field_and_msg_options() -> anyhow::Result<()> {
         let registry = Registry::new_with_exocore_types();
 
         let descriptor = registry.get_message_descriptor("exocore.test.TestMessage")?;
 
         // see `protos/exocore/test/test.proto`
+        assert_eq!(descriptor.short_names, vec!["test".to_string()]);
+
         assert!(descriptor.fields.get(&1).unwrap().text_flag);
         assert!(!descriptor.fields.get(&2).unwrap().text_flag);
 

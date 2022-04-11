@@ -187,6 +187,14 @@ export class QueryBuilder {
         return builder;
     }
 
+    static fromQueryString(query: string): QueryBuilder {
+        let builder = new QueryBuilder();
+        builder.query.queryString = new exocore.store.QueryStringPredicate({
+            query: query,
+        });
+        return builder;
+    }
+
     static all(): QueryBuilder {
         let builder = new QueryBuilder();
         builder.query.all = new exocore.store.AllPredicate();
@@ -257,6 +265,14 @@ export class TraitQueryBuilder {
             query: query,
         });
 
+        return builder;
+    }
+
+    static fromQueryString(query: string): TraitQueryBuilder {
+        let builder = new TraitQueryBuilder();
+        builder.query.queryString = new exocore.store.QueryStringPredicate({
+            query: query,
+        });
         return builder;
     }
 

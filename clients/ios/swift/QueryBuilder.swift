@@ -51,6 +51,14 @@ public class QueryBuilder {
         return builder
     }
 
+    public static func fromQueryString(query: String) -> QueryBuilder {
+        let builder = QueryBuilder()
+        var qs = Exocore_Store_QueryStringPredicate()
+        qs.query = query
+        builder.inner.queryString = qs
+        return builder
+    }
+
     public func count(_ count: Int) -> QueryBuilder {
         var paging = Exocore_Store_Paging()
         paging.count = UInt32(count)
@@ -125,6 +133,15 @@ public class TraitQueryBuilder {
         predicate.query = query
         builder.inner.match = predicate
 
+        return builder
+    }
+
+    public static func fromQueryString(query: String) -> TraitQueryBuilder {
+        let builder = TraitQueryBuilder()
+        var qs = Exocore_Store_QueryStringPredicate()
+        qs.query = query
+        builder.inner.queryString = qs
+        
         return builder
     }
 
