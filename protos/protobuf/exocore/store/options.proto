@@ -21,7 +21,7 @@ extend google.protobuf.FieldOptions {
 }
 
 extend google.protobuf.MessageOptions {
-    // Short name that can be used to refer to this field in a query.
+    // Short name that can be used to refer to this trait in a query.
     // Ex: type:<some_type_name>
     repeated string short_name = 1377;
 }

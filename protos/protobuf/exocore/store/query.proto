@@ -91,7 +91,7 @@ message TestPredicate {
     bool success = 1;
 }
 
-// Boolean query constructed of different sub queries with occurrence logic.
+// Boolean query constructed of different sub-queries with boolean operators.
 message BooleanPredicate {
     enum Occur {
         SHOULD = 0;

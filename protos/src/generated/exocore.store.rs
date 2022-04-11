@@ -156,6 +156,7 @@ pub struct TestPredicate {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
+/// Boolean query constructed of different sub-queries with boolean operators.
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BooleanPredicate {
     #[prost(message, repeated, tag = "1")]
@@ -326,7 +327,7 @@ pub mod ordering {
         /// by creation date
         #[prost(bool, tag = "7")]
         CreatedAt(bool),
-        /// by last update date
+        /// by update date
         #[prost(bool, tag = "8")]
         UpdatedAt(bool),
     }
