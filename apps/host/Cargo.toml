@@ -13,14 +13,14 @@ version = "0.1.21"
 default = []
 
 [dependencies]
-anyhow = "1.0"
+anyhow = "1.0.56"
 exocore-core = {version = "0.1.21", path = "../../core"}
 exocore-protos = {version = "0.1.21", path = "../../protos"}
 exocore-store = {version = "0.1.21", path = "../../store"}
-futures = "0.3"
-log = "0.4"
-reqwest = {version = "0.11", default-features = false, features = ["rustls-tls"]}
-thiserror = "1.0"
+futures = "0.3.21"
+log = "0.4.16"
+reqwest = { version = "0.11.10", default-features = false, features = ["rustls-tls"] }
+thiserror = "1.0.30"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
 wasmtime = "0.35.3"

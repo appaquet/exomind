@@ -18,30 +18,30 @@ mmap = ["memmap2"]
 tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
 
 [dependencies]
-anyhow = "1.0"
-byteorder = "1.4"
+anyhow = "1.0.56"
+byteorder = "1.4.3"
 exocore-core = {version = "0.1.21", path = "../core"}
 exocore-protos = {version = "0.1.21", path = "../protos"}
 exocore-transport = {version = "0.1.21", path = "../transport", default-features = false}
-futures = "0.3"
-itertools = "0.10"
-log = "0.4"
-serde = {version = "1.0", features = ["derive"]}
-thiserror = "1.0"
-bytes = "1.1"
+futures = "0.3.21"
+itertools = "0.10.3"
+log = "0.4.16"
+serde = { version = "1.0.136", features = ["derive"] }
+thiserror = "1.0.30"
+bytes = "1.1.0"
 
 # For directory chain
-extindex = {version = "0.4", optional = true}
-memmap2 = {version = "0.5", optional = true}
+extindex = { version = "0.4.1", optional = true }
+memmap2 = { version = "0.5.3", optional = true }
 
 # For tests
-tempfile = {version = "3.2", optional = true}
+tempfile = { version = "3.3.0", optional = true }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.21", path = "../core", features = ["tests-utils"]}
 exocore-transport = {version = "0.1.21", path = "../transport", features = ["tests-utils"]}
-tempfile = "3.2"
-tokio = {version = "1.17", features = ["macros"], default-features = false}
+tempfile = "3.3.0"
+tokio = { version = "1.17.0", features = ["macros"], default-features = false }
 
 [[test]]
 name = "engine"

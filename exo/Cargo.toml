@@ -10,12 +10,12 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.21"
 
 [dependencies]
-anyhow = "1.0"
-bytes = "1.1"
-clap = {version = "3.1.8", features = ["derive", "env"]}
-console = "0.15"
-dialoguer = "0.10"
-dirs-next = "2.0"
+anyhow = "1.0.56"
+bytes = "1.1.0"
+clap = { version = "3.1.8", features = ["derive", "env"] }
+console = "0.15.0"
+dialoguer = "0.10.0"
+dirs-next = "2.0.0"
 exocore-apps-host = {version = "0.1.21", path = "../apps/host"}
 exocore-chain = {version = "0.1.21", path = "../chain"}
 exocore-core = {version = "0.1.21", path = "../core", features = ["runtime", "logger"]}
@@ -23,17 +23,17 @@ exocore-discovery = {version = "0.1.21", path = "../discovery", features = ["ser
 exocore-protos = {version = "0.1.21", path = "../protos"}
 exocore-store = {version = "0.1.21", path = "../store"}
 exocore-transport = {version = "0.1.21", path = "../transport", features = ["http-server"]}
-futures = "0.3"
-indicatif = "0.16"
-log = "0.4"
-log4rs = "1.0"
+futures = "0.3.21"
+indicatif = "0.16.2"
+log = "0.4.16"
+log4rs = "1.0.0"
 rand = "0.8"
-reqwest = {version = "0.11", default-features = false, features = ["rustls-tls"]}
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-tempfile = "3.2"
-thiserror = "1.0"
-tokio = {version = "1.17", features = ["macros"], default-features = false}
-url = "2.2"
-zip = "0.6"
+reqwest = { version = "0.11.10", default-features = false, features = ["rustls-tls"] }
+serde = "1.0.136"
+serde_derive = "1.0.136"
+serde_json = "1.0.79"
+tempfile = "3.3.0"
+thiserror = "1.0.30"
+tokio = { version = "1.17.0", features = ["macros"], default-features = false }
+url = "2.2.2"
+zip = "0.6.2"

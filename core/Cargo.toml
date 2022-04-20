@@ -28,48 +28,48 @@ web = [
 ]
 
 [dependencies]
-anyhow = "1.0"
-bs58 = "0.4"
-byteorder = "1.4"
-bytes = "1.1"
-chrono = "0.4"
+anyhow = "1.0.56"
+bs58 = "0.4.0"
+byteorder = "1.4.3"
+bytes = "1.1.0"
+chrono = "0.4.19"
 exocore-protos = {version = "0.1.21", path = "../protos"}
-futures = {version = "0.3", features = ["async-await"]}
-libp2p = {version = "0.44", features = ["noise", "secp256k1"], default-features = false}
-log = "0.4"
-log4rs = {version = "1.0", optional = true}
-multihash = "0.16"
-petname = "1.1"
+futures = { version = "0.3.21", features = ["async-await"] }
+libp2p = { version = "0.44.0", features = ["noise", "secp256k1"], default-features = false }
+log = "0.4.16"
+log4rs = { version = "1.0.0", optional = true }
+multihash = "0.16.2"
+petname = "1.1.2"
 rand = "0.8"
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-serde_yaml = "0.8"
-shadow-rs = {version = "0.11", default-features = false}
-thiserror = "1.0"
-url = "2.2"
-uuid = {version = "0.8", features = ["v4", "wasm-bindgen"]}
-wasm-timer = "0.2"
+serde = "1.0.136"
+serde_derive = "1.0.136"
+serde_json = "1.0.79"
+serde_yaml = "0.8.23"
+shadow-rs = { version = "0.11.0", default-features = false }
+thiserror = "1.0.30"
+url = "2.2.2"
+uuid = { version = "0.8.2", features = ["v4", "wasm-bindgen"] }
+wasm-timer = "0.2.5"
 
 # web
-web-sys = {version = "0.3", features = ["Storage"], optional = true}
+web-sys = { version = "0.3.57", features = ["Storage"], optional = true }
 
 [target."cfg(target_arch = \"wasm32\")".dependencies]
-getrandom = "0.2"
-wasm-bindgen = "0.2"
-wasm-bindgen-futures = "0.4"
+getrandom = "0.2.6"
+wasm-bindgen = "0.2.80"
+wasm-bindgen-futures = "0.4.30"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = {version = "1.17", features = ["rt"], default-features = false}
+tokio = { version = "1.17.0", features = ["rt"], default-features = false }
 
 [build-dependencies]
-shadow-rs = {version = "0.11", default-features = false}
+shadow-rs = { version = "0.11.0", default-features = false }
 
 [dev-dependencies]
-criterion_bencher_compat = "0.3"
-log4rs = "1.0"
-tempfile = "3.2"
-tokio = {version = "1.17", features = ["macros", "rt", "rt-multi-thread", "time"], default-features = false}
+criterion_bencher_compat = "0.3.4"
+log4rs = "1.0.0"
+tempfile = "3.3.0"
+tokio = { version = "1.17.0", features = ["macros", "rt", "rt-multi-thread", "time"], default-features = false }
 
 [[bench]]
 harness = false

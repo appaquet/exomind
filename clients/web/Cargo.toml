@@ -8,21 +8,21 @@ version = "0.1.21"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0"
-console_error_panic_hook = "0.1"
+anyhow = "1.0.56"
+console_error_panic_hook = "0.1.7"
 exocore-core = {version = "0.1.21", path = "../../core", default-features = false, features=["web"]}
 exocore-discovery = {version = "0.1.21", path = "../../discovery", default-features = false}
 exocore-protos = {version = "0.1.21", path = "../../protos", default-features = false}
 exocore-store = {version = "0.1.21", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.21", path = "../../transport", default-features = false, features = ["p2p-web"]}
-futures = "0.3"
-js-sys = "0.3"
-log = "0.4"
-thiserror = "1.0"
-wasm-bindgen = {version = "0.2", features = ["serde-serialize"]}# serde for serialization from JsValue
-wasm-bindgen-futures = "0.4"
-wasm-logger = "0.2"
-web-sys = {version = "0.3", features = ["Storage", "Window"]}
+futures = "0.3.21"
+js-sys = "0.3.57"
+log = "0.4.16"
+thiserror = "1.0.30"
+wasm-bindgen = { version = "0.2.80", features = ["serde-serialize"] }# serde for serialization from JsValue
+wasm-bindgen-futures = "0.4.30"
+wasm-logger = "0.2.0"
+web-sys = { version = "0.3.57", features = ["Storage", "Window"] }
 
 # Needed to force rand 0.7 to load with wasm support
 rand07 = {package = "rand", version = "0.7", features = ["wasm-bindgen"]}
