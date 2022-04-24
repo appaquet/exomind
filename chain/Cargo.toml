@@ -18,7 +18,7 @@ mmap = ["memmap2"]
 tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.56"
+anyhow = "1.0.57"
 byteorder = "1.4.3"
 exocore-core = {version = "0.1.21", path = "../core"}
 exocore-protos = {version = "0.1.21", path = "../protos"}
