@@ -21,7 +21,6 @@ use libp2p::{
 use super::bytes_channel::BytesChannelSender;
 
 const MAX_MESSAGE_SIZE: usize = 20 * 1024 * 1024; // 20MB
-const STREAM_CLOSE_ZERO_NEEDED: usize = 3;
 const STREAM_BUFFER_SIZE: usize = 1024;
 
 type HandlerEvent = ConnectionHandlerEvent<ExocoreProtoConfig, (), MessageData, io::Error>;
@@ -282,7 +281,6 @@ where
 {
     socket: TStream,
     out_stream: Option<BytesChannelSender>,
-    zeroes: usize,
 }
 
 impl<TStream> WrappedStream<TStream>
@@ -293,7 +291,6 @@ where
         WrappedStream {
             socket,
             out_stream: None,
-            zeroes: 0,
         }
     }
 }
@@ -319,6 +316,11 @@ where
         if let Some(stream) = message.stream {
             futures::io::copy(stream, &mut self.socket).await?;
             self.socket.flush().await?;
+
+            // closing the socket is necessary to prevent the socket from being dropped and a reset control message
+            // sent to destination resulting in an error reading the socket, even if it has still data to be read.
+            self.socket.close().await?;
+
             Ok(None)
         } else {
             self.socket.flush().await?;
@@ -328,14 +330,7 @@ where
 
     async fn read_next(mut self) -> Result<(Option<MessageData>, Self), io::Error> {
         if let Some(mut out_stream) = self.out_stream.take() {
-            let copied = futures::io::copy(&mut self.socket, &mut out_stream).await?;
-            if copied == 0 && self.zeroes < STREAM_CLOSE_ZERO_NEEDED {
-                // we only deem a stream closed when we fail to read data from it
-                // after a few polls
-                self.out_stream = Some(out_stream);
-                self.zeroes += 1;
-            }
-
+            futures::io::copy(&mut self.socket, &mut out_stream).await?;
             Ok((None, self))
         } else {
             let msg = self.read_new_message().await?;

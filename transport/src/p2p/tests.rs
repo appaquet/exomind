@@ -76,19 +76,18 @@ async fn test_integration() -> anyhow::Result<()> {
             .await;
     }
 
-    // TODO: Fix me. This hangs under load.
-    // {
-    //     // send message with stream
-    //     let stream = str_to_stream("hello world");
-    //     handle1
-    //         .send_stream_msg(n2.node().clone(), 124, stream)
-    //         .await;
+    {
+        // send message with stream
+        let stream = str_to_stream("hello world");
+        handle1
+            .send_stream_msg(n2.node().clone(), 124, stream)
+            .await;
 
-    //     let msg = handle2.recv_rdv(124).await;
-    //     let mut out = String::new();
-    //     msg.stream.unwrap().read_to_string(&mut out).await.unwrap();
-    //     assert_eq!(out, "hello world");
-    // }
+        let msg = handle2.recv_rdv(124).await;
+        let mut out = String::new();
+        msg.stream.unwrap().read_to_string(&mut out).await.unwrap();
+        assert_eq!(out, "hello world");
+    }
 
     Ok(())
 }
