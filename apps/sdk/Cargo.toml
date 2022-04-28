@@ -22,4 +22,4 @@ thiserror = "1.0.30"
 chrono = "0.4.19"
 
 [dev-dependencies]
-tokio = { version = "1.17.0", features = ["macros"], default-features = false }
+tokio = { version = "1.18.0", features = ["macros"], default-features = false }
