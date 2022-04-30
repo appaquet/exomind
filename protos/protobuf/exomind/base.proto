@@ -10,6 +10,8 @@ import "google/protobuf/timestamp.proto";
 //  #1: Fields necessary for search/listing
 
 message Collection {
+    option (exocore.short_name) = "collection";
+
     string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
 
     string description = 2 [(exocore.text) = true, (exocore.field_group) = 1];
@@ -54,7 +56,7 @@ message EmailThread {
     exocore.store.Reference account = 1 [(exocore.field_group) = 1];
     string source_id = 2 [(exocore.field_group) = 1];
 
-    Contact from = 3 [(exocore.field_group) = 1];
+    Contact from = 3 [(exocore.field_group) = 1, (exocore.indexed) = true];
     string subject = 4 [(exocore.text) = true, (exocore.field_group) = 1];
     string snippet = 5 [(exocore.text) = true, (exocore.field_group) = 1];
 
@@ -63,6 +65,8 @@ message EmailThread {
 }
 
 message Email {
+    option (exocore.short_name) = "email";
+
     exocore.store.Reference account = 1 [(exocore.field_group) = 1];
     string source_id = 2 [(exocore.field_group) = 1];
 
@@ -111,6 +115,8 @@ message EmailAttachment {
 }
 
 message Note {
+    option (exocore.short_name) = "note";
+
     string title = 1 [(exocore.text) = true, (exocore.field_group) = 1];
     string body = 2 [(exocore.text) = true];
 }
@@ -121,10 +127,14 @@ message Contact {
 }
 
 message Task {
+    option (exocore.short_name) = "task";
+
     string title = 1 [(exocore.text) = true, (exocore.field_group) = 1];
 }
 
 message Link {
+    option (exocore.short_name) = "link";
+
     string url = 1 [(exocore.text) = true, (exocore.field_group) = 1];
     string title = 2 [(exocore.text) = true, (exocore.field_group) = 1];
 }

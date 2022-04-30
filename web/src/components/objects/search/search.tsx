@@ -79,7 +79,7 @@ export class Search extends React.Component<IProps, IState> {
     this.entityQuery?.free();
 
     const childrenQuery = QueryBuilder
-      .matches(query)
+      .fromQueryString(query)
       .count(30)
       .project(
         new exocore.store.Projection({

@@ -2,6 +2,7 @@ use crate::config::Config;
 use exomind_protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::api::{ModifyMessageRequest, ModifyThreadRequest};
 use google_gmail1::oauth2::{self, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
+use hyper_rustls::HttpsConnectorBuilder;
 use std::{
     collections::HashSet,
     path::PathBuf,
@@ -48,10 +49,12 @@ impl GmailClient {
 
         auth.token(&[FULL_ACCESS_SCOPE]).await?;
 
-        let client = google_gmail1::Gmail::new(
-            hyper::Client::builder().build(hyper_rustls::HttpsConnector::with_native_roots()),
-            auth,
-        );
+        let connector = HttpsConnectorBuilder::new()
+            .with_native_roots()
+            .https_only()
+            .enable_http2()
+            .build();
+        let client = google_gmail1::Gmail::new(hyper::Client::builder().build(connector), auth);
 
         Ok(client)
     }

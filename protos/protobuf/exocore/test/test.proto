@@ -7,6 +7,8 @@ import "exocore/store/entity.proto";
 import "google/protobuf/timestamp.proto";
 
 message TestMessage {
+    option (exocore.short_name) = "test";
+
     string string1 = 1 [(exocore.text) = true];
 
     string string2 = 2 [(exocore.text) = false];
