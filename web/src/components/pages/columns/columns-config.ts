@@ -99,6 +99,8 @@ export const MultipleToken = 'm';
 
 export type ColumnType = 'i' | 'c' | 's' | 'o' | 'e' | 't' | 'z' | 'r' | 'm';
 
+const PartDelim = '::';
+
 export class ColumnConfig {
     public type: ColumnType;
     public parts: string[];
@@ -107,7 +109,7 @@ export class ColumnConfig {
         this.type = type;
 
         if (typeof parts == 'string') {
-            this.parts = parts.split(':');
+            this.parts = parts.split(PartDelim);
         } else if (Array.isArray(parts)) {
             this.parts = parts;
         } else {
@@ -120,7 +122,7 @@ export class ColumnConfig {
     }
 
     toString(): string {
-        return this.type + this.parts.join(':');
+        return this.type + this.parts.join(PartDelim);
     }
 
     static forSearch(keyword: string): ColumnConfig {
@@ -156,7 +158,7 @@ export class ColumnConfig {
     }
 
     static forMultiple(configs: ColumnConfig[]): ColumnConfig {
-        const inner = configs.map((config) => config.toString()).join(':');
+        const inner = configs.map((config) => config.toString()).join(PartDelim);
         return new ColumnConfig(MultipleToken, inner);
     }
 
@@ -213,6 +215,6 @@ export class ColumnConfig {
         if (!_.isNull(part)) {
             newParts.push(part);
         }
-        return new ColumnConfig(this.type, newParts.join(':'));
+        return new ColumnConfig(this.type, newParts.join(PartDelim));
     }
 }

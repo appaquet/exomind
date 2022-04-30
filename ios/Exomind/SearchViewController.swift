@@ -123,7 +123,7 @@ class SearchCollectionContainer: UIViewController, UISearchBarDelegate {
         projectSkipRest.skip = true
 
         let query = QueryBuilder
-                .matching(query: searchText)
+                .fromQueryString(query: searchText)
                 .count(30)
                 .project(withProjections: [projectSummaryFields, projectSkipRest])
                 .build()
