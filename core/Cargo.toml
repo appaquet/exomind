@@ -60,7 +60,7 @@ wasm-bindgen = "0.2.80"
 wasm-bindgen-futures = "0.4.30"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-tokio = { version = "1.18.0", features = ["rt"], default-features = false }
+tokio = { version = "1.18.1", features = ["rt"], default-features = false }
 
 [build-dependencies]
 shadow-rs = { version = "0.11.0", default-features = false }
@@ -69,7 +69,7 @@ shadow-rs = { version = "0.11.0", default-features = false }
 criterion_bencher_compat = "0.3.4"
 log4rs = "1.1.1"
 tempfile = "3.3.0"
-tokio = { version = "1.18.0", features = ["macros", "rt", "rt-multi-thread", "time"], default-features = false }
+tokio = { version = "1.18.1", features = ["macros", "rt", "rt-multi-thread", "time"], default-features = false }
 
 [[bench]]
 harness = false
