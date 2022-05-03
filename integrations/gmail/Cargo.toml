@@ -19,7 +19,7 @@ exomind-protos = {version = "0.1.13", path = "../../protos"}
 google-gmail1 = "3.1.0"
 hyper = "0.14.18"
 hyper-rustls = "0.23.0"
-log = "0.4.16"
+log = "0.4.17"
 mailparse = "0.13.8"
 serde = "1.0.137"
 serde_derive = "1.0.136"
