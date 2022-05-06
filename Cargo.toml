@@ -48,7 +48,7 @@ exocore-discovery = {version = "0.1.21", path = "./discovery", default-features 
 exocore-protos = {version = "0.1.21", path = "./protos", default-features = false, optional = true}
 exocore-store = {version = "0.1.21", path = "./store", default-features = false, optional = true}
 exocore-transport = {version = "0.1.21", path = "./transport", default-features = false, optional = true}
-log = "0.4.16"
+log = "0.4.17"
 
 [dev-dependencies]
 exocore-core = {version = "0.1.21", path = "./core", features = ["tests-utils"]}
