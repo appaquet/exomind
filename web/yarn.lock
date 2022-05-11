@@ -1258,13 +1258,13 @@
     "@babel/helper-validator-identifier" "^7.16.7"
     to-fast-properties "^2.0.0"
 
-"@bangle.dev/base-components@^0.28.5":
-  version "0.28.8"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/base-components/-/base-components-0.28.8.tgz#0b8d7c47a172c33bef19dab59f08ed5a489b3457"
-  integrity sha512-NyQd+FQi9VlxoccGi72+ioMnv0jv86TBl05pk2hQGBzjAojQpUJJiohhhhm3qbuHG+gYg6UPUXAP+bgUHzOiPQ==
+"@bangle.dev/base-components@^0.28.11":
+  version "0.28.11"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/base-components/-/base-components-0.28.11.tgz#99651d76263a5550d26af26ed882918647827caf"
+  integrity sha512-R4HkwqMnE/8YzgbS6Iw9/AREHIa7fRzrxFjYGyKXrspb9wwUDgFMalX1DIVdoDIEVAATEbavb3m8jkd+z5wOVw==
   dependencies:
-    "@bangle.dev/pm-commands" "0.28.8"
-    "@bangle.dev/utils" "0.28.8"
+    "@bangle.dev/pm-commands" "0.28.11"
+    "@bangle.dev/utils" "0.28.11"
 
 "@bangle.dev/core@^0.28.5":
   version "0.28.8"
@@ -1273,6 +1273,13 @@
   dependencies:
     "@bangle.dev/pm-commands" "0.28.8"
     "@bangle.dev/utils" "0.28.8"
+
+"@bangle.dev/pm-commands@0.28.11":
+  version "0.28.11"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/pm-commands/-/pm-commands-0.28.11.tgz#4c5bf8ea252ceabc6473ba90c2e96cf2ff0645c3"
+  integrity sha512-neKu4bxxvsIbqfkkihPBhLjo65G1sN7umEmUGFcRZVLOaCy3R125Q68fkWiHpfmYwahrGbGr/uvT4vGrq/Mb+Q==
+  dependencies:
+    "@bangle.dev/utils" "0.28.11"
 
 "@bangle.dev/pm-commands@0.28.8":
   version "0.28.8"
@@ -1319,7 +1326,16 @@
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
-"@bangle.dev/utils@0.28.8", "@bangle.dev/utils@^0.28.5":
+"@bangle.dev/utils@0.28.11", "@bangle.dev/utils@^0.28.5":
+  version "0.28.11"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.11.tgz#cdf384b9bae4b7a641df63954351201e25d23c3b"
+  integrity sha512-QncBV9XZVNXsAZ0eK1aAL0T8DsPWhPZh8nugKPp61imxc6b9QeQuRGdPu0ar1R6O6Y+Gyb+w/5BS2pa1borofA==
+  dependencies:
+    prosemirror-model "^1.1.0"
+    prosemirror-state "^1.0.1"
+    prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@0.28.8":
   version "0.28.8"
   resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.28.8.tgz#fb5f07dc49c283c997677bb921efabeb56d8d351"
   integrity sha512-oncR0r7kDI7MaP/5cSyG8vGx6EpkUppBXTJdwE5QtgJ4xdkdVcd1oWefaWHoKSlkGImMXBi72bDnIoGxdZcOqQ==
