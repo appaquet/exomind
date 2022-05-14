@@ -66,6 +66,8 @@ jobs:
           profile: minimal
 
       - uses: Swatinem/rust-cache@v1
+        with:
+          key: bust-1
 
       - name: Tests
         uses: actions-rs/cargo@v1.0.3
