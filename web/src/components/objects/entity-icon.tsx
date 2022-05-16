@@ -16,7 +16,7 @@ export default class EntityIcon extends React.Component<IProps> {
         return this.renderTraitIcon(this.props.trait.icon);
     }
 
-    private renderTraitIcon(icon: TraitIcon): React.ReactFragment {
+    private renderTraitIcon(icon: TraitIcon): React.ReactNode {
         if ('fa' in icon) {
             return this.renderFaIcon(icon.fa);
         } else if ('emoji' in icon) {
@@ -24,7 +24,7 @@ export default class EntityIcon extends React.Component<IProps> {
         }
     }
 
-    private renderFaIcon(icon: string): React.ReactFragment {
+    private renderFaIcon(icon: string): React.ReactNode {
         const iconClasses = classNames({
             [`fa-${icon}`]: true,
             fa: true,
@@ -39,7 +39,7 @@ export default class EntityIcon extends React.Component<IProps> {
         );
     }
 
-    private renderEmoji(emoji: string): React.ReactFragment {
+    private renderEmoji(emoji: string): React.ReactNode {
         const classes = classNames({
             'entity-icon': true,
             'emoji': true,

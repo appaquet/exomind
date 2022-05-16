@@ -73,7 +73,7 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         });
     }
 
-    private renderLinkControl(): React.ReactFragment {
+    private renderLinkControl(): React.ReactNode {
         const iconClasses = classNames({
             icon: true,
             link: true,

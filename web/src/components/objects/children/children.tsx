@@ -161,7 +161,7 @@ export class Children extends React.Component<IProps, IState> {
         }
     }
 
-    private renderBottomMenu(): React.ReactFragment {
+    private renderBottomMenu(): React.ReactNode {
         if (!this.state.parent || !(this.props.containerState.active ?? false)) {
             return null;
         }
