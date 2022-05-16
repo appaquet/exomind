@@ -75,7 +75,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     }
   }
 
-  private renderReadOnly(): React.ReactFragment {
+  private renderReadOnly(): React.ReactNode {
     const placeholder = this.props.placeholder || 'Click to change';
     const singleClick = !this.props.doubleClick;
     const value = !this.state.value ? <span className="empty">{placeholder}</span> : this.state.value;
@@ -89,7 +89,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     );
   }
 
-  private renderSingleEdit(): React.ReactFragment {
+  private renderSingleEdit(): React.ReactNode {
     return (
       <span className="editable-text">
         <input
@@ -105,7 +105,7 @@ export default class EditableText extends React.Component<IProps, IState> {
     );
   }
 
-  private renderMultiEdit(): React.ReactFragment {
+  private renderMultiEdit(): React.ReactNode {
     return (
       <span className="editable-text">
         <textarea

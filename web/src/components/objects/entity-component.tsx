@@ -127,7 +127,7 @@ export class EntityComponent extends React.Component<Props, State> {
                 default: () => {
                     return <Message text="Unsupported entity" />;
                 },
-            });
+            }) as React.ReactNode;
 
             const loading = <Message key={'loading'} text="Loading..." showAfterMs={200} />;
             return <React.Suspense fallback={loading}>{inner}</React.Suspense>;

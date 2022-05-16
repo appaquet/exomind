@@ -142,7 +142,7 @@ export default class EmailThread extends React.Component<IProps, IState> {
                                 </li>
                             )];
                         },
-                    });
+                    }) as React.ReactNode[];
                 }
             })
             .flatten()

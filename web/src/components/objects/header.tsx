@@ -76,7 +76,7 @@ export class Header extends React.Component<IProps> {
             visibleActions.push(new HeaderAction('More', 'ellipsis-v', showMenu, false));
         }
 
-        const actionFragments: React.ReactFragment[] = _.chain(visibleActions)
+        const actionFragments: React.ReactNode[] = _.chain(visibleActions)
             .sortBy((a) => a.order)
             .map(action => {
                 const classes = classNames({

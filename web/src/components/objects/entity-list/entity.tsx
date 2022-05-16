@@ -185,7 +185,7 @@ export class Entity extends React.Component<IProps, IState> {
                 const entityTrait = entityTraits.trait(firstTraitId);
                 return this.renderDefaultElement(entityTrait);
             }
-        });
+        }) as React.ReactNode;
     }
 
     private renderEmailThreadElement(entityTraits: EntityTraits, entityTrait: EntityTrait<exomind.base.v1.IEmailThread>): React.ReactNode {
