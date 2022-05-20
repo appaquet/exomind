@@ -13,7 +13,7 @@ fi
 
 # Use a specific nightly version since they are unstable from time to time
 # To check new versions, see: https://rust-lang.github.io/rustup-components-history/
-export RUSTUP_TOOLCHAIN=nightly-2021-12-05 
+export RUSTUP_TOOLCHAIN=nightly-2022-05-13 
 rustup component add llvm-tools-preview
 
 cd "$CUR_DIR/.."
