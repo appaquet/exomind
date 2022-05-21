@@ -23,7 +23,7 @@ reqwest = { version = "0.11.10", default-features = false, features = ["rustls-t
 thiserror = "1.0.31"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
-wasmtime = "0.36.0"
+wasmtime = "0.37.0"
 
 [dev-dependencies]
 exocore-core = {version = "0.1.21", path = "../../core", features = ["tests-utils"]}
