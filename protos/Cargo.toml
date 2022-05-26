@@ -24,4 +24,4 @@ thiserror = "1.0.31"
 
 [build-dependencies]
 capnpc = "0.14.7"
-prost-build = "0.10.3"
+prost-build = "0.10.4"
