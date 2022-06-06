@@ -124,7 +124,7 @@
     "@types/node": "^17.0.38",
     "@types/react": "^18.0.10",
     "@types/react-dom": "^18.0.5",
-    "@types/react-flatpickr": "^3.8.6",
+    "@types/react-flatpickr": "^3.8.7",
     "@types/sanitize-html": "^2.6.0",
     "@typescript-eslint/eslint-plugin": "^5.27.0",
     "@typescript-eslint/parser": "^5.27.0",
