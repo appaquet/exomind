@@ -1115,12 +1115,13 @@
     prosemirror-transform "^1.1.0"
     prosemirror-view "^1.10.0"
 
-"@bangle.dev/react@^0.28.5":
-  version "0.28.11"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.28.11.tgz#bf82a7ea893ddc35111d0c6a29b6372fd8599237"
-  integrity sha512-u+ICm/N8PeDhJAZu1WtndLhwwxeqDIng6PvpieVYxB3vJO/HyRJ7+Aid6FW+pmCcgLtaVM0fRonWDBitnGJoBw==
+"@bangle.dev/react@^0.29.0":
+  version "0.29.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.29.0.tgz#6fb85c566be906d9f3b1cff705365dc60e6d117b"
+  integrity sha512-msOqDbSe1aHFP642Q7ooS/ygvqZGNcZlCodlcrcA1mnSbXcDTt/YeAXaN8m3yqXVoTXonTdElBnmdMQqYNAvmg==
   dependencies:
-    "@bangle.dev/utils" "0.28.11"
+    "@bangle.dev/utils" "0.29.0"
+    "@types/jest" "^27.0.4"
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
@@ -1132,6 +1133,16 @@
     prosemirror-model "^1.1.0"
     prosemirror-state "^1.0.1"
     prosemirror-utils "1.0.0-0"
+
+"@bangle.dev/utils@0.29.0":
+  version "0.29.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.29.0.tgz#deccc40a832f70d7a4171ff83e48e893c61a095a"
+  integrity sha512-YTrkOxKCMFikcoH8dAEofYCaKhCpTpk2kfMUdwLSqb7FPxsFRwFFg2rC8VDg/E8ZavGo7wIF/DwzWZHJEfLPpQ==
+  dependencies:
+    "@types/jest" "^27.0.4"
+    prosemirror-model "^1.18.0"
+    prosemirror-state "^1.4.0"
+    prosemirror-utils-bangle "0.0.4"
 
 "@bcoe/v8-coverage@^0.2.3":
   version "0.2.3"
@@ -1654,10 +1665,10 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
-"@types/jest@^27.5.0":
-  version "27.5.1"
-  resolved "https://registry.yarnpkg.com/@types/jest/-/jest-27.5.1.tgz#2c8b6dc6ff85c33bcd07d0b62cb3d19ddfdb3ab9"
-  integrity sha512-fUy7YRpT+rHXto1YlL+J9rs0uLGyiqVt3ZOTQR+4ROc47yNl8WLdVLgUloBRhOxP1PZvguHl44T3H0wAWxahYQ==
+"@types/jest@^27.0.4", "@types/jest@^27.5.0":
+  version "27.5.2"
+  resolved "https://registry.yarnpkg.com/@types/jest/-/jest-27.5.2.tgz#ec49d29d926500ffb9fd22b84262e862049c026c"
+  integrity sha512-mpT8LJJ4CMeeahobofYWIjFo0xonRS/HfxnVEPMPFSQdGUt1uHCnoPT7Zhb+sjDU2wz0oKV0OLUR0WzrHNgfeA==
   dependencies:
     jest-matcher-utils "^27.0.0"
     pretty-format "^27.0.0"
@@ -8550,6 +8561,13 @@ prosemirror-model@^1.0.0, prosemirror-model@^1.1.0, prosemirror-model@^1.16.0, p
   dependencies:
     orderedmap "^1.1.0"
 
+prosemirror-model@^1.18.0:
+  version "1.18.0"
+  resolved "https://registry.yarnpkg.com/prosemirror-model/-/prosemirror-model-1.18.0.tgz#8c360ed65a6ec9dd2fb899b5f5ceeb5f5f689ee0"
+  integrity sha512-EZLl0mvVIixEL1V538GsPP4Iw+D83gBRdLcjL7VouzoPPWlhhv/0Y0V9ttT5lUhF7jieIrNHOa3XNFs1FwgrOw==
+  dependencies:
+    orderedmap "^1.1.0"
+
 prosemirror-schema-list@^1.1.5:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/prosemirror-schema-list/-/prosemirror-schema-list-1.1.6.tgz#c3e13fe2f74750e4a53ff88d798dc0c4ccca6707"
@@ -8562,6 +8580,14 @@ prosemirror-state@^1.0.0, prosemirror-state@^1.0.1, prosemirror-state@^1.2.2, pr
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/prosemirror-state/-/prosemirror-state-1.3.4.tgz#4c6b52628216e753fc901c6d2bfd84ce109e8952"
   integrity sha512-Xkkrpd1y/TQ6HKzN3agsQIGRcLckUMA9u3j207L04mt8ToRgpGeyhbVv0HI7omDORIBHjR29b7AwlATFFf2GLA==
+  dependencies:
+    prosemirror-model "^1.0.0"
+    prosemirror-transform "^1.0.0"
+
+prosemirror-state@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/prosemirror-state/-/prosemirror-state-1.4.0.tgz#0b0c23b38d9f5bb23d19ad043cf8453d876c0414"
+  integrity sha512-mVDZdjNX/YT5FvypiwbphJe9psA5h+j9apsSszVRFc6oKFoIInvzdujh8QW9f9lwHtSYajLxNiM1hPhd0Sl1XA==
   dependencies:
     prosemirror-model "^1.0.0"
     prosemirror-transform "^1.0.0"
@@ -8583,6 +8609,11 @@ prosemirror-transform@^1.0.0, prosemirror-transform@^1.1.0, prosemirror-transfor
   integrity sha512-bcIsf3uRZhfab0xRfyyxOEh6eqSszq/hJbDbmUumFnbHBoWhB/uXbpz6vvUxfk0XiEvrZDJ+5pXRrNDc1Hu3vQ==
   dependencies:
     prosemirror-model "^1.0.0"
+
+prosemirror-utils-bangle@0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/prosemirror-utils-bangle/-/prosemirror-utils-bangle-0.0.4.tgz#a47b2bccd6d92a95b7b402f8330b33fe60caa727"
+  integrity sha512-Z/JUE5nu/ZNvztH8Ou+ux274wOx9g9cz1d8ZAP+anWZT+mXY3UiMvEsdtf2iT5v4skLEh0XQj/FromEjbHmu4w==
 
 prosemirror-utils@1.0.0-0:
   version "1.0.0-0"
