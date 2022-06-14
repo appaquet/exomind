@@ -1071,13 +1071,14 @@
     "@bangle.dev/pm-commands" "0.28.11"
     "@bangle.dev/utils" "0.28.11"
 
-"@bangle.dev/core@^0.28.5":
-  version "0.28.11"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/core/-/core-0.28.11.tgz#a8ae0ccdac7ebfc1cfbc2eec3ee6f24166cdf662"
-  integrity sha512-zhXugBzisC70LStoNi+9LsmZr2GL5TAC791VBA8PE0zIixOapQjgiQFNB2SjCWOA2XimHBPoGU35lFCQruUZ9w==
+"@bangle.dev/core@^0.29.0":
+  version "0.29.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/core/-/core-0.29.0.tgz#d50ccdcb2d3852b21ac605b6908ede6d4d933aec"
+  integrity sha512-wAQpXiG1w7qDwoQo5PWwneJjve64YSkSLuiBPw0YXFH3/N+2jF07DitctqzxbQNGlM1QvDR5A6ZqodoFAJRTnw==
   dependencies:
-    "@bangle.dev/pm-commands" "0.28.11"
-    "@bangle.dev/utils" "0.28.11"
+    "@bangle.dev/pm-commands" "0.29.0"
+    "@bangle.dev/utils" "0.29.0"
+    "@types/jest" "^27.0.4"
 
 "@bangle.dev/pm-commands@0.28.11":
   version "0.28.11"
@@ -1085,6 +1086,14 @@
   integrity sha512-neKu4bxxvsIbqfkkihPBhLjo65G1sN7umEmUGFcRZVLOaCy3R125Q68fkWiHpfmYwahrGbGr/uvT4vGrq/Mb+Q==
   dependencies:
     "@bangle.dev/utils" "0.28.11"
+
+"@bangle.dev/pm-commands@0.29.0":
+  version "0.29.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/pm-commands/-/pm-commands-0.29.0.tgz#4804454a0950d7ea3122fc788ecc0e322081f14a"
+  integrity sha512-3Qcd26JbjO6cJnMn3qSgYqpT05lfsfnxeiUhiY91KWiGpmyvcO3RxVv6Pmh4SkomY/ilHqY/NpvUoqoJOjYAOA==
+  dependencies:
+    "@bangle.dev/utils" "0.29.0"
+    "@types/jest" "^27.0.4"
 
 "@bangle.dev/pm@^0.28.5":
   version "0.28.11"
