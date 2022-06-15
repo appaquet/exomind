@@ -1114,13 +1114,13 @@
     prosemirror-transform "^1.6.0"
     prosemirror-view "^1.26.0"
 
-"@bangle.dev/react@^0.29.0":
-  version "0.29.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.29.0.tgz#6fb85c566be906d9f3b1cff705365dc60e6d117b"
-  integrity sha512-msOqDbSe1aHFP642Q7ooS/ygvqZGNcZlCodlcrcA1mnSbXcDTt/YeAXaN8m3yqXVoTXonTdElBnmdMQqYNAvmg==
+"@bangle.dev/react@^0.30.0":
+  version "0.30.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.30.0.tgz#53a5226299f0e9fbd546dfa7f28d12f0f38993e8"
+  integrity sha512-Kk81rH+TGLLvf5phfDlOeXLzgKb+4uRGQlWBGQjzYMjVpw4s9hq9exmDZxxbBL+CMGu/vxJ6waGqursAv1vp0A==
   dependencies:
-    "@bangle.dev/utils" "0.29.0"
-    "@types/jest" "^27.0.4"
+    "@bangle.dev/utils" "0.30.0"
+    "@types/jest" "^27.5.2"
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
@@ -1139,6 +1139,16 @@
   integrity sha512-YTrkOxKCMFikcoH8dAEofYCaKhCpTpk2kfMUdwLSqb7FPxsFRwFFg2rC8VDg/E8ZavGo7wIF/DwzWZHJEfLPpQ==
   dependencies:
     "@types/jest" "^27.0.4"
+    prosemirror-model "^1.18.0"
+    prosemirror-state "^1.4.0"
+    prosemirror-utils-bangle "0.0.4"
+
+"@bangle.dev/utils@0.30.0":
+  version "0.30.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.30.0.tgz#3fc5f2830db3324b5598d401b186b85b032e32b5"
+  integrity sha512-7l6QQq+FnRNs1iDJO//HZixVwLoUzaKmL9mWBjvBBiG203yIjUQv7qckuKFxEA8aCf0x4KoA6PN9m7a7iP5Osw==
+  dependencies:
+    "@types/jest" "^27.5.2"
     prosemirror-model "^1.18.0"
     prosemirror-state "^1.4.0"
     prosemirror-utils-bangle "0.0.4"
@@ -1664,7 +1674,7 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
-"@types/jest@^27.0.4", "@types/jest@^27.5.0":
+"@types/jest@^27.0.4", "@types/jest@^27.5.0", "@types/jest@^27.5.2":
   version "27.5.2"
   resolved "https://registry.yarnpkg.com/@types/jest/-/jest-27.5.2.tgz#ec49d29d926500ffb9fd22b84262e862049c026c"
   integrity sha512-mpT8LJJ4CMeeahobofYWIjFo0xonRS/HfxnVEPMPFSQdGUt1uHCnoPT7Zhb+sjDU2wz0oKV0OLUR0WzrHNgfeA==
