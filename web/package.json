@@ -81,7 +81,7 @@
     }
   },
   "dependencies": {
-    "@bangle.dev/base-components": "^0.28.5",
+    "@bangle.dev/base-components": "^0.30.0",
     "@bangle.dev/core": "^0.29.0",
     "@bangle.dev/pm": "^0.29.0",
     "@bangle.dev/react": "^0.29.0",
