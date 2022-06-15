@@ -1133,12 +1133,22 @@
     prosemirror-state "^1.0.1"
     prosemirror-utils "1.0.0-0"
 
-"@bangle.dev/utils@0.29.0", "@bangle.dev/utils@^0.29.0":
+"@bangle.dev/utils@0.29.0":
   version "0.29.0"
   resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.29.0.tgz#deccc40a832f70d7a4171ff83e48e893c61a095a"
   integrity sha512-YTrkOxKCMFikcoH8dAEofYCaKhCpTpk2kfMUdwLSqb7FPxsFRwFFg2rC8VDg/E8ZavGo7wIF/DwzWZHJEfLPpQ==
   dependencies:
     "@types/jest" "^27.0.4"
+    prosemirror-model "^1.18.0"
+    prosemirror-state "^1.4.0"
+    prosemirror-utils-bangle "0.0.4"
+
+"@bangle.dev/utils@^0.30.0":
+  version "0.30.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.30.0.tgz#3fc5f2830db3324b5598d401b186b85b032e32b5"
+  integrity sha512-7l6QQq+FnRNs1iDJO//HZixVwLoUzaKmL9mWBjvBBiG203yIjUQv7qckuKFxEA8aCf0x4KoA6PN9m7a7iP5Osw==
+  dependencies:
+    "@types/jest" "^27.5.2"
     prosemirror-model "^1.18.0"
     prosemirror-state "^1.4.0"
     prosemirror-utils-bangle "0.0.4"
@@ -1664,7 +1674,7 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
-"@types/jest@^27.0.4", "@types/jest@^27.5.0":
+"@types/jest@^27.0.4", "@types/jest@^27.5.0", "@types/jest@^27.5.2":
   version "27.5.2"
   resolved "https://registry.yarnpkg.com/@types/jest/-/jest-27.5.2.tgz#ec49d29d926500ffb9fd22b84262e862049c026c"
   integrity sha512-mpT8LJJ4CMeeahobofYWIjFo0xonRS/HfxnVEPMPFSQdGUt1uHCnoPT7Zhb+sjDU2wz0oKV0OLUR0WzrHNgfeA==
