@@ -1,23 +1,11 @@
 import React, { MouseEvent, UIEvent } from "react";
 import { BangleEditor } from '@bangle.dev/react';
 import { BangleEditorState, Plugin, BangleEditor as CoreBangleEditor } from '@bangle.dev/core';
-import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, image, } from '@bangle.dev/base-components';
+import { bold, italic, link, bulletList, heading, listItem, orderedList, paragraph, underline, code, strike, codeBlock, blockquote, image } from '@bangle.dev/base-components';
 import { safeInsert, toHTMLString } from '@bangle.dev/utils';
 import { EditorState, EditorView, NodeSelection, Selection, setBlockType } from "@bangle.dev/pm";
-import { queryIsItalicActive, toggleItalic } from "@bangle.dev/base-components/dist/italic";
-import { queryIsBoldActive, toggleBold } from "@bangle.dev/base-components/dist/bold";
 import { keymap } from '@bangle.dev/pm';
-import { queryIsHeadingActive, toggleHeading } from "@bangle.dev/base-components/dist/heading";
-import { queryIsBulletListActive, queryIsTodoListActive, toggleBulletList, toggleTodoList } from "@bangle.dev/base-components/dist/bullet-list";
-import { queryIsUnderlineActive, toggleUnderline } from "@bangle.dev/base-components/dist/underline";
-import { queryIsCodeActive, toggleCode } from "@bangle.dev/base-components/dist/code";
-import { queryIsStrikeActive, toggleStrike } from "@bangle.dev/base-components/dist/strike";
-import { queryIsOrderedListActive, toggleOrderedList } from "@bangle.dev/base-components/dist/ordered-list";
-import { queryIsBlockquoteActive, wrapInBlockquote } from "@bangle.dev/base-components/dist/blockquote";
-import { queryIsCodeActiveBlock } from "@bangle.dev/base-components/dist/code-block";
-import { indentListItem, outdentListItem } from "@bangle.dev/base-components/dist/list-item/list-item-component";
 import Debouncer from "../../../utils/debouncer";
-import { createLink, queryLinkAttrs, updateLink } from "@bangle.dev/base-components/dist/link";
 import { createPopper, Instance } from '@popperjs/core';
 import { CancellableEvent } from "../../../utils/events";
 import { Shortcuts } from "../../../shortcuts";
@@ -252,19 +240,19 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     toggleInlineStyle(style: InlineStyle): void {
         switch (style) {
             case 'BOLD':
-                toggleBold()(this.editor.view.state, this.editor.view.dispatch);
+                bold.commands.toggleBold()(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'ITALIC':
-                toggleItalic()(this.editor.view.state, this.editor.view.dispatch);
+                italic.commands.toggleItalic()(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'UNDERLINE':
-                toggleUnderline()(this.editor.view.state, this.editor.view.dispatch);
+                underline.commands.toggleUnderline()(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'CODE':
-                toggleCode()(this.editor.view.state, this.editor.view.dispatch);
+                code.commands.toggleCode()(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'STRIKETHROUGH':
-                toggleStrike()(this.editor.view.state, this.editor.view.dispatch);
+                strike.commands.toggleStrike()(this.editor.view.state, this.editor.view.dispatch);
                 break;
         }
     }
@@ -274,29 +262,29 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
 
         switch (type) {
             case 'header-one':
-                toggleHeading(1)(this.editor.view.state, this.editor.view.dispatch);
+                heading.commands.toggleHeading(1)(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'header-two':
-                toggleHeading(2)(this.editor.view.state, this.editor.view.dispatch);
+                heading.commands.toggleHeading(2)(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'header-three':
-                toggleHeading(3)(this.editor.view.state, this.editor.view.dispatch);
+                heading.commands.toggleHeading(3)(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'header-four':
-                toggleHeading(4)(this.editor.view.state, this.editor.view.dispatch);
+                heading.commands.toggleHeading(4)(this.editor.view.state, this.editor.view.dispatch);
                 break;
             case 'unordered-list-item':
-                toggleBulletList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                bulletList.commands.toggleBulletList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 break;
             case 'ordered-list-item':
-                toggleOrderedList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                orderedList.commands.toggleOrderedList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 break;
             case 'todo-list-item':
-                toggleTodoList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                bulletList.toggleTodoList()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 break;
             case 'blockquote':
                 if (cursor.blockType != 'blockquote') {
-                    wrapInBlockquote()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+                    blockquote.commands.wrapInBlockquote()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
                 }
                 break;
             case 'code-block':
@@ -315,7 +303,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     clearLink(): void {
-        updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
+        link.commands.updateLink(null)(this.editor.view.state, this.editor.view.dispatch);
     }
 
     async toggleLink(url: string | null = null, title: string | null = null, pos: number | null = null): Promise<void> {
@@ -340,7 +328,7 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
                     dispatch(state.tr.replaceSelectionWith(linkNode, false));
                 }
             } else {
-                createLink(url)(state, dispatch);
+                link.commands.createLink(url)(state, dispatch);
             }
 
             return;
@@ -387,11 +375,11 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
     }
 
     indent(): void {
-        indentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+        listItem.commands.indentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
     }
 
     outdent(): void {
-        outdentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
+        listItem.commands.outdentListItem()(this.editor.view.state, this.editor.view.dispatch, this.editor.view);
     }
 
     focus(): void {
@@ -506,54 +494,54 @@ export default class HtmlEditor extends React.Component<IProps, IState> {
         const inlineStyle: Set<InlineStyle> = new Set();
         let blockType: BlockStyle = null;
 
-        if (queryIsBoldActive()(state)) {
+        if (bold.commands.queryIsBoldActive()(state)) {
             inlineStyle.add('BOLD');
         }
-        if (queryIsItalicActive()(state)) {
+        if (italic.commands.queryIsItalicActive()(state)) {
             inlineStyle.add('ITALIC');
         }
-        if (queryIsUnderlineActive()(state)) {
+        if (underline.commands.queryIsUnderlineActive()(state)) {
             inlineStyle.add('UNDERLINE');
         }
-        if (queryIsStrikeActive()(state)) {
+        if (strike.commands.queryIsStrikeActive()(state)) {
             inlineStyle.add('STRIKETHROUGH');
         }
-        if (queryIsCodeActive()(state)) {
+        if (code.commands.queryIsCodeActive()(state)) {
             inlineStyle.add('CODE');
         }
 
-        if (queryIsHeadingActive(1)(state)) {
+        if (heading.commands.queryIsHeadingActive(1)(state)) {
             blockType = 'header-one';
-        } else if (queryIsHeadingActive(2)(state)) {
+        } else if (heading.commands.queryIsHeadingActive(2)(state)) {
             blockType = 'header-two';
-        } else if (queryIsHeadingActive(3)(state)) {
+        } else if (heading.commands.queryIsHeadingActive(3)(state)) {
             blockType = 'header-three';
-        } else if (queryIsHeadingActive(4)(state)) {
+        } else if (heading.commands.queryIsHeadingActive(4)(state)) {
             blockType = 'header-four';
-        } else if (queryIsBulletListActive()(state)) {
+        } else if (bulletList.commands.queryIsBulletListActive()(state)) {
             blockType = 'unordered-list-item';
-        } else if (queryIsOrderedListActive()(state)) {
+        } else if (orderedList.commands.queryIsOrderedListActive()(state)) {
             blockType = 'ordered-list-item';
-        } else if (queryIsTodoListActive()(state)) {
+        } else if (bulletList.queryIsTodoListActive()(state)) {
             blockType = 'todo-list-item';
-        } else if (queryIsBlockquoteActive()(state)) {
+        } else if (blockquote.commands.queryIsBlockquoteActive()(state)) {
             blockType = 'blockquote';
-        } else if (queryIsCodeActiveBlock()(state)) {
+        } else if (codeBlock.commands.queryIsCodeActiveBlock()(state)) {
             blockType = 'code-block';
         }
 
 
-        let link;
-        const attrs = queryLinkAttrs()(this.editor.view.state);
+        let linkEl;
+        const attrs = link.commands.queryLinkAttrs()(this.editor.view.state);
         if (attrs) {
-            link = attrs.href;
+            linkEl = attrs.href;
         }
 
         const rect = this.getCursorRect();
         return {
             blockType,
             inlineStyle,
-            link,
+            link: linkEl,
             rect,
             domNode: rect.domNode,
             selection: rect.selection,
