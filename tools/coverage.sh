@@ -11,18 +11,9 @@ else
 	OUTPUT_ARGS="--lcov --output-path $CUR_DIR/../lcov.info"
 fi
 
-# Use a specific nightly version since they are unstable from time to time
-# To check new versions, see: https://rust-lang.github.io/rustup-components-history/
-export RUSTUP_TOOLCHAIN=nightly-2022-05-13 
 rustup component add llvm-tools-preview
 
 cd "$CUR_DIR/.."
 cargo llvm-cov --workspace \
-		--exclude=exo \
-		--exclude=exocore-client-web \
-		--exclude=exocore-client-android \
-		--exclude=exocore-client-c \
-		--exclude=exocore-apps-macros \
-		--exclude=exocore-apps-example \
-		--exclude=exocore-protos \
+		--ignore-filename-regex="(protos|exo|clients)/.*" \
 		$OUTPUT_ARGS

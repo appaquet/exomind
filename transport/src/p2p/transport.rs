@@ -391,14 +391,15 @@ pub fn build_transport(
 ) -> std::io::Result<libp2p::core::transport::Boxed<(PeerId, libp2p::core::muxing::StreamMuxerBox)>>
 {
     let transport = {
-        let tcp = libp2p::tcp::TokioTcpConfig::new().nodelay(true);
-        let dns_tcp = libp2p::dns::TokioDnsConfig::custom(
-            tcp,
-            libp2p::dns::ResolverConfig::google(),
-            Default::default(),
-        )?;
-        let ws_dns_tcp = libp2p::websocket::WsConfig::new(dns_tcp.clone());
-        dns_tcp.or_transport(ws_dns_tcp)
+        let dns_tcp = || {
+            libp2p::dns::TokioDnsConfig::custom(
+                libp2p::tcp::TokioTcpConfig::new().nodelay(true),
+                libp2p::dns::ResolverConfig::google(),
+                Default::default(),
+            )
+        };
+        let ws_dns_tcp = libp2p::websocket::WsConfig::new(dns_tcp()?);
+        ws_dns_tcp.or_transport(dns_tcp()?)
     };
 
     let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()

@@ -35,7 +35,7 @@ bytes = "1.1.0"
 chrono = "0.4.19"
 exocore-protos = {version = "0.1.21", path = "../protos"}
 futures = { version = "0.3.21", features = ["async-await"] }
-libp2p = { version = "0.44.0", features = ["noise", "secp256k1"], default-features = false }
+libp2p = { version = "0.45.1", features = ["noise", "secp256k1"], default-features = false }
 log = "0.4.17"
 log4rs = { version = "1.1.1", optional = true }
 multihash = "0.16.2"
