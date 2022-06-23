@@ -4,35 +4,36 @@ use std::{
 };
 
 use protobuf::{
-    descriptor::{
-        DescriptorProto, FieldDescriptorProto, FieldDescriptorProto_Label,
-        FieldDescriptorProto_Type, FileDescriptorProto, FileDescriptorSet,
-    },
-    types::{ProtobufType, ProtobufTypeBool, ProtobufTypeString},
-    Message,
+    descriptor::{FieldDescriptorProto, FileDescriptorProto, FileDescriptorSet},
+    reflect::FileDescriptor,
+    Message, MessageFull, UnknownValueRef,
 };
 
 use super::{
     reflect::{FieldDescriptor, FieldType, ReflectMessageDescriptor},
     Error,
 };
-use crate::reflect::iter_repeated_unknown_value;
 
 type MessageDescriptorsMap = HashMap<String, Arc<ReflectMessageDescriptor>>;
+type FileDescriptorsMap = HashMap<String, FileDescriptor>;
 
 pub struct Registry {
     message_descriptors: RwLock<MessageDescriptorsMap>,
+    file_descriptors: RwLock<FileDescriptorsMap>,
 }
 
 impl Registry {
     pub fn new() -> Registry {
         Registry {
             message_descriptors: RwLock::new(HashMap::new()),
+            file_descriptors: RwLock::new(HashMap::new()),
         }
     }
 
     pub fn new_with_exocore_types() -> Registry {
         let reg = Registry::new();
+
+        reg.register_well_knowns();
 
         reg.register_file_descriptor_set_bytes(super::generated::STORE_FDSET)
             .expect("Couldn't register exocore_store FileDescriptorProto");
@@ -43,10 +44,41 @@ impl Registry {
         reg
     }
 
-    pub fn register_file_descriptor_set(&self, fd_set: &FileDescriptorSet) {
-        for fd in fd_set.get_file() {
-            self.register_file_descriptor(fd.clone());
+    pub fn register_well_knowns(&self) {
+        let fds = &[
+            protobuf::well_known_types::timestamp::Timestamp::descriptor(),
+            protobuf::well_known_types::any::Any::descriptor(),
+            FileDescriptorProto::descriptor(),
+        ];
+
+        for fd in fds {
+            self.register_file_descriptor(fd.file_descriptor_proto().clone());
         }
+    }
+
+    pub fn register_file_descriptor_set(&self, fd_set: &FileDescriptorSet) {
+        let fds = protobuf::reflect::FileDescriptor::new_dynamic_fds(
+            fd_set.file.clone(),
+            self.dependencies().as_ref(),
+        )
+        .expect("FIX ME");
+
+        for fd in &fds {
+            {
+                let mut file_descriptors = self.file_descriptors.write().unwrap();
+                file_descriptors.insert(fd.name().to_string(), fd.clone());
+            }
+
+            for msg_descriptor in fd.messages() {
+                let full_name = format!("{}.{}", fd.package(), msg_descriptor.name(),);
+                self.register_message_descriptor(full_name, msg_descriptor);
+            }
+        }
+    }
+
+    fn dependencies(&self) -> Vec<FileDescriptor> {
+        let fds = self.file_descriptors.read().unwrap();
+        fds.values().cloned().collect()
     }
 
     pub fn register_file_descriptor_set_bytes<R: std::io::Read>(
@@ -61,67 +93,81 @@ impl Registry {
         Ok(())
     }
 
-    pub fn register_file_descriptor(&self, file_descriptor: FileDescriptorProto) {
-        let file_descriptor = Arc::new(file_descriptor);
+    pub fn register_file_descriptor(&self, file_descriptor_proto: FileDescriptorProto) {
+        let fd = protobuf::reflect::FileDescriptor::new_dynamic(
+            file_descriptor_proto,
+            self.dependencies().as_ref(),
+        )
+        .expect("FIX ME");
 
-        for msg_descriptor in file_descriptor.get_message_type() {
-            let full_name = format!(
-                "{}.{}",
-                file_descriptor.get_package(),
-                msg_descriptor.get_name()
-            );
-            self.register_message_descriptor(full_name, msg_descriptor.clone());
+        {
+            let mut file_descriptors = self.file_descriptors.write().unwrap();
+            file_descriptors.insert(fd.name().to_string(), fd.clone());
+        }
+
+        for msg_descriptor in fd.messages() {
+            let full_name = format!("{}.{}", fd.package(), msg_descriptor.name(),);
+            self.register_message_descriptor(full_name, msg_descriptor);
         }
     }
 
     pub fn register_message_descriptor(
         &self,
         full_name: String,
-        msg_descriptor: DescriptorProto,
+        msg_descriptor: protobuf::reflect::MessageDescriptor,
     ) -> Arc<ReflectMessageDescriptor> {
-        for sub_msg in msg_descriptor.get_nested_type() {
-            let sub_full_name = format!("{}.{}", full_name, sub_msg.get_name());
+        for sub_msg in msg_descriptor.nested_messages() {
+            let sub_full_name = format!("{}.{}", full_name, sub_msg.name());
             self.register_message_descriptor(sub_full_name, sub_msg.clone());
         }
 
         let mut fields = HashMap::new();
-        for field in msg_descriptor.get_field() {
-            let mut field_type = match field.get_field_type() {
-                FieldDescriptorProto_Type::TYPE_STRING => FieldType::String,
-                FieldDescriptorProto_Type::TYPE_INT32 => FieldType::Int32,
-                FieldDescriptorProto_Type::TYPE_UINT32 => FieldType::Uint32,
-                FieldDescriptorProto_Type::TYPE_INT64 => FieldType::Int64,
-                FieldDescriptorProto_Type::TYPE_UINT64 => FieldType::Uint64,
-                FieldDescriptorProto_Type::TYPE_MESSAGE => {
-                    let typ = field.get_type_name().trim_start_matches('.');
+        for field in msg_descriptor.fields() {
+            let field_proto = field.proto();
+
+            use protobuf::descriptor::field_descriptor_proto::Type as ProtoFieldType;
+            let mut field_type = match field_proto.type_.map(|e| e.enum_value()) {
+                Some(Ok(ProtoFieldType::TYPE_STRING)) => FieldType::String,
+                Some(Ok(ProtoFieldType::TYPE_INT32)) => FieldType::Int32,
+                Some(Ok(ProtoFieldType::TYPE_UINT32)) => FieldType::Uint32,
+                Some(Ok(ProtoFieldType::TYPE_INT64)) => FieldType::Int64,
+                Some(Ok(ProtoFieldType::TYPE_UINT64)) => FieldType::Uint64,
+                Some(Ok(ProtoFieldType::TYPE_MESSAGE)) => {
+                    let typ = field_proto.type_name().trim_start_matches('.');
                     match typ {
                         "google.protobuf.Timestamp" => FieldType::DateTime,
                         "exocore.store.Reference" => FieldType::Reference,
                         _ => FieldType::Message(typ.to_string()),
                     }
                 }
+
                 _ => continue,
             };
 
-            if field.get_label() == FieldDescriptorProto_Label::LABEL_REPEATED {
+            if field_proto.label()
+                == protobuf::descriptor::field_descriptor_proto::Label::LABEL_REPEATED
+            {
                 field_type = FieldType::Repeated(Box::new(field_type));
             }
 
-            let id = field.get_number() as u32;
-            fields.insert(
-                id,
-                FieldDescriptor {
+            if let Some(number) = field_proto.number {
+                let id = number as u32;
+                fields.insert(
                     id,
-                    name: field.get_name().to_string(),
-                    field_type,
+                    FieldDescriptor {
+                        id,
+                        descriptor: field.clone(),
+                        name: field.name().to_string(),
+                        field_type,
 
-                    // see exocore/store/options.proto
-                    indexed_flag: Registry::field_has_option(field, 1373),
-                    sorted_flag: Registry::field_has_option(field, 1374),
-                    text_flag: Registry::field_has_option(field, 1375),
-                    groups: Registry::get_field_u32s_option(field, 1376),
-                },
-            );
+                        // see exocore/store/options.proto
+                        indexed_flag: Registry::field_has_option(field_proto, 1373),
+                        sorted_flag: Registry::field_has_option(field_proto, 1374),
+                        text_flag: Registry::field_has_option(field_proto, 1375),
+                        groups: Registry::get_field_u32s_option(field_proto, 1376),
+                    },
+                );
+            }
         }
 
         let short_names = Registry::get_message_strings_option(&msg_descriptor, 1377);
@@ -133,6 +179,10 @@ impl Registry {
             // see exocore/store/options.proto
             short_names,
         });
+
+        let mut file_descriptors = self.file_descriptors.write().unwrap();
+        let fd = descriptor.message.file_descriptor();
+        file_descriptors.insert(fd.name().to_string(), fd.clone());
 
         let mut message_descriptors = self.message_descriptors.write().unwrap();
         message_descriptors.insert(full_name, descriptor.clone());
@@ -151,59 +201,48 @@ impl Registry {
             .ok_or_else(|| Error::NotInRegistry(full_name.to_string()))
     }
 
-    pub fn get_or_register_generated_descriptor<M: Message>(
-        &self,
-        message: &M,
-    ) -> Arc<ReflectMessageDescriptor> {
-        let full_name = message.descriptor().full_name();
-
-        {
-            let message_descriptors = self.message_descriptors.read().unwrap();
-            if let Some(desc) = message_descriptors.get(full_name) {
-                return desc.clone();
-            }
-        }
-
-        self.register_message_descriptor(
-            full_name.to_string(),
-            message.descriptor().get_proto().clone(),
-        )
-    }
-
     pub fn message_descriptors(&self) -> Vec<Arc<ReflectMessageDescriptor>> {
         let message_descriptors = self.message_descriptors.read().unwrap();
         message_descriptors.values().cloned().collect()
     }
 
     fn field_has_option(field: &FieldDescriptorProto, option_field_id: u32) -> bool {
-        if let Some(unknown_value) = field.get_options().unknown_fields.get(option_field_id) {
-            ProtobufTypeBool::get_from_unknown(unknown_value).unwrap_or(false)
+        if let Some(UnknownValueRef::Varint(v)) =
+            field.options.unknown_fields().get(option_field_id)
+        {
+            v == 1
         } else {
             false
         }
     }
 
     fn get_field_u32s_option(field: &FieldDescriptorProto, option_field_id: u32) -> Vec<u32> {
-        if let Some(unknown_value) = field.get_options().unknown_fields.get(option_field_id) {
-            unknown_value.varint.iter().map(|&v| v as u32).collect()
-        } else {
-            vec![]
+        let mut ret = Vec::new();
+        for (field_id, value) in field.options.unknown_fields().iter() {
+            if let UnknownValueRef::Varint(v) = value {
+                // unfortunately, doesn't allow getting multiple values for one field other than iterating on all options
+                if field_id == option_field_id {
+                    ret.push(v as u32);
+                }
+            }
         }
+        ret
     }
 
-    fn get_message_strings_option(msg_desc: &DescriptorProto, option_field_id: u32) -> Vec<String> {
-        if let Some(unknown_value) = msg_desc.get_options().unknown_fields.get(option_field_id) {
-            let mut values = Vec::new();
-            let _ = iter_repeated_unknown_value(unknown_value, |uk| {
-                if let Some(value) = ProtobufTypeString::get_from_unknown(&uk) {
-                    values.push(value);
+    fn get_message_strings_option(
+        msg_desc: &protobuf::reflect::MessageDescriptor,
+        option_field_id: u32,
+    ) -> Vec<String> {
+        let mut ret = Vec::new();
+        for (field_id, value) in msg_desc.proto().options.unknown_fields().iter() {
+            if let UnknownValueRef::LengthDelimited(bytes) = value {
+                // unfortunately, doesn't allow getting multiple values for one field other than iterating on all options
+                if field_id == option_field_id {
+                    ret.push(String::from_utf8_lossy(bytes).to_string());
                 }
-                Ok(())
-            });
-            values
-        } else {
-            vec![]
+            }
         }
+        ret
     }
 }
 

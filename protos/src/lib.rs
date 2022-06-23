@@ -3,6 +3,8 @@ pub extern crate serde_derive;
 pub extern crate capnp;
 pub extern crate serde;
 pub extern crate serde_json;
+#[macro_use]
+pub extern crate anyhow;
 
 pub mod base64;
 pub mod prost;

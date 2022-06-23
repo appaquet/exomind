@@ -33,7 +33,7 @@ impl<Tz: chrono::TimeZone> ProstDateTimeExt for chrono::DateTime<Tz> {
 pub trait ProstAnyPackMessageExt {
     fn pack_to_any(&self) -> Result<Any, Error>;
 
-    fn pack_to_stepan_any(&self) -> Result<protobuf::well_known_types::Any, Error>;
+    fn pack_to_stepan_any(&self) -> Result<protobuf::well_known_types::any::Any, Error>;
 }
 
 impl<M> ProstAnyPackMessageExt for M
@@ -50,10 +50,10 @@ where
         })
     }
 
-    fn pack_to_stepan_any(&self) -> Result<protobuf::well_known_types::Any, Error> {
+    fn pack_to_stepan_any(&self) -> Result<protobuf::well_known_types::any::Any, Error> {
         let any = self.pack_to_any()?;
 
-        Ok(protobuf::well_known_types::Any {
+        Ok(protobuf::well_known_types::any::Any {
             type_url: any.type_url,
             value: any.value,
             ..Default::default()

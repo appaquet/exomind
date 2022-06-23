@@ -15,7 +15,7 @@ pub enum Error {
     NotSupported,
 
     #[error("Protobuf error: {0}")]
-    StepanProtobuf(#[from] protobuf::ProtobufError),
+    StepanProtobuf(#[from] protobuf::Error),
 
     #[error("Protobuf encode error: {0}")]
     ProstEncodeError(#[from] prost::EncodeError),

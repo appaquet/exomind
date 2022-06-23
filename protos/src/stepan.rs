@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use protobuf::{
-    well_known_types::{Any, Timestamp},
-    Message, SingularPtrField,
+    well_known_types::{any::Any, timestamp::Timestamp},
+    MessageFull,
 };
 
 use super::Error;
@@ -18,10 +18,6 @@ impl StepanTimestampExt for Timestamp {
 
 pub trait StepanDateTimeExt {
     fn to_proto_timestamp(&self) -> Timestamp;
-
-    fn to_proto_timestamp_ptr(&self) -> SingularPtrField<Timestamp> {
-        Some(self.to_proto_timestamp()).into()
-    }
 }
 
 impl StepanDateTimeExt for chrono::DateTime<Utc> {
@@ -36,23 +32,16 @@ impl StepanDateTimeExt for chrono::DateTime<Utc> {
 
 pub trait StepanMessageExt {
     fn pack_to_any(&self) -> Result<Any, Error>;
-
-    fn pack_to_any_ptr(&self) -> Result<SingularPtrField<Any>, Error> {
-        Ok(Some(self.pack_to_any()?).into())
-    }
 }
 
 impl<M> StepanMessageExt for M
 where
-    M: Message,
+    M: MessageFull,
 {
     fn pack_to_any(&self) -> Result<Any, Error> {
         let mut any = Any::new();
-        any.set_type_url(format!(
-            "type.googleapis.com/{}",
-            self.descriptor().full_name()
-        ));
-        any.set_value(self.write_to_bytes()?);
+        any.type_url = format!("type.googleapis.com/{}", M::descriptor().name(),);
+        any.value = self.write_to_bytes()?;
         Ok(any)
     }
 }

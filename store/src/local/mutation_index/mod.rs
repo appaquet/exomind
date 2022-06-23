@@ -471,7 +471,7 @@ impl MutationIndex {
         let field_value = match dyn_message.get_field_value(field_desc.id) {
             Ok(fv) => fv,
             Err(err) => {
-                trace!("Couldn't get value of field {:?}: {}", field_desc, err);
+                trace!("Couldn't get value of field {}: {}", field_desc.name, err);
                 return;
             }
         };
