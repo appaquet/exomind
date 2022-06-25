@@ -36,7 +36,7 @@ exocore-protos = {version = "0.1.21", path = "../protos"}
 futures = "0.3.21"
 itertools = "0.10.3"
 log = "0.4.17"
-smallvec = "1.8.0"
+smallvec = "1.8.1"
 thiserror = "1.0.31"
 
 # local or remote
