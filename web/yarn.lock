@@ -8768,10 +8768,10 @@ react-dom@^18.2.0:
     loose-envify "^1.1.0"
     scheduler "^0.23.0"
 
-react-flatpickr@^3.10.12:
-  version "3.10.12"
-  resolved "https://registry.yarnpkg.com/react-flatpickr/-/react-flatpickr-3.10.12.tgz#c07f39f553865bc7063b69586ffc9d36759e6915"
-  integrity sha512-NYhUg3QE9K1QpHXLxR7HuWldnNbVWa6lgiZBlWu0HDsX3IWs/hVJ5q1JzM0/CNLJmm2blUEdudHwbyBNezynBg==
+react-flatpickr@^3.10.13:
+  version "3.10.13"
+  resolved "https://registry.yarnpkg.com/react-flatpickr/-/react-flatpickr-3.10.13.tgz#5b9d8f35f84e43f342fb0f0334b78a8dcd7d67c4"
+  integrity sha512-4m+K1K8jhvRFI8J/AHmQfA5hLALzhebEtEK8mLevXjX24MV3u502crzBn+EGFIBOfNUtrL5PId9FsGwgtuz/og==
   dependencies:
     flatpickr "^4.6.2"
     prop-types "^15.5.10"
