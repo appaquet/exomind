@@ -142,9 +142,17 @@ fn convert_field_ref(
             None => Err(Error::NoSuchField(field_id)),
         },
         ReflectFieldRef::Repeated(r) => {
+            let inner_field_type = if let FieldType::Repeated(inner) = field_type {
+                inner
+            } else {
+                return Err(Error::Other(anyhow!(
+                    "expected repeated field type, got {field_type:?} at field {field_id:?}"
+                )));
+            };
+
             let mut values = Vec::new();
             for i in 0..r.len() {
-                values.push(convert_field_value(field_type, r.get(i))?);
+                values.push(convert_field_value(inner_field_type, r.get(i))?);
             }
             Ok(FieldValue::Repeated(values))
         }
