@@ -393,7 +393,7 @@ pub fn build_transport(
     let transport = {
         let dns_tcp = || {
             libp2p::dns::TokioDnsConfig::custom(
-                libp2p::tcp::TokioTcpConfig::new().nodelay(true),
+                libp2p::tcp::TokioTcpTransport::new(libp2p::tcp::GenTcpConfig::new().nodelay(true)),
                 libp2p::dns::ResolverConfig::google(),
                 Default::default(),
             )
