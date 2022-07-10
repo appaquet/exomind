@@ -12,11 +12,11 @@ mkdir -p $EXOCORE_WEB_ROOT/protos
 PROTOC_GEN_TS_PATH="$EXOCORE_WEB_ROOT/node_modules/.bin/protoc-gen-ts"
 $EXOCORE_ROOT/node_modules/.bin/pbjs \
     -t static-module \
-    -w es6 \
+    --wrap es6 \
+    --es6 \
     -o $EXOCORE_WEB_ROOT/protos/index.js \
     -p $EXOCORE_ROOT/protos/protobuf/ \
-    --es6 \
-    -r 'exocore-root' \
+    --root 'exocore-root' \
     $EXOCORE_ROOT/protos/protobuf/exocore/core/*.proto \
     $EXOCORE_ROOT/protos/protobuf/exocore/store/*.proto \
     $EXOCORE_ROOT/protos/protobuf/exocore/test/*.proto
