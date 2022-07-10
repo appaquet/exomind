@@ -137,12 +137,14 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.name = reader.string();
-                            break;
-                        case 2:
-                            message.description = reader.string();
-                            break;
+                        case 1: {
+                                message.name = reader.string();
+                                break;
+                            }
+                        case 2: {
+                                message.description = reader.string();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -239,6 +241,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 Collection.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for Collection
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Collection
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Collection.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Collection";
                 };
 
                 return Collection;
@@ -347,12 +364,14 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.collection = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
-                        case 2:
-                            message.weight = reader.uint64();
-                            break;
+                        case 1: {
+                                message.collection = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 2: {
+                                message.weight = reader.uint64();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -470,6 +489,21 @@ export const exomind = $root.exomind = (() => {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
                 };
 
+                /**
+                 * Gets the default type url for CollectionChild
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.CollectionChild
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                CollectionChild.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.CollectionChild";
+                };
+
                 return CollectionChild;
             })();
 
@@ -565,9 +599,10 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 2:
-                            message.untilDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                            break;
+                        case 2: {
+                                message.untilDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -660,6 +695,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 Snoozed.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for Snoozed
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Snoozed
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Snoozed.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Snoozed";
                 };
 
                 return Snoozed;
@@ -757,9 +807,10 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.entity = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
+                        case 1: {
+                                message.entity = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -852,6 +903,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 Unread.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for Unread
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Unread
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Unread.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Unread";
                 };
 
                 return Unread;
@@ -1028,47 +1094,52 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.key = reader.string();
-                            break;
-                        case 2:
-                            message.name = reader.string();
-                            break;
-                        case 3:
-                            message.type = reader.int32();
-                            break;
-                        case 4:
-                            if (!(message.scopes && message.scopes.length))
-                                message.scopes = [];
-                            if ((tag & 7) === 2) {
-                                let end2 = reader.uint32() + reader.pos;
-                                while (reader.pos < end2)
-                                    message.scopes.push(reader.int32());
-                            } else
-                                message.scopes.push(reader.int32());
-                            break;
-                        case 5:
-                            if (message.data === $util.emptyObject)
-                                message.data = {};
-                            let end2 = reader.uint32() + reader.pos;
-                            key = "";
-                            value = "";
-                            while (reader.pos < end2) {
-                                let tag2 = reader.uint32();
-                                switch (tag2 >>> 3) {
-                                case 1:
-                                    key = reader.string();
-                                    break;
-                                case 2:
-                                    value = reader.string();
-                                    break;
-                                default:
-                                    reader.skipType(tag2 & 7);
-                                    break;
-                                }
+                        case 1: {
+                                message.key = reader.string();
+                                break;
                             }
-                            message.data[key] = value;
-                            break;
+                        case 2: {
+                                message.name = reader.string();
+                                break;
+                            }
+                        case 3: {
+                                message.type = reader.int32();
+                                break;
+                            }
+                        case 4: {
+                                if (!(message.scopes && message.scopes.length))
+                                    message.scopes = [];
+                                if ((tag & 7) === 2) {
+                                    let end2 = reader.uint32() + reader.pos;
+                                    while (reader.pos < end2)
+                                        message.scopes.push(reader.int32());
+                                } else
+                                    message.scopes.push(reader.int32());
+                                break;
+                            }
+                        case 5: {
+                                if (message.data === $util.emptyObject)
+                                    message.data = {};
+                                let end2 = reader.uint32() + reader.pos;
+                                key = "";
+                                value = "";
+                                while (reader.pos < end2) {
+                                    let tag2 = reader.uint32();
+                                    switch (tag2 >>> 3) {
+                                    case 1:
+                                        key = reader.string();
+                                        break;
+                                    case 2:
+                                        value = reader.string();
+                                        break;
+                                    default:
+                                        reader.skipType(tag2 & 7);
+                                        break;
+                                    }
+                                }
+                                message.data[key] = value;
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -1247,6 +1318,21 @@ export const exomind = $root.exomind = (() => {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
                 };
 
+                /**
+                 * Gets the default type url for Account
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Account
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Account.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Account";
+                };
+
                 return Account;
             })();
 
@@ -1408,27 +1494,34 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
-                        case 2:
-                            message.sourceId = reader.string();
-                            break;
-                        case 3:
-                            message.from = $root.exomind.base.v1.Contact.decode(reader, reader.uint32());
-                            break;
-                        case 4:
-                            message.subject = reader.string();
-                            break;
-                        case 5:
-                            message.snippet = reader.string();
-                            break;
-                        case 6:
-                            message.lastEmail = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
-                        case 7:
-                            message.read = reader.bool();
-                            break;
+                        case 1: {
+                                message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 2: {
+                                message.sourceId = reader.string();
+                                break;
+                            }
+                        case 3: {
+                                message.from = $root.exomind.base.v1.Contact.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 4: {
+                                message.subject = reader.string();
+                                break;
+                            }
+                        case 5: {
+                                message.snippet = reader.string();
+                                break;
+                            }
+                        case 6: {
+                                message.lastEmail = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 7: {
+                                message.read = reader.bool();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -1580,6 +1673,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 EmailThread.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for EmailThread
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.EmailThread
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                EmailThread.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.EmailThread";
                 };
 
                 return EmailThread;
@@ -1808,52 +1916,64 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
-                        case 2:
-                            message.sourceId = reader.string();
-                            break;
-                        case 3:
-                            message.from = $root.exomind.base.v1.Contact.decode(reader, reader.uint32());
-                            break;
-                        case 4:
-                            message.receivedDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                            break;
-                        case 5:
-                            if (!(message.to && message.to.length))
-                                message.to = [];
-                            message.to.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
-                            break;
-                        case 6:
-                            if (!(message.cc && message.cc.length))
-                                message.cc = [];
-                            message.cc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
-                            break;
-                        case 7:
-                            if (!(message.bcc && message.bcc.length))
-                                message.bcc = [];
-                            message.bcc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
-                            break;
-                        case 8:
-                            message.subject = reader.string();
-                            break;
-                        case 9:
-                            message.snippet = reader.string();
-                            break;
-                        case 10:
-                            if (!(message.parts && message.parts.length))
-                                message.parts = [];
-                            message.parts.push($root.exomind.base.v1.EmailPart.decode(reader, reader.uint32()));
-                            break;
-                        case 11:
-                            if (!(message.attachments && message.attachments.length))
-                                message.attachments = [];
-                            message.attachments.push($root.exomind.base.v1.EmailAttachment.decode(reader, reader.uint32()));
-                            break;
-                        case 14:
-                            message.read = reader.bool();
-                            break;
+                        case 1: {
+                                message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 2: {
+                                message.sourceId = reader.string();
+                                break;
+                            }
+                        case 3: {
+                                message.from = $root.exomind.base.v1.Contact.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 4: {
+                                message.receivedDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 5: {
+                                if (!(message.to && message.to.length))
+                                    message.to = [];
+                                message.to.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 6: {
+                                if (!(message.cc && message.cc.length))
+                                    message.cc = [];
+                                message.cc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 7: {
+                                if (!(message.bcc && message.bcc.length))
+                                    message.bcc = [];
+                                message.bcc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 8: {
+                                message.subject = reader.string();
+                                break;
+                            }
+                        case 9: {
+                                message.snippet = reader.string();
+                                break;
+                            }
+                        case 10: {
+                                if (!(message.parts && message.parts.length))
+                                    message.parts = [];
+                                message.parts.push($root.exomind.base.v1.EmailPart.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 11: {
+                                if (!(message.attachments && message.attachments.length))
+                                    message.attachments = [];
+                                message.attachments.push($root.exomind.base.v1.EmailAttachment.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 14: {
+                                message.read = reader.bool();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -2134,6 +2254,21 @@ export const exomind = $root.exomind = (() => {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
                 };
 
+                /**
+                 * Gets the default type url for Email
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Email
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Email.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Email";
+                };
+
                 return Email;
             })();
 
@@ -2338,46 +2473,56 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
-                        case 2:
-                            message.inReplyTo = $root.exocore.store.Reference.decode(reader, reader.uint32());
-                            break;
-                        case 3:
-                            if (!(message.to && message.to.length))
-                                message.to = [];
-                            message.to.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
-                            break;
-                        case 4:
-                            if (!(message.cc && message.cc.length))
-                                message.cc = [];
-                            message.cc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
-                            break;
-                        case 5:
-                            if (!(message.bcc && message.bcc.length))
-                                message.bcc = [];
-                            message.bcc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
-                            break;
-                        case 6:
-                            message.subject = reader.string();
-                            break;
-                        case 7:
-                            if (!(message.parts && message.parts.length))
-                                message.parts = [];
-                            message.parts.push($root.exomind.base.v1.EmailPart.decode(reader, reader.uint32()));
-                            break;
-                        case 8:
-                            if (!(message.attachments && message.attachments.length))
-                                message.attachments = [];
-                            message.attachments.push($root.exomind.base.v1.EmailAttachment.decode(reader, reader.uint32()));
-                            break;
-                        case 9:
-                            message.sendingDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                            break;
-                        case 10:
-                            message.sentDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
-                            break;
+                        case 1: {
+                                message.account = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 2: {
+                                message.inReplyTo = $root.exocore.store.Reference.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 3: {
+                                if (!(message.to && message.to.length))
+                                    message.to = [];
+                                message.to.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 4: {
+                                if (!(message.cc && message.cc.length))
+                                    message.cc = [];
+                                message.cc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 5: {
+                                if (!(message.bcc && message.bcc.length))
+                                    message.bcc = [];
+                                message.bcc.push($root.exomind.base.v1.Contact.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 6: {
+                                message.subject = reader.string();
+                                break;
+                            }
+                        case 7: {
+                                if (!(message.parts && message.parts.length))
+                                    message.parts = [];
+                                message.parts.push($root.exomind.base.v1.EmailPart.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 8: {
+                                if (!(message.attachments && message.attachments.length))
+                                    message.attachments = [];
+                                message.attachments.push($root.exomind.base.v1.EmailAttachment.decode(reader, reader.uint32()));
+                                break;
+                            }
+                        case 9: {
+                                message.sendingDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                                break;
+                            }
+                        case 10: {
+                                message.sentDate = $root.google.protobuf.Timestamp.decode(reader, reader.uint32());
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -2647,6 +2792,21 @@ export const exomind = $root.exomind = (() => {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
                 };
 
+                /**
+                 * Gets the default type url for DraftEmail
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.DraftEmail
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                DraftEmail.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.DraftEmail";
+                };
+
                 return DraftEmail;
             })();
 
@@ -2753,12 +2913,14 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.mimeType = reader.string();
-                            break;
-                        case 2:
-                            message.body = reader.string();
-                            break;
+                        case 1: {
+                                message.mimeType = reader.string();
+                                break;
+                            }
+                        case 2: {
+                                message.body = reader.string();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -2855,6 +3017,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 EmailPart.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for EmailPart
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.EmailPart
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                EmailPart.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.EmailPart";
                 };
 
                 return EmailPart;
@@ -3009,43 +3186,49 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.key = reader.string();
-                            break;
-                        case 2:
-                            message.name = reader.string();
-                            break;
-                        case 3:
-                            message.mimeType = reader.string();
-                            break;
-                        case 4:
-                            message.size = reader.uint64();
-                            break;
-                        case 5:
-                            message.inlinePlaceholder = reader.string();
-                            break;
-                        case 6:
-                            if (message.data === $util.emptyObject)
-                                message.data = {};
-                            let end2 = reader.uint32() + reader.pos;
-                            key = "";
-                            value = "";
-                            while (reader.pos < end2) {
-                                let tag2 = reader.uint32();
-                                switch (tag2 >>> 3) {
-                                case 1:
-                                    key = reader.string();
-                                    break;
-                                case 2:
-                                    value = reader.string();
-                                    break;
-                                default:
-                                    reader.skipType(tag2 & 7);
-                                    break;
-                                }
+                        case 1: {
+                                message.key = reader.string();
+                                break;
                             }
-                            message.data[key] = value;
-                            break;
+                        case 2: {
+                                message.name = reader.string();
+                                break;
+                            }
+                        case 3: {
+                                message.mimeType = reader.string();
+                                break;
+                            }
+                        case 4: {
+                                message.size = reader.uint64();
+                                break;
+                            }
+                        case 5: {
+                                message.inlinePlaceholder = reader.string();
+                                break;
+                            }
+                        case 6: {
+                                if (message.data === $util.emptyObject)
+                                    message.data = {};
+                                let end2 = reader.uint32() + reader.pos;
+                                key = "";
+                                value = "";
+                                while (reader.pos < end2) {
+                                    let tag2 = reader.uint32();
+                                    switch (tag2 >>> 3) {
+                                    case 1:
+                                        key = reader.string();
+                                        break;
+                                    case 2:
+                                        value = reader.string();
+                                        break;
+                                    default:
+                                        reader.skipType(tag2 & 7);
+                                        break;
+                                    }
+                                }
+                                message.data[key] = value;
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -3205,6 +3388,21 @@ export const exomind = $root.exomind = (() => {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
                 };
 
+                /**
+                 * Gets the default type url for EmailAttachment
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.EmailAttachment
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                EmailAttachment.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.EmailAttachment";
+                };
+
                 return EmailAttachment;
             })();
 
@@ -3311,12 +3509,14 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.title = reader.string();
-                            break;
-                        case 2:
-                            message.body = reader.string();
-                            break;
+                        case 1: {
+                                message.title = reader.string();
+                                break;
+                            }
+                        case 2: {
+                                message.body = reader.string();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -3413,6 +3613,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 Note.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for Note
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Note
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Note.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Note";
                 };
 
                 return Note;
@@ -3521,12 +3736,14 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.name = reader.string();
-                            break;
-                        case 2:
-                            message.email = reader.string();
-                            break;
+                        case 1: {
+                                message.name = reader.string();
+                                break;
+                            }
+                        case 2: {
+                                message.email = reader.string();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -3625,6 +3842,21 @@ export const exomind = $root.exomind = (() => {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
                 };
 
+                /**
+                 * Gets the default type url for Contact
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Contact
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Contact.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Contact";
+                };
+
                 return Contact;
             })();
 
@@ -3720,9 +3952,10 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.title = reader.string();
-                            break;
+                        case 1: {
+                                message.title = reader.string();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -3810,6 +4043,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 Task.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for Task
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Task
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Task.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Task";
                 };
 
                 return Task;
@@ -3918,12 +4166,14 @@ export const exomind = $root.exomind = (() => {
                     while (reader.pos < end) {
                         let tag = reader.uint32();
                         switch (tag >>> 3) {
-                        case 1:
-                            message.url = reader.string();
-                            break;
-                        case 2:
-                            message.title = reader.string();
-                            break;
+                        case 1: {
+                                message.url = reader.string();
+                                break;
+                            }
+                        case 2: {
+                                message.title = reader.string();
+                                break;
+                            }
                         default:
                             reader.skipType(tag & 7);
                             break;
@@ -4020,6 +4270,21 @@ export const exomind = $root.exomind = (() => {
                  */
                 Link.prototype.toJSON = function toJSON() {
                     return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+                };
+
+                /**
+                 * Gets the default type url for Link
+                 * @function getTypeUrl
+                 * @memberof exomind.base.v1.Link
+                 * @static
+                 * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+                 * @returns {string} The default type url
+                 */
+                Link.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                    if (typeUrlPrefix === undefined) {
+                        typeUrlPrefix = "type.googleapis.com";
+                    }
+                    return typeUrlPrefix + "/exomind.base.v1.Link";
                 };
 
                 return Link;
@@ -4155,12 +4420,14 @@ export const exocore = $root.exocore = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 1:
-                        message.entityId = reader.string();
-                        break;
-                    case 2:
-                        message.traitId = reader.string();
-                        break;
+                    case 1: {
+                            message.entityId = reader.string();
+                            break;
+                        }
+                    case 2: {
+                            message.traitId = reader.string();
+                            break;
+                        }
                     default:
                         reader.skipType(tag & 7);
                         break;
@@ -4257,6 +4524,21 @@ export const exocore = $root.exocore = (() => {
              */
             Reference.prototype.toJSON = function toJSON() {
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for Reference
+             * @function getTypeUrl
+             * @memberof exocore.store.Reference
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            Reference.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/exocore.store.Reference";
             };
 
             return Reference;
@@ -4389,12 +4671,14 @@ export const google = $root.google = (() => {
                 while (reader.pos < end) {
                     let tag = reader.uint32();
                     switch (tag >>> 3) {
-                    case 1:
-                        message.seconds = reader.int64();
-                        break;
-                    case 2:
-                        message.nanos = reader.int32();
-                        break;
+                    case 1: {
+                            message.seconds = reader.int64();
+                            break;
+                        }
+                    case 2: {
+                            message.nanos = reader.int32();
+                            break;
+                        }
                     default:
                         reader.skipType(tag & 7);
                         break;
@@ -4505,6 +4789,21 @@ export const google = $root.google = (() => {
              */
             Timestamp.prototype.toJSON = function toJSON() {
                 return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+            };
+
+            /**
+             * Gets the default type url for Timestamp
+             * @function getTypeUrl
+             * @memberof google.protobuf.Timestamp
+             * @static
+             * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+             * @returns {string} The default type url
+             */
+            Timestamp.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+                if (typeUrlPrefix === undefined) {
+                    typeUrlPrefix = "type.googleapis.com";
+                }
+                return typeUrlPrefix + "/google.protobuf.Timestamp";
             };
 
             return Timestamp;

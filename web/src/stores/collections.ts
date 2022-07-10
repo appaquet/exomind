@@ -260,7 +260,7 @@ export function getEntityParentWeight(entity: EntityTraits, parentId: string): n
     if (Long.isLong(weight)) {
         return weight.toNumber();
     } else {
-        return weight;
+        return weight as number;
     }
 }
 
