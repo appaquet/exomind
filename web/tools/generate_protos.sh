@@ -13,11 +13,11 @@ PROTOC_GEN_TS_PATH="$EXOMIND_WEB_ROOT/node_modules/.bin/protoc-gen-ts"
 $EXOMIND_WEB_ROOT/node_modules/.bin/pbjs \
     -t static-module \
     -w es6 \
+    --es6 \
     --sparse \
     -o $EXOMIND_WEB_ROOT/src/protos/index.js \
     -p "$EXOMIND_ROOT/protos/protobuf/" \
-    -r 'exomind-root' \
-    --es6 \
+    --root 'exomind-root' \
     $EXOMIND_ROOT/protos/protobuf/exomind/*.proto
 
 # Generate typescript definition for protos
