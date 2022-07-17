@@ -171,7 +171,7 @@ export class Children extends React.Component<IProps, IState> {
 
         // Archive / snooze actions
         if (this.props.selection && !this.props.selection.isEmpty) {
-            const selectedEntities = this.getSelectedEntities();
+            const selectedEntities = this.props.selection.filterSelectedEntities(this.state.entities);
             items = Actions.forSelectedEntities(selectedEntities, { parent: this.state.parent });
             actionShortcuts = [
                 {
@@ -361,22 +361,4 @@ export class Children extends React.Component<IProps, IState> {
             this.props.onSelectionChange(new Selection());
         }
     };
-
-    private getSelectedEntities(): EntityTraits[] {
-        const indexedEntities = this.state.entities.reduce((acc: { [key: string]: EntityTraits; }, entity) => {
-            acc[entity.id] = entity;
-            return acc;
-        }, {});
-
-        const selectedEntities = this.props.selection.items.flatMap((sel) => {
-            const entity = indexedEntities[sel.entityId];
-            if (!entity) {
-                return [];
-            }
-
-            return [entity];
-        });
-
-        return selectedEntities;
-    }
 }

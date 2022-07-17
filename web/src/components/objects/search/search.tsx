@@ -10,6 +10,7 @@ import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../../stores/stores';
 import { Actions } from '../../../utils/actions';
 import './search.less';
+import { BottomMenu, IActionShortcut } from '../../interaction/bottom-menu/bottom-menu';
 
 interface IProps {
   query: string;
@@ -71,7 +72,37 @@ export class Search extends React.Component<IProps, IState> {
           actionsForEntity={this.actionsForEntity}
           containerState={this.props.containerState}
         />;
+
+        {this.renderBottomMenu()}
       </div>
+    );
+  }
+
+  private renderBottomMenu(): React.ReactNode {
+    if (!this.props.selection || this.props.selection.isEmpty) {
+      return null;
+    }
+
+    const selectedEntities = this.props.selection.filterSelectedEntities(this.state.entities);
+    const items = Actions.forSelectedEntities(selectedEntities, { section: 'search' });
+    const actionShortcuts: IActionShortcut[] = [
+      {
+        shortcutKey: 'z',
+        disabledContexts: ['input', 'modal'],
+        actionKey: 'snooze',
+      },
+      {
+        shortcutKey: 'c',
+        disabledContexts: ['input', 'modal'],
+        actionKey: 'select-entity-collections',
+      },
+    ];
+
+    return (
+      <BottomMenu
+        items={items}
+        shortcuts={actionShortcuts}
+      />
     );
   }
 
