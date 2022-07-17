@@ -30,39 +30,53 @@
   }
 
   &.choices {
-    width: 290px;
-    height: 300px;
+    width: 390px;
+    height: 320px;
 
     ul {
-      overflow: hidden;
+      overflow: scroll;
       @calc-minus: @time-selector-list-margin*2;
       height: ~"calc(100% - @{calc-minus})";
       margin: @time-selector-list-margin;
       background: var(--entity-component-bg);
+
       .make-list();
+
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
 
       li {
         .make-list-item();
-        display: inline-block;
-        vertical-align: top; // otherwise they are misaligned
+
         width: @time-selector-box-size;
         height: @time-selector-box-size;
-        cursor: pointer;
         padding: 5px;
-        border: var(--entity-component-list-separator-border);
         margin: 5px;
-        font-size: 15px;
+
+        border: var(--entity-component-list-separator-border);
+        cursor: pointer;
 
         &.selected {
           background: var(--entity-component-bg-hover);
         }
 
-        // position text in middle
-        position: relative;
-        span {
-          position: absolute;
-          .center-element();
-          text-align: center;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        &>.icon {
+          font-size: 25px;
+          display: block;
+        }
+        &>.text {
+          margin-top: 10px;
+          font-size: 12px;
+          display: block;
         }
       }
     }
