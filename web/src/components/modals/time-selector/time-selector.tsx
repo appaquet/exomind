@@ -94,6 +94,12 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                 const classes = classNames({
                     selected
                 });
+                const faIcon = classNames({
+                    'icon': true,
+                    'fa': true,
+                    ['fa-' + DateUtil.getSnoozeIcon(choice.key)]: true,
+                });
+
                 return (
                     <li className={classes}
                         key={choice.key}
@@ -101,7 +107,8 @@ export default class TimeSelector extends React.Component<IProps, IState> {
                         onMouseOut={() => this.handleMouseOut(i)}
                         onClick={() => this.handleTimeClick(choice.key)}
                     >
-                        <span>{choice.copy}</span>
+                        <span className={faIcon}/>
+                        <span className="text">{choice.copy}</span>
                     </li>
                 );
             });

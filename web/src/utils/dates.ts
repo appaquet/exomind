@@ -1,5 +1,8 @@
 
-export type SnoozeKey = 'evening' | 'later_today' | 'next_morning' | 'next_evening' | 'weekend' | 'next_week' | 'next_month' | 'pick';
+export type SnoozeKey =
+  'evening' | 'later_today' | 'next_morning' | 'next_evening' |
+  'weekend' | 'next_week' | 'next_month' | 'pick' | 'plus_1_week' |
+  'plus_4_weeks' | 'plus_3_months';
 
 export interface ISnoozeChoice {
   key: SnoozeKey;
@@ -13,14 +16,17 @@ export default class DateUtil {
   // Exposed to iOS
   static getSnoozeChoices(): ISnoozeChoice[] {
     return [
-      { key: 'evening', copy: 'This Evening' },
-      { key: 'later_today', copy: 'Later Today' },
-      { key: 'next_morning', copy: 'Next Morning' },
-      { key: 'next_evening', copy: 'Next Evening' },
-      { key: 'weekend', copy: 'This Weekend' },
-      { key: 'next_week', copy: 'Next Week' },
-      { key: 'next_month', copy: 'Next Month' },
-      { key: 'pick', copy: 'Pick' }
+      { key: 'evening', copy: 'This evening' },
+      { key: 'later_today', copy: 'Later today' },
+      { key: 'next_morning', copy: 'Next morning' },
+      { key: 'next_evening', copy: 'Next evening' },
+      { key: 'weekend', copy: 'Next weekend' },
+      { key: 'next_week', copy: 'Next week' },
+      { key: 'next_month', copy: 'Next month' },
+      { key: 'plus_1_week', copy: '~1 week' },
+      { key: 'plus_4_weeks', copy: '~4 weeks' },
+      { key: 'plus_3_months', copy: '~3 months' },
+      { key: 'pick', copy: 'Pick' },
     ];
   }
 
@@ -40,6 +46,12 @@ export default class DateUtil {
       case 'next_week':
         return 'briefcase';
       case 'next_month':
+        return 'calendar-plus-o';
+      case 'plus_1_week':
+        return 'plus-square';
+      case 'plus_4_weeks':
+        return 'plus-square';
+      case 'plus_3_months':
         return 'calendar-plus-o';
       case 'pick':
         return 'calendar';
@@ -88,8 +100,24 @@ export default class DateUtil {
         date.setDate(1);
         date.setHours(8);
         break;
+      case 'plus_1_week':
+        date = DateUtil.addDays(date, DateUtil.rand(5, 9));
+        date.setHours(8);
+        break;
+      case 'plus_4_weeks':
+        date = DateUtil.addDays(date, DateUtil.rand(20, 40));
+        date.setHours(8);
+        break;
+      case 'plus_3_months':
+        date = DateUtil.addDays(date, DateUtil.rand(75, 115));
+        date.setHours(8);
+        break;
     }
     return date;
+  }
+
+  static rand(from: number, to: number): number {
+    return Math.floor(Math.random() * (to - from + 1)) + from;
   }
 
   static toShortFormat(date: Date): string {

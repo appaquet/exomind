@@ -75,6 +75,8 @@ class ObjectsIcon {
             fa = .plug
         case "star":
             fa = .star
+        case "plus-square":
+            fa = .plusSquare
         default:
             print("Couldn't find fontawesome icon for \(name)")
             fa = .question

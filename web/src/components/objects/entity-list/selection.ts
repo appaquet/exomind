@@ -70,6 +70,28 @@ export class Selection {
         this.forceMulti = true;
         return this;
     }
+
+    filterSelectedEntities(entities: EntityTraits[] | null): EntityTraits[] {
+        if (!entities) {
+            return [];
+        }
+
+        const indexedEntities = entities.reduce((acc: { [key: string]: EntityTraits; }, entity) => {
+            acc[entity.id] = entity;
+            return acc;
+        }, {});
+
+        const selectedEntities = this.items.flatMap((sel) => {
+            const entity = indexedEntities[sel.entityId];
+            if (!entity) {
+                return [];
+            }
+
+            return [entity];
+        });
+
+        return selectedEntities;
+    }
 }
 
 export class SelectedItem {

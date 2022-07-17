@@ -106,6 +106,16 @@ export class EntityList extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
+    componentDidUpdate(): void {
+        // if currently selected entity isn't in the list anymore, we re-select the entity at the same position
+        if (this.state.activeEntityId) {
+            const activeEntity = this.props.entities.find(e => e.id === this.state.activeEntityId);
+            if (!activeEntity) {
+                this.changeActiveEntityIndex(this.state.activeEntityIndex ?? 0);
+            }
+        }
+    }
+
     render(): React.ReactNode {
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
@@ -162,7 +172,7 @@ export class EntityList extends React.Component<IProps, IState> {
                     selected={selected}
                     onSelectionChange={this.props.onSelectionChange}
                     onClick={(e) => this.handleItemClick(entity, e)}
-                    actionsForEntity={this.props.actionsForEntity}
+                    actionsForEntity={this.actionsForEntity}
 
                     onMouseOver={() => this.handleItemMouseOver(entity.id, idx)}
                     onMouseLeave={() => this.handleItemMouseLeave(entity.id)}
@@ -180,6 +190,15 @@ export class EntityList extends React.Component<IProps, IState> {
             <ul className="list">{items}</ul>
         );
     }
+
+    private actionsForEntity: (entity: EntityTraits) => ListEntityActions = (entity) => {
+        if (this.props.selection?.isMulti ?? false) {
+            // if we're in multi-select mode, we don't show individual mouse hovering actions
+            return new ListEntityActions();
+        }
+
+        return this.props.actionsForEntity?.(entity);
+    };
 
     private renderEmptyList(): React.ReactNode {
         return (
