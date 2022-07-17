@@ -106,6 +106,16 @@ export class EntityList extends React.Component<IProps, IState> {
         Shortcuts.unregister(this.shortcutToken);
     }
 
+    componentDidUpdate(): void {
+        // if currently selected entity isn't in the list anymore, we re-select the entity at the same position
+        if (this.state.activeEntityId) {
+            const activeEntity = this.props.entities.find(e => e.id === this.state.activeEntityId);
+            if (!activeEntity) {
+                this.changeActiveEntityIndex(this.state.activeEntityIndex ?? 0);
+            }
+        }
+    }
+
     render(): React.ReactNode {
         Shortcuts.setListenerEnabled(this.shortcutToken, this.props.containerState?.active ?? false);
 
