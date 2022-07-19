@@ -1,3 +1,4 @@
+use duration_string::DurationString;
 use exocore::core::utils::path::child_to_abs_path;
 use std::path::{Path, PathBuf};
 
@@ -8,6 +9,8 @@ pub struct Config {
     pub tokens_directory: PathBuf,
 
     pub save_fixtures: bool,
+
+    pub full_sync_interval: DurationString,
 }
 
 impl Config {

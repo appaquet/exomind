@@ -17,7 +17,7 @@ interface IState {
     selected?: number;
 }
 
-const choicePerRow = 3;
+const choicePerRow = 4;
 
 export default class TimeSelector extends React.Component<IProps, IState> {
     private listElemRef: React.RefObject<HTMLUListElement> = React.createRef();
