@@ -170,6 +170,8 @@ jobs:
           yarn build_ios
 
           cd $GITHUB_WORKSPACE/ios
+          gem install bundler
+          bundle install
           bundle exec pod install
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
