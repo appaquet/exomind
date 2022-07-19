@@ -2,7 +2,7 @@
 export type SnoozeKey =
   'evening' | 'later_today' | 'next_morning' | 'next_evening' |
   'weekend' | 'next_week' | 'next_month' | 'pick' | 'plus_1_week' |
-  'plus_4_weeks' | 'plus_3_months';
+  'plus_2_weeks' | 'plus_4_weeks' | 'plus_3_months';
 
 export interface ISnoozeChoice {
   key: SnoozeKey;
@@ -24,6 +24,7 @@ export default class DateUtil {
       { key: 'next_week', copy: 'Next week' },
       { key: 'next_month', copy: 'Next month' },
       { key: 'plus_1_week', copy: '~1 week' },
+      { key: 'plus_2_weeks', copy: '~2 weeks' },
       { key: 'plus_4_weeks', copy: '~4 weeks' },
       { key: 'plus_3_months', copy: '~3 months' },
       { key: 'pick', copy: 'Pick' },
@@ -48,6 +49,8 @@ export default class DateUtil {
       case 'next_month':
         return 'calendar-plus-o';
       case 'plus_1_week':
+        return 'plus-square';
+      case 'plus_2_weeks':
         return 'plus-square';
       case 'plus_4_weeks':
         return 'plus-square';
@@ -102,6 +105,10 @@ export default class DateUtil {
         break;
       case 'plus_1_week':
         date = DateUtil.addDays(date, DateUtil.rand(5, 9));
+        date.setHours(8);
+        break;
+      case 'plus_2_weeks':
+        date = DateUtil.addDays(date, DateUtil.rand(11, 19));
         date.setHours(8);
         break;
       case 'plus_4_weeks':

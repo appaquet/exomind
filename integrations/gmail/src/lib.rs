@@ -16,7 +16,7 @@ extern crate serde_derive;
 use cli::{LoginOptions, LogoutOptions};
 use config::Config;
 use exocore::{
-    core::futures::sleep,
+    core::futures::{sleep, tokio::time::Instant},
     protos::{prost::ProstAnyPackMessageExt, store::Trait},
     store::{mutation::MutationBuilder, store::Store},
 };
@@ -61,11 +61,18 @@ async fn daemon(config: Config, exm: ExomindClient) -> anyhow::Result<()> {
         account_synchronizers.push(synchronizer);
     }
 
-    for sync in &mut account_synchronizers {
-        sync.synchronize_inbox().await?;
-    }
+    let full_sync_interval: Duration = config.full_sync_interval.into();
+    let mut last_full_sync: Option<Instant> = None;
 
     loop {
+        let should_full_sync = last_full_sync.map_or(true, |i| i.elapsed() > full_sync_interval);
+        if should_full_sync {
+            for sync in &mut account_synchronizers {
+                sync.synchronize_inbox().await?;
+            }
+            last_full_sync = Some(Instant::now());
+        }
+
         for sync in &mut account_synchronizers {
             if let Err(err) = sync.maybe_refresh_client().await {
                 error!(
