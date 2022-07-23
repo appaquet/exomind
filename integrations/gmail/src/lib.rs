@@ -65,36 +65,58 @@ async fn daemon(config: Config, exm: ExomindClient) -> anyhow::Result<()> {
     let mut last_full_sync: Option<Instant> = None;
 
     loop {
-        let should_full_sync = last_full_sync.map_or(true, |i| i.elapsed() > full_sync_interval);
-        if should_full_sync {
-            for sync in &mut account_synchronizers {
-                sync.synchronize_inbox().await?;
-            }
-            last_full_sync = Some(Instant::now());
-        }
-
-        for sync in &mut account_synchronizers {
-            if let Err(err) = sync.maybe_refresh_client().await {
-                error!(
-                    "Error refreshing client for account {}: {}",
-                    sync.account.email(),
-                    err
-                );
-                continue;
-            }
-
-            if let Err(err) = sync.synchronize_history().await {
-                error!(
-                    "Error synchronizing via history for account {}: {}",
-                    sync.account.email(),
-                    err
-                );
-            }
+        let sync_res = synchronize_accounts(
+            &mut last_full_sync,
+            full_sync_interval,
+            &mut account_synchronizers,
+        )
+        .await;
+        if let Err(e) = sync_res {
+            error!("Error executing synchronization loop: {}", e);
         }
 
         // TODO: Watch query on exomind
         sleep(Duration::from_secs(10)).await;
     }
+}
+
+async fn synchronize_accounts(
+    last_full_sync: &mut Option<Instant>,
+    full_sync_interval: Duration,
+    account_synchronizers: &mut [AccountSynchronizer],
+) -> Result<(), anyhow::Error> {
+    let should_full_sync = last_full_sync.map_or(true, |i| i.elapsed() > full_sync_interval);
+    if should_full_sync {
+        for sync in account_synchronizers.iter_mut() {
+            sync.synchronize_inbox().await.map_err(|err| {
+                anyhow!(
+                    "failed to fully sync inbox for account {:?}: {}",
+                    sync.account,
+                    err
+                )
+            })?;
+        }
+        *last_full_sync = Some(Instant::now());
+    }
+
+    for sync in account_synchronizers.iter_mut() {
+        sync.maybe_refresh_client().await.map_err(|err| {
+            anyhow!(
+                "failed to refresh client for account {:?}: {}",
+                sync.account,
+                err
+            )
+        })?;
+        sync.synchronize_history().await.map_err(|err| {
+            anyhow!(
+                "failed to sync history for account {:?}: {}",
+                sync.account,
+                err
+            )
+        })?;
+    }
+
+    Ok(())
 }
 
 async fn login(config: Config, opt: &LoginOptions, exm: ExomindClient) -> anyhow::Result<()> {

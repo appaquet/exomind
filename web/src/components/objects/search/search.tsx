@@ -79,7 +79,7 @@ export class Search extends React.Component<IProps, IState> {
   }
 
   private renderBottomMenu(): React.ReactNode {
-    if (!this.props.selection || this.props.selection.isEmpty) {
+    if (!this.props.selection || this.props.selection.isEmpty || !(this.props.containerState.active ?? false)) {
       return null;
     }
 
