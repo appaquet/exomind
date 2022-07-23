@@ -3,8 +3,8 @@ import FontAwesome_swift
 
 class GridIconsView: UIView {
     var items = [GridIconsViewItem]()
-    var squareSize = 80
-    var imageSize = 40
+    var squareSize = 90
+    var imageSize = 50
     var squareOffset = 10
     var squarePerRow = 3
     var squareColor = UIColor.white.withAlphaComponent(0.7)
@@ -71,7 +71,7 @@ class GridIconsView: UIView {
             choiceView.addSubview(choiceTxt)
             choiceTxt.textColor = squareColor
             choiceTxt.text = choice.label
-            choiceTxt.font = choiceTxt.font.withSize(10)
+            choiceTxt.font = choiceTxt.font.withSize(12)
             choiceTxt.textAlignment = .center
             choiceTxt.snp.makeConstraints { (make) in
                 make.centerX.equalTo(choiceView.snp.centerX)
