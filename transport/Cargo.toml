@@ -34,4 +34,4 @@ url = { version = "2.2.2", optional = true }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.22", path = "../core", features = ["tests-utils"]}
-tokio = { version = "1.20.0", features = ["macros"], default-features = false }
+tokio = { version = "1.20.1", features = ["macros"], default-features = false }
