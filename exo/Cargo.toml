@@ -13,7 +13,7 @@ version = "0.1.22"
 anyhow = "1.0.58"
 bytes = "1.2.0"
 clap = { version = "3.2.15", features = ["derive", "env"] }
-console = "0.15.0"
+console = "0.15.1"
 dialoguer = "0.10.1"
 dirs-next = "2.0.0"
 exocore-apps-host = {version = "0.1.22", path = "../apps/host"}
