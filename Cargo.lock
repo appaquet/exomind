@@ -689,7 +689,7 @@ dependencies = [
  "capnp",
  "capnpc",
  "chrono",
- "prost",
+ "prost 0.10.4",
  "prost-build",
  "prost-types",
  "protobuf",
@@ -783,7 +783,7 @@ name = "exomind-protos"
 version = "0.1.14"
 dependencies = [
  "exocore",
- "prost",
+ "prost 0.11.0",
  "prost-build",
  "prost-types",
 ]
@@ -1337,7 +1337,7 @@ dependencies = [
  "multistream-select",
  "parking_lot 0.12.1",
  "pin-project",
- "prost",
+ "prost 0.10.4",
  "prost-build",
  "rand 0.8.5",
  "ring",
@@ -1377,7 +1377,7 @@ dependencies = [
  "libp2p-swarm",
  "log 0.4.17",
  "lru",
- "prost",
+ "prost 0.10.4",
  "prost-build",
  "prost-codec",
  "smallvec",
@@ -1428,7 +1428,7 @@ dependencies = [
  "lazy_static",
  "libp2p-core",
  "log 0.4.17",
- "prost",
+ "prost 0.10.4",
  "prost-build",
  "rand 0.8.5",
  "sha2 0.10.2",
@@ -2112,7 +2112,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71adf41db68aa0daaefc69bb30bcd68ded9b9abaad5d1fbb6304c4fb390e083e"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.10.1",
+]
+
+[[package]]
+name = "prost"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "399c3c31cdec40583bb68f0b18403400d01ec4289c383aa047560439952c4dd7"
+dependencies = [
+ "bytes",
+ "prost-derive 0.11.0",
 ]
 
 [[package]]
@@ -2130,7 +2140,7 @@ dependencies = [
  "log 0.4.17",
  "multimap",
  "petgraph",
- "prost",
+ "prost 0.10.4",
  "prost-types",
  "regex",
  "tempfile",
@@ -2145,7 +2155,7 @@ checksum = "00af1e92c33b4813cc79fda3f2dbf56af5169709be0202df730e9ebc3e4cd007"
 dependencies = [
  "asynchronous-codec",
  "bytes",
- "prost",
+ "prost 0.10.4",
  "thiserror",
  "unsigned-varint",
 ]
@@ -2164,13 +2174,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "prost-derive"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7345d5f0e08c0536d7ac7229952590239e77abf0a0100a1b1d890add6ea96364"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "prost-types"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d0a014229361011dc8e69c8a1ec6c2e8d0f2af7c91e3ea3f5b2170298461e68"
 dependencies = [
  "bytes",
- "prost",
+ "prost 0.10.4",
 ]
 
 [[package]]
