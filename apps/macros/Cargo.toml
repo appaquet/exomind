@@ -18,4 +18,4 @@ futures = "0.3.21"
 log = "0.4.17"
 quote = "1.0.20"
 syn = { version = "1.0.98", features = ["full", "fold"] }
-thiserror = "1.0.31"
+thiserror = "1.0.32"
