@@ -147,6 +147,7 @@
     "jest": "^27.5.0",
     "json-loader": "^0.5.7",
     "less-loader": "^7.3.0",
+    "protobufjs-cli": "^1.0.0",
     "style-loader": "^2.0.0",
     "ts-jest": "^27.1.4",
     "ts-loader": "^8.3.0",
@@ -155,8 +156,7 @@
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0",
-    "webpack-merge": "^5.8.0",
-    "protobufjs-cli": "^1.0.0"
+    "webpack-merge": "^5.8.0"
   },
   "resolutions": {
     "@types/react": "^18.0.0"
