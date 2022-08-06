@@ -14,7 +14,7 @@ anyhow = "1.0.59"
 bytes = "1.2.1"
 clap = { version = "3.2.16", features = ["derive", "env"] }
 console = "0.15.1"
-dialoguer = "0.10.1"
+dialoguer = "0.10.2"
 dirs-next = "2.0.0"
 exocore-apps-host = {version = "0.1.22", path = "../apps/host"}
 exocore-chain = {version = "0.1.22", path = "../chain"}
