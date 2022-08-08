@@ -220,7 +220,8 @@ impl Registry {
         let mut ret = Vec::new();
         for (field_id, value) in field.options.unknown_fields().iter() {
             if let UnknownValueRef::Varint(v) = value {
-                // unfortunately, doesn't allow getting multiple values for one field other than iterating on all options
+                // unfortunately, doesn't allow getting multiple values for one field other than
+                // iterating on all options
                 if field_id == option_field_id {
                     ret.push(v as u32);
                 }
@@ -236,7 +237,8 @@ impl Registry {
         let mut ret = Vec::new();
         for (field_id, value) in msg_desc.proto().options.unknown_fields().iter() {
             if let UnknownValueRef::LengthDelimited(bytes) = value {
-                // unfortunately, doesn't allow getting multiple values for one field other than iterating on all options
+                // unfortunately, doesn't allow getting multiple values for one field other than
+                // iterating on all options
                 if field_id == option_field_id {
                     ret.push(String::from_utf8_lossy(bytes).to_string());
                 }

@@ -80,6 +80,7 @@ pub mod pending_sync_request {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_ranges(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -197,6 +198,7 @@ pub mod pending_sync_request {
                 size,
             )
         }
+        #[inline]
         pub fn has_ranges(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -318,6 +320,7 @@ pub mod pending_sync_range {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_operations_hash(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -332,6 +335,7 @@ pub mod pending_sync_range {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_operations_frames(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -349,6 +353,7 @@ pub mod pending_sync_range {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_operations_headers(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
         }
@@ -470,6 +475,7 @@ pub mod pending_sync_range {
         pub fn init_operations_hash(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_operations_hash(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -506,6 +512,7 @@ pub mod pending_sync_range {
                 size,
             )
         }
+        #[inline]
         pub fn has_operations_frames(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -548,6 +555,7 @@ pub mod pending_sync_range {
                 size,
             )
         }
+        #[inline]
         pub fn has_operations_headers(&self) -> bool {
             !self.builder.get_pointer_field(2).is_null()
         }
@@ -781,7 +789,7 @@ pub mod chain_sync_request {
     }
 
     #[repr(u16)]
-    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
     pub enum RequestedDetails {
         Headers = 0,
         Blocks = 1,
@@ -893,6 +901,7 @@ pub mod chain_sync_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_headers(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -903,6 +912,7 @@ pub mod chain_sync_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_blocks(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -1029,6 +1039,7 @@ pub mod chain_sync_response {
                 size,
             )
         }
+        #[inline]
         pub fn has_headers(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -1054,6 +1065,7 @@ pub mod chain_sync_response {
                 size,
             )
         }
+        #[inline]
         pub fn has_blocks(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }

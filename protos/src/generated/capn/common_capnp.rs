@@ -73,6 +73,7 @@ pub mod envelope {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_cell_id(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -95,6 +96,7 @@ pub mod envelope {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_from_node_id(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -105,6 +107,7 @@ pub mod envelope {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_data(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
         }
@@ -194,6 +197,7 @@ pub mod envelope {
         pub fn init_cell_id(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_cell_id(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -236,6 +240,7 @@ pub mod envelope {
         pub fn init_from_node_id(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_from_node_id(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -254,6 +259,7 @@ pub mod envelope {
         pub fn init_data(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(2).init_data(size)
         }
+        #[inline]
         pub fn has_data(&self) -> bool {
             !self.builder.get_pointer_field(2).is_null()
         }
@@ -351,6 +357,7 @@ pub mod node {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_id(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -361,6 +368,7 @@ pub mod node {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_public_key(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -375,6 +383,7 @@ pub mod node {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_address(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
         }
@@ -464,6 +473,7 @@ pub mod node {
         pub fn init_id(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(0).init_text(size)
         }
+        #[inline]
         pub fn has_id(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -482,6 +492,7 @@ pub mod node {
         pub fn init_public_key(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_public_key(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -517,6 +528,7 @@ pub mod node {
                 size,
             )
         }
+        #[inline]
         pub fn has_address(&self) -> bool {
             !self.builder.get_pointer_field(2).is_null()
         }
@@ -614,6 +626,7 @@ pub mod node_address {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_data(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -703,6 +716,7 @@ pub mod node_address {
         pub fn init_data(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(0).init_text(size)
         }
+        #[inline]
         pub fn has_data(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }

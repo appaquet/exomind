@@ -59,6 +59,21 @@ pub mod in_message {
         StoreEntityResults = 1,
         StoreMutationResult = 2,
     }
+    impl InMessageType {
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
+        ///
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                InMessageType::Invalid => "INVALID",
+                InMessageType::StoreEntityResults => "STORE_ENTITY_RESULTS",
+                InMessageType::StoreMutationResult => "STORE_MUTATION_RESULT",
+            }
+        }
+    }
 }
 /// Message sent from application running in WASM to runtime.
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -81,6 +96,21 @@ pub mod out_message {
         StoreEntityQuery = 1,
         StoreMutationRequest = 2,
     }
+    impl OutMessageType {
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
+        ///
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                OutMessageType::Invalid => "INVALID",
+                OutMessageType::StoreEntityQuery => "STORE_ENTITY_QUERY",
+                OutMessageType::StoreMutationRequest => "STORE_MUTATION_REQUEST",
+            }
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -88,4 +118,18 @@ pub enum MessageStatus {
     Ok = 0,
     Unhandled = 1,
     DecodeError = 2,
+}
+impl MessageStatus {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic
+    /// use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            MessageStatus::Ok => "MESSAGE_STATUS_OK",
+            MessageStatus::Unhandled => "MESSAGE_STATUS_UNHANDLED",
+            MessageStatus::DecodeError => "MESSAGE_STATUS_DECODE_ERROR",
+        }
+    }
 }

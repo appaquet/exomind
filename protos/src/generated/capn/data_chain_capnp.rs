@@ -85,6 +85,7 @@ pub mod block_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_previous_hash(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -99,6 +100,7 @@ pub mod block_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_proposed_node_id(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -120,6 +122,7 @@ pub mod block_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_operations_header(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
         }
@@ -130,6 +133,7 @@ pub mod block_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_operations_hash(&self) -> bool {
             !self.reader.get_pointer_field(3).is_null()
         }
@@ -247,6 +251,7 @@ pub mod block_header {
         pub fn init_previous_hash(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_previous_hash(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -273,6 +278,7 @@ pub mod block_header {
         pub fn init_proposed_node_id(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_proposed_node_id(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -323,6 +329,7 @@ pub mod block_header {
                 size,
             )
         }
+        #[inline]
         pub fn has_operations_header(&self) -> bool {
             !self.builder.get_pointer_field(2).is_null()
         }
@@ -341,6 +348,7 @@ pub mod block_header {
         pub fn init_operations_hash(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(3).init_data(size)
         }
+        #[inline]
         pub fn has_operations_hash(&self) -> bool {
             !self.builder.get_pointer_field(3).is_null()
         }
@@ -458,6 +466,7 @@ pub mod block_partial_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_previous_hash(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -472,6 +481,7 @@ pub mod block_partial_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_proposed_node_id(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -486,6 +496,7 @@ pub mod block_partial_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_block_hash(&self) -> bool {
             !self.reader.get_pointer_field(2).is_null()
         }
@@ -607,6 +618,7 @@ pub mod block_partial_header {
         pub fn init_previous_hash(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_previous_hash(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -633,6 +645,7 @@ pub mod block_partial_header {
         pub fn init_proposed_node_id(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_proposed_node_id(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -659,6 +672,7 @@ pub mod block_partial_header {
         pub fn init_block_hash(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(2).init_data(size)
         }
+        #[inline]
         pub fn has_block_hash(&self) -> bool {
             !self.builder.get_pointer_field(2).is_null()
         }
@@ -974,6 +988,7 @@ pub mod block_signatures {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_signatures(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -1092,6 +1107,7 @@ pub mod block_signatures {
                 size,
             )
         }
+        #[inline]
         pub fn has_signatures(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -1189,6 +1205,7 @@ pub mod block_signature {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_node_id(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -1199,6 +1216,7 @@ pub mod block_signature {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_node_signature(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -1288,6 +1306,7 @@ pub mod block_signature {
         pub fn init_node_id(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(0).init_text(size)
         }
+        #[inline]
         pub fn has_node_id(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -1306,6 +1325,7 @@ pub mod block_signature {
         pub fn init_node_signature(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(1).init_data(size)
         }
+        #[inline]
         pub fn has_node_signature(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -1411,6 +1431,7 @@ pub mod chain_operation {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_node_id(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -1522,6 +1543,7 @@ pub mod chain_operation {
         pub fn init_node_id(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(0).init_text(size)
         }
+        #[inline]
         pub fn has_node_id(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -1633,24 +1655,28 @@ pub mod chain_operation {
             pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
                 self.reader.total_size()
             }
+            #[inline]
             pub fn has_entry(&self) -> bool {
                 if self.reader.get_data_field::<u16>(8) != 0 {
                     return false;
                 }
                 !self.reader.get_pointer_field(1).is_null()
             }
+            #[inline]
             pub fn has_block_propose(&self) -> bool {
                 if self.reader.get_data_field::<u16>(8) != 1 {
                     return false;
                 }
                 !self.reader.get_pointer_field(1).is_null()
             }
+            #[inline]
             pub fn has_block_sign(&self) -> bool {
                 if self.reader.get_data_field::<u16>(8) != 2 {
                     return false;
                 }
                 !self.reader.get_pointer_field(1).is_null()
             }
+            #[inline]
             pub fn has_block_refuse(&self) -> bool {
                 if self.reader.get_data_field::<u16>(8) != 3 {
                     return false;
@@ -1778,6 +1804,7 @@ pub mod chain_operation {
                     0,
                 )
             }
+            #[inline]
             pub fn has_entry(&self) -> bool {
                 if self.builder.get_data_field::<u16>(8) != 0 {
                     return false;
@@ -1806,6 +1833,7 @@ pub mod chain_operation {
                     0,
                 )
             }
+            #[inline]
             pub fn has_block_propose(&self) -> bool {
                 if self.builder.get_data_field::<u16>(8) != 1 {
                     return false;
@@ -1834,6 +1862,7 @@ pub mod chain_operation {
                     0,
                 )
             }
+            #[inline]
             pub fn has_block_sign(&self) -> bool {
                 if self.builder.get_data_field::<u16>(8) != 2 {
                     return false;
@@ -1862,6 +1891,7 @@ pub mod chain_operation {
                     0,
                 )
             }
+            #[inline]
             pub fn has_block_refuse(&self) -> bool {
                 if self.builder.get_data_field::<u16>(8) != 3 {
                     return false;
@@ -2019,6 +2049,7 @@ pub mod chain_operation_header {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_operation_signature(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -2124,6 +2155,7 @@ pub mod chain_operation_header {
         pub fn init_operation_signature(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_operation_signature(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -2221,6 +2253,7 @@ pub mod operation_entry {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_data(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -2310,6 +2343,7 @@ pub mod operation_entry {
         pub fn init_data(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_data(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -2407,6 +2441,7 @@ pub mod operation_block_propose {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_block(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -2496,6 +2531,7 @@ pub mod operation_block_propose {
         pub fn init_block(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_block(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -2595,6 +2631,7 @@ pub mod operation_block_sign {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_signature(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -2693,6 +2730,7 @@ pub mod operation_block_sign {
         pub fn init_signature(self) -> crate::data_chain_capnp::block_signature::Builder<'a> {
             ::capnp::traits::FromPointerBuilder::init_pointer(self.builder.get_pointer_field(0), 0)
         }
+        #[inline]
         pub fn has_signature(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }

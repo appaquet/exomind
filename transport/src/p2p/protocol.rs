@@ -317,8 +317,9 @@ where
             futures::io::copy(stream, &mut self.socket).await?;
             self.socket.flush().await?;
 
-            // closing the socket is necessary to prevent the socket from being dropped and a reset control message
-            // sent to destination resulting in an error reading the socket, even if it has still data to be read.
+            // closing the socket is necessary to prevent the socket from being dropped and
+            // a reset control message sent to destination resulting in an error
+            // reading the socket, even if it has still data to be read.
             self.socket.close().await?;
 
             Ok(None)

@@ -6,6 +6,7 @@ use exocore_protos::{
 };
 use log::Level;
 use wasmtime::*;
+use wasmtime_wasi::{sync::WasiCtxBuilder, WasiCtx};
 
 use crate::error::Error;
 
@@ -17,11 +18,9 @@ pub struct WasmTimeRuntime<E: HostEnvironment> {
     instance: Instance,
     send_message_func: FuncSendMessage,
     tick_func: FuncTick,
-    store: Store<RuntimeState>,
+    store: Store<WasiCtx>,
     _phantom: std::marker::PhantomData<E>,
 }
-
-struct RuntimeState;
 
 impl<E: HostEnvironment> WasmTimeRuntime<E> {
     pub fn from_file<P>(file: P, env: Arc<E>) -> Result<WasmTimeRuntime<E>, Error>
@@ -29,12 +28,19 @@ impl<E: HostEnvironment> WasmTimeRuntime<E> {
         P: AsRef<Path>,
     {
         let engine = Engine::default();
-        let mut store = Store::new(&engine, RuntimeState);
 
         let mut linker = Linker::new(&engine);
+        wasmtime_wasi::add_to_linker(&mut linker, |s| s)?;
         Self::setup_host_module(&mut linker, &env)?;
 
         let module = Module::from_file(&engine, file)?;
+
+        let wasi = WasiCtxBuilder::new()
+            .inherit_stderr()
+            .inherit_stdout()
+            .build();
+
+        let mut store = Store::new(&engine, wasi);
 
         let instance = linker.instantiate(&mut store, &module)?;
         let (tick_func, send_message_func) = bootstrap_instance(&mut store, &instance)?;
@@ -79,13 +85,13 @@ impl<E: HostEnvironment> WasmTimeRuntime<E> {
         Ok(())
     }
 
-    fn setup_host_module(linker: &mut Linker<RuntimeState>, env: &Arc<E>) -> Result<(), Error> {
+    fn setup_host_module(linker: &mut Linker<WasiCtx>, env: &Arc<E>) -> Result<(), Error> {
         let env_clone = env.clone();
 
         linker.func_wrap(
             "exocore",
             "__exocore_host_log",
-            move |mut caller: Caller<'_, RuntimeState>, level: i32, ptr: i32, len: i32| {
+            move |mut caller: Caller<'_, WasiCtx>, level: i32, ptr: i32, len: i32| {
                 let log_level = log_level_from_i32(level);
                 read_wasm_str(&mut caller, ptr, len, |msg| {
                     env_clone.handle_log(log_level, msg);
@@ -98,14 +104,14 @@ impl<E: HostEnvironment> WasmTimeRuntime<E> {
         linker.func_wrap(
             "exocore",
             "__exocore_host_now",
-            |_caller: Caller<'_, RuntimeState>| -> u64 { unix_timestamp() },
+            |_caller: Caller<'_, WasiCtx>| -> u64 { unix_timestamp() },
         )?;
 
         let env = env.clone();
         linker.func_wrap(
             "exocore",
             "__exocore_host_out_message",
-            move |mut caller: Caller<'_, RuntimeState>, ptr: i32, len: i32| -> u32 {
+            move |mut caller: Caller<'_, WasiCtx>, ptr: i32, len: i32| -> u32 {
                 let status = match read_wasm_message::<OutMessage>(&mut caller, ptr, len) {
                     Ok(msg) => {
                         env.as_ref().handle_message(msg);
@@ -143,7 +149,7 @@ pub trait HostEnvironment: Send + Sync + 'static {
 }
 
 fn bootstrap_instance(
-    mut store: &mut Store<RuntimeState>,
+    mut store: &mut Store<WasiCtx>,
     instance: &Instance,
 ) -> Result<(FuncTick, FuncSendMessage), Error> {
     // Initialize environment
@@ -179,7 +185,7 @@ fn bootstrap_instance(
 ///
 /// Mostly copied from wasmtime::Func comments.
 fn read_wasm_message<M: prost::Message + Default>(
-    caller: &mut Caller<'_, RuntimeState>,
+    caller: &mut Caller<'_, WasiCtx>,
     ptr: i32,
     len: i32,
 ) -> Result<M, Error> {
@@ -203,7 +209,7 @@ fn read_wasm_message<M: prost::Message + Default>(
 ///
 /// Mostly copied from wasmtime::Func comments.
 fn read_wasm_str<F: FnOnce(&str)>(
-    caller: &mut Caller<'_, RuntimeState>,
+    caller: &mut Caller<'_, WasiCtx>,
     ptr: i32,
     len: i32,
     f: F,
@@ -230,7 +236,7 @@ fn read_wasm_str<F: FnOnce(&str)>(
 
 // Inspired from https://radu-matei.com/blog/practical-guide-to-wasm-memory/#passing-arrays-to-modules-using-wasmtime
 fn wasm_alloc(
-    mut store: &mut Store<RuntimeState>,
+    mut store: &mut Store<WasiCtx>,
     instance: &Instance,
     bytes: &[u8],
 ) -> Result<(i32, i32), Error> {
@@ -252,7 +258,7 @@ fn wasm_alloc(
 }
 
 fn wasm_free(
-    mut store: &mut Store<RuntimeState>,
+    mut store: &mut Store<WasiCtx>,
     instance: &Instance,
     ptr: i32,
     size: i32,

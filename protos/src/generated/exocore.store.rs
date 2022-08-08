@@ -43,6 +43,19 @@ pub enum TraitDetails {
     Full = 0,
     Partial = 1,
 }
+impl TraitDetails {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic
+    /// use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            TraitDetails::Full => "TRAIT_DETAILS_FULL",
+            TraitDetails::Partial => "TRAIT_DETAILS_PARTIAL",
+        }
+    }
+}
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
     /// Optional projections on traits and fields to be returned.
@@ -198,6 +211,21 @@ pub mod boolean_predicate {
         Must = 1,
         MustNot = 2,
     }
+    impl Occur {
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
+        ///
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Occur::Should => "SHOULD",
+                Occur::Must => "MUST",
+                Occur::MustNot => "MUST_NOT",
+            }
+        }
+    }
 }
 /// Query entities that have a specified trait and optionally matching a trait
 /// query.
@@ -246,6 +274,23 @@ pub mod trait_field_predicate {
         Gte = 2,
         Lt = 3,
         Lte = 4,
+    }
+    impl Operator {
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
+        ///
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Operator::Equal => "EQUAL",
+                Operator::Gt => "GT",
+                Operator::Gte => "GTE",
+                Operator::Lt => "LT",
+                Operator::Lte => "LTE",
+            }
+        }
     }
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
@@ -418,6 +463,20 @@ pub enum EntityResultSource {
     Unknown = 0,
     Pending = 1,
     Chain = 2,
+}
+impl EntityResultSource {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic
+    /// use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            EntityResultSource::Unknown => "UNKNOWN",
+            EntityResultSource::Pending => "PENDING",
+            EntityResultSource::Chain => "CHAIN",
+        }
+    }
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationRequest {

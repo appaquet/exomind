@@ -73,6 +73,7 @@ pub mod mutation_request {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_request(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -162,6 +163,7 @@ pub mod mutation_request {
         pub fn init_request(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_request(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -259,6 +261,7 @@ pub mod mutation_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_response(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -269,6 +272,7 @@ pub mod mutation_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_error(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -358,6 +362,7 @@ pub mod mutation_response {
         pub fn init_response(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_response(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -376,6 +381,7 @@ pub mod mutation_response {
         pub fn init_error(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_error(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -473,6 +479,7 @@ pub mod query_request {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_request(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -562,6 +569,7 @@ pub mod query_request {
         pub fn init_request(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_request(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -659,6 +667,7 @@ pub mod query_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_response(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -669,6 +678,7 @@ pub mod query_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_error(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -758,6 +768,7 @@ pub mod query_response {
         pub fn init_response(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_response(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -776,6 +787,7 @@ pub mod query_response {
         pub fn init_error(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_error(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
@@ -873,6 +885,7 @@ pub mod watched_query_request {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_request(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -962,6 +975,7 @@ pub mod watched_query_request {
         pub fn init_request(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_request(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -1059,6 +1073,7 @@ pub mod watched_query_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_response(&self) -> bool {
             !self.reader.get_pointer_field(0).is_null()
         }
@@ -1069,6 +1084,7 @@ pub mod watched_query_response {
                 ::core::option::Option::None,
             )
         }
+        #[inline]
         pub fn has_error(&self) -> bool {
             !self.reader.get_pointer_field(1).is_null()
         }
@@ -1158,6 +1174,7 @@ pub mod watched_query_response {
         pub fn init_response(self, size: u32) -> ::capnp::data::Builder<'a> {
             self.builder.get_pointer_field(0).init_data(size)
         }
+        #[inline]
         pub fn has_response(&self) -> bool {
             !self.builder.get_pointer_field(0).is_null()
         }
@@ -1176,6 +1193,7 @@ pub mod watched_query_response {
         pub fn init_error(self, size: u32) -> ::capnp::text::Builder<'a> {
             self.builder.get_pointer_field(1).init_text(size)
         }
+        #[inline]
         pub fn has_error(&self) -> bool {
             !self.builder.get_pointer_field(1).is_null()
         }
