@@ -183,13 +183,13 @@ jobs:
         with:
           toolchain: stable
           profile: minimal
-          target: wasm32-unknown-unknown
+          target: wasm32-wasi
 
       - uses: Swatinem/rust-cache@v1
 
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.22/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.23/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
       - name: Build & package app

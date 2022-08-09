@@ -1,5 +1,5 @@
 // Fields groups
-//  #1: Fields necessary for search/listing
+//   #1: Fields necessary for search/listing
 
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Collection {
@@ -166,9 +166,33 @@ pub enum AccountType {
     Invalid = 0,
     Gmail = 1,
 }
+impl AccountType {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            AccountType::Invalid => "ACCOUNT_TYPE_INVALID",
+            AccountType::Gmail => "ACCOUNT_TYPE_GMAIL",
+        }
+    }
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum AccountScope {
     Invalid = 0,
     Email = 1,
+}
+impl AccountScope {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            AccountScope::Invalid => "ACCOUNT_SCOPE_INVALID",
+            AccountScope::Email => "ACCOUNT_SCOPE_EMAIL",
+        }
+    }
 }
