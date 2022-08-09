@@ -74,15 +74,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-<<<<<<< Updated upstream
-version = "1.0.59"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c91f1f46651137be86f3a2b9a8359f9ab421d04d941c62b5982e1ca21113adf9"
-=======
 version = "1.0.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c794e162a5eff65c72ef524dfe393eb923c354e350bb78b9c7383df13f3bc142"
->>>>>>> Stashed changes
 
 [[package]]
 name = "arc-swap"
@@ -621,7 +615,9 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6864ff21c4a7f939cd93450bee306905de634f200ca2f4c926472dae453b63d0"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -634,7 +630,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-macros"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2926bd13c4df313468f74f2abd2992a26a02d92d549131b28055ae2c87de9c7d"
 dependencies = [
  "anyhow",
  "futures",
@@ -646,7 +644,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-sdk"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dee4374830539d933d59326a8bdf18cf55c60ef1c313f8f7fadb6d1d8136848a"
 dependencies = [
  "anyhow",
  "chrono",
@@ -662,7 +662,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07eab0d1aa35d7ced5a9dd4d5dfc69e122c81ed10f128440f58b9d5107bbb3ba"
 dependencies = [
  "anyhow",
  "bs58",
@@ -681,11 +683,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
-<<<<<<< Updated upstream
- "serde_yaml 0.8.26",
-=======
  "serde_yaml 0.9.4",
->>>>>>> Stashed changes
  "shadow-rs",
  "thiserror",
  "tokio",
@@ -698,7 +696,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-protos"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4f09abe1b590ca8b08a46f430297816e8334371d26ae5edd7b7cf0b0120139f"
 dependencies = [
  "anyhow",
  "base64",
@@ -717,7 +717,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1e662da61cc941f83e304f1bcb794135c921cab13f352c4af5b73eef8e29776"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -735,7 +737,9 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.22"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d80ce2d6f42767e3e2072c3a1f2125284391c5bf5254e0d1ef3c8fe23baaa228"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -2078,9 +2082,9 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "proc-macro-crate"
-version = "1.2.0"
+version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26d50bfb8c23f23915855a00d98b5a35ef2e0b871bb52937bacadb798fbb66c8"
+checksum = "eda0fc3b0fb7c975631757e14d9049da17374063edb6ebbcbc54d880d4fe94e9"
 dependencies = [
  "once_cell",
  "thiserror",
@@ -2576,9 +2580,9 @@ checksum = "93f6841e709003d68bb2deee8c343572bf446003ec20a583e76f7b15cebf3711"
 
 [[package]]
 name = "serde"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e590c437916fb6b221e1d00df6e3294f3fccd70ca7e92541c475d6ed6ef5fee2"
+checksum = "53e8e5d5b70924f74ff5c6d64d9a5acd91422117c60f48c4e07855238a254553"
 dependencies = [
  "serde_derive",
 ]
@@ -2595,9 +2599,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34b5b8d809babe02f538c2cfec6f2c1ed10804c0e5a6a041a049a4f5588ccc2e"
+checksum = "d3d8e8de557aee63c26b85b947f5e59b690d0454c753f3adeb5cd7835ab88391"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2695,7 +2699,7 @@ checksum = "b2d399ad15b5c90d8e6461da75c751c77501598dd915d81a108401b252aaa99f"
 dependencies = [
  "const_format",
  "is_debug",
- "time 0.3.12",
+ "time 0.3.13",
  "tzdb",
 ]
 
@@ -2913,12 +2917,11 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.12"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74b7cc93fc23ba97fde84f7eea56c55d1ba183f495c6715defdfc7b9cb8c870f"
+checksum = "db76ff9fa4b1458b3c7f077f3ff9887394058460d21e634355b273aaf11eea45"
 dependencies = [
  "itoa",
- "js-sys",
  "libc",
  "num_threads",
  "serde",
@@ -3542,7 +3545,7 @@ dependencies = [
  "seahash",
  "serde",
  "serde_json",
- "time 0.3.12",
+ "time 0.3.13",
  "tokio",
  "url 2.2.2",
 ]

@@ -13,12 +13,8 @@ version = "0.1.14"
 crate-type = ['cdylib']
 
 [dependencies]
-<<<<<<< Updated upstream
-anyhow = "1.0.59"
-=======
 anyhow = "1.0.60"
->>>>>>> Stashed changes
-exocore = { version = "0.1.22", default-features = false, features = ["apps-sdk"] }
+exocore = { version = "0.1.23", default-features = false, features = ["apps-sdk"] }
 exomind-protos = {version = "0.1.14", path = "../protos"}
 futures = "0.3.21"
 log = "0.4.17"
