@@ -11,6 +11,7 @@ function createNewWindow() {
   const window = new BrowserWindow({
     webPreferences: {
       nodeIntegration: false,
+      sandbox: false,
       contextIsolation: true,
       preload: path.resolve(__dirname, "preload.js"), // setup context isolation bridge
     },
