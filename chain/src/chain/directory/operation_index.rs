@@ -9,7 +9,7 @@ use std::{
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use exocore_core::simple_store::{json_disk_store::JsonDiskStore, SimpleStore};
 use exocore_protos::generated::data_chain_capnp::block_header;
-use extindex::{Builder, Encodable, Reader};
+use extindex::{Builder, Reader, Serializable};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
@@ -384,16 +384,16 @@ struct StoredIndexKey {
     operation_id: OperationId,
 }
 
-impl Encodable for StoredIndexKey {
-    fn encoded_size(&self) -> Option<usize> {
+impl Serializable for StoredIndexKey {
+    fn size(&self) -> Option<usize> {
         Some(8) // u64
     }
 
-    fn encode<W: Write>(&self, write: &mut W) -> Result<(), std::io::Error> {
+    fn serialize<W: Write>(&self, write: &mut W) -> Result<(), std::io::Error> {
         write.write_u64::<LittleEndian>(self.operation_id)
     }
 
-    fn decode<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexKey, std::io::Error> {
+    fn deserialize<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexKey, std::io::Error> {
         let operation_id = data.read_u64::<LittleEndian>()?;
         Ok(StoredIndexKey { operation_id })
     }
@@ -405,16 +405,19 @@ struct StoredIndexValue {
     offset: BlockOffset,
 }
 
-impl Encodable for StoredIndexValue {
-    fn encoded_size(&self) -> Option<usize> {
+impl Serializable for StoredIndexValue {
+    fn size(&self) -> Option<usize> {
         Some(8) // u64
     }
 
-    fn encode<W: Write>(&self, write: &mut W) -> Result<(), std::io::Error> {
+    fn serialize<W: Write>(&self, write: &mut W) -> Result<(), std::io::Error> {
         write.write_u64::<LittleEndian>(self.offset)
     }
 
-    fn decode<R: Read>(data: &mut R, _size: usize) -> Result<StoredIndexValue, std::io::Error> {
+    fn deserialize<R: Read>(
+        data: &mut R,
+        _size: usize,
+    ) -> Result<StoredIndexValue, std::io::Error> {
         let offset = data.read_u64::<LittleEndian>()?;
         Ok(StoredIndexValue { offset })
     }
