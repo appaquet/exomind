@@ -28,7 +28,7 @@ gloo-timers = {version = "=0.2.2", optional = true}# force version because of wa
 hyper = { version = "0.14.20", features = ["full"], optional = true }
 libp2p = { version = "0.46.1", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"] }
 log = "0.4.17"
-pin-project = "1.0.11"
+pin-project = "1.0.12"
 thiserror = "1.0.32"
 url = { version = "2.2.2", optional = true }
 
