@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.23"
 
 [dependencies]
-anyhow = "1.0.60"
+anyhow = "1.0.62"
 base64 = "0.13.0"
 capnp = { version = "0.14.8", features = ["sync_reader"] }
 chrono = "0.4.22"
