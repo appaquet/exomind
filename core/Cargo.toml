@@ -44,7 +44,7 @@ rand = "0.8"
 serde = "1.0.144"
 serde_derive = "1.0.142"
 serde_json = "1.0.85"
-serde_yaml = "0.9.9"
+serde_yaml = "0.9.10"
 shadow-rs = { version = "0.16.3", default-features = false }
 thiserror = "1.0.32"
 url = "2.2.2"
