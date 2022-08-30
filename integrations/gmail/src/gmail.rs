@@ -41,11 +41,13 @@ impl GmailClient {
 
         let token_file = account_token_file(config, account.email())?;
         let app_secret = oauth2::read_application_secret(&config.client_secret).await?;
-        let auth =
-            InstalledFlowAuthenticator::builder(app_secret, InstalledFlowReturnMethod::HTTPRedirect)
-                .persist_tokens_to_disk(token_file)
-                .build()
-                .await?;
+        let auth = InstalledFlowAuthenticator::builder(
+            app_secret,
+            InstalledFlowReturnMethod::HTTPRedirect,
+        )
+        .persist_tokens_to_disk(token_file)
+        .build()
+        .await?;
 
         auth.token(&[FULL_ACCESS_SCOPE]).await?;
 
