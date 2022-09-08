@@ -47,6 +47,11 @@ jobs:
           target: ${{ matrix.pair.target }}
           profile: minimal
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions-rs/cargo@v1.0.3
         with:
           use-cross: ${{ matrix.pair.cross }}

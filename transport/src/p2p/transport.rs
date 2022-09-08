@@ -14,7 +14,7 @@ use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
 use libp2p::{
     core::PeerId,
     ping::{Ping, PingEvent, PingSuccess},
-    swarm::{NetworkBehaviourEventProcess, Swarm},
+    swarm::Swarm,
     NetworkBehaviour, Transport,
 };
 
@@ -92,7 +92,7 @@ impl Libp2pTransport {
     /// Runs the transport to completion.
     pub async fn run(self) -> Result<(), Error> {
         let behaviour = CombinedBehaviour {
-            service_handles: Arc::clone(&self.service_handles),
+            // service_handles: Arc::clone(&self.service_handles),
             exocore: ExocoreBehaviour::default(),
             ping: Ping::default(),
         };
@@ -169,7 +169,8 @@ impl Libp2pTransport {
             exocore_core::futures::interval(self.config.swarm_nodes_update_interval);
 
         // Spawn the main Future which will take care of the swarm
-        let inner = Arc::clone(&self.service_handles);
+        let service_handles = Arc::clone(&self.service_handles);
+        let inner = service_handles.clone();
         let swarm_task = future::poll_fn(move |cx: &mut Context| -> Poll<()> {
             // At interval, re-add all nodes to make sure that their newer addresses are
             // added.
@@ -217,7 +218,48 @@ impl Libp2pTransport {
             }
 
             // Poll the swarm to complete its job
-            while let Poll::Ready(_event) = swarm.poll_next_unpin(cx) {}
+            while let Poll::Ready(event) = swarm.poll_next_unpin(cx) {
+                let event = if let Some(event) = event {
+                    event
+                } else {
+                    continue;
+                };
+
+                match event {
+                    libp2p::swarm::SwarmEvent::Behaviour(CombinedEvent::Exocore(
+                        ExocoreBehaviourEvent::Message(msg),
+                    )) => {
+                        trace!("Got message from {}", msg.source);
+
+                        if let Err(err) = dispatch_message(&service_handles, msg) {
+                            warn!("Couldn't dispatch message: {}", err);
+                        }
+                    }
+                    libp2p::swarm::SwarmEvent::Behaviour(CombinedEvent::Exocore(
+                        ExocoreBehaviourEvent::PeerStatus(peer_id, status),
+                    )) => {
+                        if let Err(err) = dispatch_node_status(&service_handles, peer_id, status) {
+                            warn!("Couldn't dispatch node status: {}", err);
+                        }
+                    }
+                    libp2p::swarm::SwarmEvent::Behaviour(CombinedEvent::Ping(event)) => {
+                        match event.result {
+                            Ok(PingSuccess::Ping { rtt }) => {
+                                // TODO: We could save round-trip time to node. Could be use for node selection.
+                                swarm
+                                    .behaviour_mut()
+                                    .exocore
+                                    .report_ping_success(&event.peer, rtt)
+                            }
+                            Ok(PingSuccess::Pong) => {}
+                            Err(failure) => {
+                                debug!("Failed to ping peer {}: {}", event.peer, failure);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
 
             Poll::Pending
         });
@@ -258,46 +300,26 @@ impl Libp2pTransport {
 
 /// Behaviour that combines exocore and ping behaviours.
 #[derive(NetworkBehaviour)]
-#[behaviour(event_process = true)]
+#[behaviour(out_event = "CombinedEvent")]
 struct CombinedBehaviour {
     exocore: ExocoreBehaviour,
     ping: Ping,
-
-    #[behaviour(ignore)]
-    service_handles: Arc<RwLock<ServiceHandles>>,
 }
 
-impl NetworkBehaviourEventProcess<ExocoreBehaviourEvent> for CombinedBehaviour {
-    fn inject_event(&mut self, event: ExocoreBehaviourEvent) {
-        match event {
-            ExocoreBehaviourEvent::Message(msg) => {
-                trace!("Got message from {}", msg.source);
+enum CombinedEvent {
+    Exocore(ExocoreBehaviourEvent),
+    Ping(PingEvent),
+}
 
-                if let Err(err) = dispatch_message(&self.service_handles, msg) {
-                    warn!("Couldn't dispatch message: {}", err);
-                }
-            }
-            ExocoreBehaviourEvent::PeerStatus(peer_id, status) => {
-                if let Err(err) = dispatch_node_status(&self.service_handles, peer_id, status) {
-                    warn!("Couldn't dispatch node status: {}", err);
-                }
-            }
-        }
+impl From<ExocoreBehaviourEvent> for CombinedEvent {
+    fn from(event: ExocoreBehaviourEvent) -> Self {
+        CombinedEvent::Exocore(event)
     }
 }
 
-impl NetworkBehaviourEventProcess<PingEvent> for CombinedBehaviour {
-    fn inject_event(&mut self, event: PingEvent) {
-        match event.result {
-            Ok(PingSuccess::Ping { rtt }) => {
-                // TODO: We could save round-trip time to node. Could be use for node selection.
-                self.exocore.report_ping_success(&event.peer, rtt);
-            }
-            Ok(PingSuccess::Pong) => {}
-            Err(failure) => {
-                debug!("Failed to ping peer {}: {}", event.peer, failure);
-            }
-        }
+impl From<PingEvent> for CombinedEvent {
+    fn from(event: PingEvent) -> Self {
+        CombinedEvent::Ping(event)
     }
 }
 

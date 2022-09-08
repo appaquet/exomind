@@ -355,7 +355,7 @@ pub struct ExocoreBehaviourMessage {
     pub message: MessageData,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum PeerStatus {
     Connected,
     Disconnected,
