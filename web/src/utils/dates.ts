@@ -83,18 +83,18 @@ export default class DateUtil {
         date.setHours(18);
         break;
       case 'weekend':
-        if (date.getUTCDay() < 6) {
-          date = DateUtil.addDays(date, 6 - date.getUTCDay()); // this saturday
+        if (date.getDay() < 6) {
+          date = DateUtil.addDays(date, 6 - date.getDay()); // this saturday
         } else {
           date = DateUtil.addDays(date, 7); // we're saturday, so next one
         }
         date.setHours(8);
         break;
       case 'next_week':
-        if (date.getUTCDay() < 1) {
+        if (date.getDay() < 1) {
           date = DateUtil.addDays(date, 1); // we're sunday, so tomorrow
         } else {
-          date = DateUtil.addDays(date, 8 - date.getUTCDay()); // next monday
+          date = DateUtil.addDays(date, 8 - date.getDay()); // next monday
         }
         date.setHours(8);
         break;
