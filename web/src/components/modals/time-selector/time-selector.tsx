@@ -30,7 +30,7 @@ export default class TimeSelector extends React.Component<IProps, IState> {
         this.state = {
             picker: false,
             pickerOpen: false,
-            date: new Date(),
+            date: DateUtil.snoozeDate('next_morning'),
         };
 
         this.choices = DateUtil.getSnoozeChoices();
