@@ -238,7 +238,7 @@ where
 }
 
 /// Events dispatched to handles to notify changes in the different stores.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Event {
     /// The engine is now started
     Started,
@@ -306,7 +306,7 @@ impl crate::operation::Operation for EngineOperation {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum EngineOperationStatus {
     Committed(BlockOffset, BlockHeight),
     Pending,

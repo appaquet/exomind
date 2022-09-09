@@ -61,7 +61,7 @@ pub(super) struct ChainSynchronizer<CS: ChainStore> {
     phantom: std::marker::PhantomData<CS>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Status {
     Unknown,
     Downloading,

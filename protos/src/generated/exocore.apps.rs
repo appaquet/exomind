@@ -1,3 +1,4 @@
+#![allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
 pub struct Manifest {
     #[prost(string, tag = "1")]

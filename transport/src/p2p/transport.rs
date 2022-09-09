@@ -245,7 +245,8 @@ impl Libp2pTransport {
                     libp2p::swarm::SwarmEvent::Behaviour(CombinedEvent::Ping(event)) => {
                         match event.result {
                             Ok(PingSuccess::Ping { rtt }) => {
-                                // TODO: We could save round-trip time to node. Could be use for node selection.
+                                // TODO: We could save round-trip time to node. Could be use for
+                                // node selection.
                                 swarm
                                     .behaviour_mut()
                                     .exocore

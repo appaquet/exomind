@@ -43,13 +43,13 @@ pub trait ChainStore: Send + Sync + 'static {
 ///
 /// The upper range is exclusive. You can use `get_block_from_next_offset` to
 /// get the last block of the segment.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Segment {
     pub range: Range<BlockOffset>,
 }
 
 /// Collection of segments of the chain.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Segments(pub Vec<Segment>);
 
 impl Segments {

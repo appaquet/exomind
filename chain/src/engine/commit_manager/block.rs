@@ -328,7 +328,7 @@ impl std::fmt::Debug for PendingBlock {
     }
 }
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum BlockStatus {
     PastRefused,
     PastCommitted,

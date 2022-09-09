@@ -280,7 +280,7 @@ where
     }
 }
 
-#[derive(PartialEq, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Clone, Copy, Debug)]
 pub enum Side {
     Left,
     Right,
