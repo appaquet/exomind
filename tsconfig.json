@@ -15,6 +15,9 @@
       "esnext.array",
       "dom"
     ],
+    "types": [
+      "long"
+    ],
   },
   "include": [
     "clients/web/ts/*"
