@@ -47,7 +47,7 @@ serde_json = "1.0.85"
 serde_yaml = "0.9.11"
 shadow-rs = { version = "0.16.3", default-features = false }
 thiserror = "1.0.34"
-url = "2.3.0"
+url = "2.3.1"
 uuid = { version = "0.8.2", features = ["v4", "wasm-bindgen"] }
 wasm-timer = "0.2.5"
 
