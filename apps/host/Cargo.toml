@@ -17,14 +17,14 @@ anyhow = "1.0.64"
 exocore-core = {version = "0.1.23", path = "../../core"}
 exocore-protos = {version = "0.1.23", path = "../../protos"}
 exocore-store = {version = "0.1.23", path = "../../store"}
-futures = "0.3.23"
+futures = "0.3.24"
 log = "0.4.17"
 reqwest = { version = "0.11.11", default-features = false, features = ["rustls-tls"] }
 thiserror = "1.0.34"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
-wasmtime = "0.39.1"
-wasmtime-wasi = { version = "0.39.1", features = ["tokio"] }
+wasmtime = "0.40.1"
+wasmtime-wasi = { version = "0.40.1", features = ["tokio"] }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.23", path = "../../core", features = ["tests-utils"]}
