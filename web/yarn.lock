@@ -8938,10 +8938,10 @@ proto-list@~1.2.1:
   resolved "https://registry.yarnpkg.com/proto-list/-/proto-list-1.2.4.tgz#212d5bfe1318306a420f6402b8e26ff39647a849"
   integrity sha512-vtK/94akxsTMhe0/cbfpR+syPuszcuwhqVjJq26CuNDgFGj682oRBXOP5MJpv2r7JtE8MsiepGIqvvOTBwn2vA==
 
-protobufjs-cli@^1.0.0:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/protobufjs-cli/-/protobufjs-cli-1.0.1.tgz#282d7b9b0fd90e72a2a61452c1f5710aacc013e2"
-  integrity sha512-d7m/aaXimDTaVvvPdU0HFwzieKJqo3x+z6iVly79jqLFyg5EmY9tl3vGbBqdytcOzT/acriOhOtB4xj3Kqixmw==
+protobufjs-cli@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/protobufjs-cli/-/protobufjs-cli-1.0.2.tgz#905fc49007cf4aaf3c45d5f250eb294eedeea062"
+  integrity sha512-cz9Pq9p/Zs7okc6avH20W7QuyjTclwJPgqXG11jNaulfS3nbVisID8rC+prfgq0gbZE0w9LBFd1OKFF03kgFzg==
   dependencies:
     chalk "^4.0.0"
     escodegen "^1.13.0"
