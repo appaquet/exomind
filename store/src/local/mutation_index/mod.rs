@@ -1,6 +1,8 @@
 use std::{
     borrow::Borrow,
     collections::BTreeMap,
+    convert::TryInto,
+    num::NonZeroUsize,
     ops::Deref,
     path::Path,
     result::Result,
@@ -104,6 +106,11 @@ impl MutationIndex {
             index.writer(config.indexer_heap_size_bytes)?
         };
 
+        let entity_cache_size: NonZeroUsize = config
+            .entity_mutations_cache_size
+            .try_into()
+            .map_err(|err| Error::Other(anyhow!("Invalid entity mutations cache size: {}", err)))?;
+
         Ok(MutationIndex {
             config,
             index,
@@ -111,7 +118,7 @@ impl MutationIndex {
             index_writer: Mutex::new(index_writer),
             schema,
             storage: Storage::Disk,
-            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size as usize),
+            entity_cache: EntityMutationsCache::new(entity_cache_size),
             full_text_boost: 1.0,
             schema_registry,
         })
@@ -141,6 +148,11 @@ impl MutationIndex {
             index.writer(config.indexer_heap_size_bytes)?
         };
 
+        let entity_cache_size: NonZeroUsize = config
+            .entity_mutations_cache_size
+            .try_into()
+            .map_err(|err| Error::Other(anyhow!("Invalid entity mutations cache size: {}", err)))?;
+
         Ok(MutationIndex {
             config,
             index,
@@ -148,7 +160,7 @@ impl MutationIndex {
             index_writer: Mutex::new(index_writer),
             schema,
             storage: Storage::Memory,
-            entity_cache: EntityMutationsCache::new(config.entity_mutations_cache_size as usize),
+            entity_cache: EntityMutationsCache::new(entity_cache_size),
             full_text_boost: 1.0,
             schema_registry,
         })

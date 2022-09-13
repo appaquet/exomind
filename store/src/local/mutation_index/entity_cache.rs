@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{num::NonZeroUsize, sync::Mutex};
 
 use lru::LruCache;
 
@@ -17,7 +17,7 @@ pub struct EntityMutationsCache {
 }
 
 impl EntityMutationsCache {
-    pub fn new(size: usize) -> EntityMutationsCache {
+    pub fn new(size: NonZeroUsize) -> EntityMutationsCache {
         EntityMutationsCache {
             cache: Mutex::new(LruCache::new(size)),
         }
