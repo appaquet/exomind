@@ -1232,10 +1232,29 @@
     "@bangle.dev/utils" "0.31.2"
     "@types/jest" "^27.5.2"
 
-"@bangle.dev/pm@0.31.2", "@bangle.dev/pm@^0.31.1":
+"@bangle.dev/pm@0.31.2":
   version "0.31.2"
   resolved "https://registry.yarnpkg.com/@bangle.dev/pm/-/pm-0.31.2.tgz#e91322dc2ff843093af2ce7ed8342ebf1dcce2b1"
   integrity sha512-7ba9ZBxyhBzcMSWkXPWoeZD08Hm5k6Ey/+EvQueftxeBcUFcX4ghHo69nCRK6xtHHreKHZkYIJ3kU0mNIrGD2A==
+  dependencies:
+    "@types/jest" "^27.5.2"
+    prosemirror-commands "^1.3.0"
+    prosemirror-dropcursor "^1.5.0"
+    prosemirror-gapcursor "^1.3.1"
+    prosemirror-history "^1.3.0"
+    prosemirror-inputrules "^1.2.0"
+    prosemirror-keymap "^1.2.0"
+    prosemirror-model "^1.18.1"
+    prosemirror-schema-list "^1.2.0"
+    prosemirror-state "^1.4.1"
+    prosemirror-tables "^1.2.3"
+    prosemirror-transform "^1.6.0"
+    prosemirror-view "^1.26.5"
+
+"@bangle.dev/pm@^0.31.3":
+  version "0.31.3"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/pm/-/pm-0.31.3.tgz#6e0c20c805915daecad01c3daadac9722f13ae5d"
+  integrity sha512-p7GtEgI1n8O0WmDaOtIS3eIkke2DW/ZINJBnkgF3OxPZl526IDa2l2QFmHdPbCYORMg7gkpltikrmNZBW978hg==
   dependencies:
     "@types/jest" "^27.5.2"
     prosemirror-commands "^1.3.0"
