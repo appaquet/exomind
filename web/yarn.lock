@@ -1894,12 +1894,7 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.31.tgz#31b7ca6407128a3d2bbc27fe2d21b345397f6197"
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
-"@types/node@*":
-  version "18.7.16"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.7.16.tgz#0eb3cce1e37c79619943d2fd903919fc30850601"
-  integrity sha512-EQHhixfu+mkqHMZl1R2Ovuvn47PUw18azMJOTwSZr9/fhzHNGXAJ0ma0dayRVchprpCj0Kc1K1xKoWaATWF1qg==
-
-"@types/node@>=13.7.0", "@types/node@^18.7.16":
+"@types/node@*", "@types/node@>=13.7.0", "@types/node@^18.7.16":
   version "18.7.17"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.7.17.tgz#52438111ea98f77475470fc62d79b9eb96bb2c92"
   integrity sha512-0UyfUnt02zIuqp7yC8RYtDkp/vo8bFaQ13KkSEvUAohPOAlnVNbj5Fi3fgPSuwzakS+EvvnnZ4x9y7i6ASaSPQ==
@@ -4502,10 +4497,10 @@ electron-webpack@^2.8.2:
     webpack-merge "^4.2.2"
     yargs "^15.3.1"
 
-electron@^20.1.3:
-  version "20.1.3"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-20.1.3.tgz#8a4e3f6945fa7ed06ba54d0f987737b0e057ceb4"
-  integrity sha512-DXBHzAwcpCor9MrxG9QA3Zt0sNcQbJ8ZJCYTC6xpuPe5wugBa6RF3hXqDUYdD2yOCUhjLbD3VASWn0+5LdYT3g==
+electron@^20.1.4:
+  version "20.1.4"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-20.1.4.tgz#d25b549f14376f99a0a239e27d67ef8515b4a5a0"
+  integrity sha512-7ov5kgSQi2JewV5SrVfjGasUvyScjuJrrDCW0rYxtP2SMe3JjoP4rsOOnh3ps2P/Nrdlbv+0ygiK0zp4ARCZ+A==
   dependencies:
     "@electron/get" "^1.14.1"
     "@types/node" "^16.11.26"
