@@ -3,7 +3,7 @@ use exomind_protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::api::{ModifyMessageRequest, ModifyThreadRequest};
 use google_gmail1::oauth2::{self, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use hyper::client::HttpConnector;
-use hyper_rustls::{HttpsConnectorBuilder, HttpsConnector};
+use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::{
     collections::HashSet,
     path::PathBuf,
