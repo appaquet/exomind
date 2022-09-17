@@ -2,7 +2,8 @@ use crate::config::Config;
 use exomind_protos::base::{Account, AccountScope, AccountType};
 use google_gmail1::api::{ModifyMessageRequest, ModifyThreadRequest};
 use google_gmail1::oauth2::{self, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
-use hyper_rustls::HttpsConnectorBuilder;
+use hyper::client::HttpConnector;
+use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::{
     collections::HashSet,
     path::PathBuf,
@@ -17,7 +18,7 @@ pub type HistoryId = u64;
 pub struct GmailClient {
     account: GmailAccount,
     config: Config,
-    client: google_gmail1::Gmail,
+    client: google_gmail1::Gmail<HttpsConnector<HttpConnector>>,
     last_refresh: Instant,
 }
 
@@ -36,7 +37,7 @@ impl GmailClient {
     async fn create_client(
         config: &Config,
         account: &GmailAccount,
-    ) -> anyhow::Result<google_gmail1::Gmail> {
+    ) -> anyhow::Result<google_gmail1::Gmail<HttpsConnector<HttpConnector>>> {
         info!("Creating gmail client for account {}", account.email());
 
         let token_file = account_token_file(config, account.email())?;
