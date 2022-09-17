@@ -122,7 +122,7 @@
     "@types/linkifyjs": "^2.1.4",
     "@types/lodash": "^4.14.184",
     "@types/node": "^18.7.18",
-    "@types/react": "^18.0.18",
+    "@types/react": "^18.0.20",
     "@types/react-dom": "^18.0.6",
     "@types/react-flatpickr": "^3.8.7",
     "@types/sanitize-html": "^2.6.0",
