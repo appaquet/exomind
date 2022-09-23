@@ -6,7 +6,7 @@ import * as domutils from 'domutils';
 import { exomind } from '../protos';
 import * as htmlparser from 'htmlparser2';
 import domSerializerRender from "dom-serializer";
-import linkifyHtml from 'linkifyjs/html';
+import linkifyHtml from 'linkify-html';
 import _ from 'lodash';
 import sanitizeHtml from 'sanitize-html';
 import { EntityTrait, EntityTraits } from '../utils/entities';
