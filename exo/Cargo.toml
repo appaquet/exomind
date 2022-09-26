@@ -33,7 +33,7 @@ serde = "1.0.145"
 serde_derive = "1.0.144"
 serde_json = "1.0.85"
 tempfile = "3.3.0"
-thiserror = "1.0.35"
+thiserror = "1.0.36"
 tokio = { version = "1.21.0", features = ["macros"], default-features = false }
 url = "2.3.1"
 zip = { version = "0.6.2", features = ["deflate"], default-features = false }
