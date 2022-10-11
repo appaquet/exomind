@@ -48,10 +48,9 @@ jobs:
       fail-fast: true
       matrix:
         pair:
-          # TODO: Enable back when we can install a recent enough version of `protoc` (cross is still on ubuntu 18.04)
-          # - target: armv7-unknown-linux-gnueabihf
-          #   os: ubuntu-latest
-          #   cross: true
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
           - target: aarch64-apple-darwin
             os: macOS-11
             cross: false
@@ -68,6 +67,10 @@ jobs:
           profile: minimal
 
       - uses: Swatinem/rust-cache@v1
+
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
