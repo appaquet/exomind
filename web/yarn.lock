@@ -4985,12 +4985,12 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ==
 
-exocore@^0.1.23:
-  version "0.1.23"
-  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.23.tgz#1b1e402c7183043b0eb110363e56a7978c87ef37"
-  integrity sha512-nZOe5UeUGrrsk+gQ0QF3QeWcXjuMGbm1WVjgKUrssa6ns4Pvl4HzguPBuYF2E03XXbIECmqTgFBb+Z5Rp5+P8g==
+exocore@^0.1.24:
+  version "0.1.24"
+  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.24.tgz#8ffc8ecaba4d28cbedb3cceb2b0d662911ed6923"
+  integrity sha512-uAAbjojGyv7zWdMGeZE0DH8dpveScSkoei45UXylmi3g/dgywZQ3xA695E/o7u9PkB9u+69p2XdJkmaPyek8UA==
   dependencies:
-    protobufjs "^7.0.0"
+    protobufjs "^7.1.2"
 
 expand-brackets@^2.1.4:
   version "2.1.4"
@@ -8790,7 +8790,7 @@ protobufjs-cli@^1.0.0:
     tmp "^0.2.1"
     uglify-js "^3.7.7"
 
-protobufjs@^7.0.0:
+protobufjs@^7.0.0, protobufjs@^7.1.2:
   version "7.1.2"
   resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.1.2.tgz#a0cf6aeaf82f5625bffcf5a38b7cd2a7de05890c"
   integrity sha512-4ZPTPkXCdel3+L81yw3dG6+Kq3umdWKh7Dc7GW/CpNk4SX3hK58iPCWeCyhVTDrbkNeKrYNZ7EojM5WDaEWTLQ==
