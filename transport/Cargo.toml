@@ -18,7 +18,7 @@ p2p-web = ["p2p-base", "libp2p/wasm-ext-websocket", "libp2p/wasm-bindgen", "gloo
 tests-utils = ["exocore-core/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.64"
+anyhow = "1.0.65"
 byteorder = "1.4.3"
 bytes = "1.2.1"
 exocore-core = {version = "0.1.24", path = "../core"}
@@ -29,9 +29,9 @@ hyper = { version = "0.14.20", features = ["full"], optional = true }
 libp2p = { version = "0.48.0", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"] }
 log = "0.4.17"
 pin-project = "1.0.12"
-thiserror = "1.0.36"
+thiserror = "1.0.37"
 url = { version = "2.3.1", optional = true }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.24", path = "../core", features = ["tests-utils"]}
-tokio = { version = "1.21.0", features = ["macros"], default-features = false }
+tokio = { version = "1.21.2", features = ["macros"], default-features = false }
