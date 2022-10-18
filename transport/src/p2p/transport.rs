@@ -11,12 +11,7 @@ use exocore_core::{
 };
 use exocore_protos::generated::common_capnp::envelope;
 use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
-use libp2p::{
-    core::PeerId,
-    ping::{Ping, PingEvent, PingSuccess},
-    swarm::Swarm,
-    NetworkBehaviour, Transport,
-};
+use libp2p::{core::PeerId, ping, swarm::Swarm, NetworkBehaviour, Transport};
 
 use super::{
     behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage, PeerStatus},
@@ -94,7 +89,7 @@ impl Libp2pTransport {
         let behaviour = CombinedBehaviour {
             // service_handles: Arc::clone(&self.service_handles),
             exocore: ExocoreBehaviour::default(),
-            ping: Ping::default(),
+            ping: ping::Behaviour::default(),
         };
 
         const DIAL_CONCURRENCY_FACTOR: u8 = 5;
@@ -244,7 +239,7 @@ impl Libp2pTransport {
                     }
                     libp2p::swarm::SwarmEvent::Behaviour(CombinedEvent::Ping(event)) => {
                         match event.result {
-                            Ok(PingSuccess::Ping { rtt }) => {
+                            Ok(ping::Success::Ping { rtt }) => {
                                 // TODO: We could save round-trip time to node. Could be use for
                                 // node selection.
                                 swarm
@@ -252,7 +247,7 @@ impl Libp2pTransport {
                                     .exocore
                                     .report_ping_success(&event.peer, rtt)
                             }
-                            Ok(PingSuccess::Pong) => {}
+                            Ok(ping::Success::Pong) => {}
                             Err(failure) => {
                                 debug!("Failed to ping peer {}: {}", event.peer, failure);
                             }
@@ -304,12 +299,12 @@ impl Libp2pTransport {
 #[behaviour(out_event = "CombinedEvent")]
 struct CombinedBehaviour {
     exocore: ExocoreBehaviour,
-    ping: Ping,
+    ping: ping::Behaviour,
 }
 
 enum CombinedEvent {
     Exocore(ExocoreBehaviourEvent),
-    Ping(PingEvent),
+    Ping(ping::Event),
 }
 
 impl From<ExocoreBehaviourEvent> for CombinedEvent {
@@ -318,8 +313,8 @@ impl From<ExocoreBehaviourEvent> for CombinedEvent {
     }
 }
 
-impl From<PingEvent> for CombinedEvent {
-    fn from(event: PingEvent) -> Self {
+impl From<ping::Event> for CombinedEvent {
+    fn from(event: ping::Event) -> Self {
         CombinedEvent::Ping(event)
     }
 }

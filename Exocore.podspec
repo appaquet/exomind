@@ -18,4 +18,6 @@ Pod::Spec.new do |spec|
     spec.library      = 'iconv', 'z'
 
     spec.dependency 'SwiftProtobuf', '~> 1.10'
+
+    spec.frameworks = 'SystemConfiguration' # referenced by the if-watch crate used in libp2p
   end
