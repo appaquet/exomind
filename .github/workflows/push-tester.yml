@@ -111,6 +111,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross
+
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
         with:
