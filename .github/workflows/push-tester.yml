@@ -25,6 +25,11 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check formatting
         uses: actions-rs/cargo@v1.0.3
         with:
@@ -69,6 +74,11 @@ jobs:
         with:
           key: bust-1
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Tests
         uses: actions-rs/cargo@v1.0.3
         with:
@@ -100,6 +110,11 @@ jobs:
           profile: minimal
 
       - uses: Swatinem/rust-cache@v1
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions-rs/cargo@v1.0.3
         with:
@@ -187,9 +202,14 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.23/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.24/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
       - name: Build & package app

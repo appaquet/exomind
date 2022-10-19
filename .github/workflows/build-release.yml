@@ -53,6 +53,15 @@ jobs:
           command: build
           args: -p exm --profile production --target ${{ matrix.pair.target }}
 
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create binary
         run: |
           mkdir archive
@@ -109,9 +118,14 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.23/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.24/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
       - name: Build app
