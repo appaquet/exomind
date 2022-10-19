@@ -47,12 +47,6 @@ jobs:
           target: ${{ matrix.pair.target }}
           override: true
 
-      - uses: actions-rs/cargo@v1.0.3
-        with:
-          use-cross: ${{ matrix.pair.cross }}
-          command: build
-          args: -p exm --profile production --target ${{ matrix.pair.target }}
-
       - name: Install master version of cross # TODO: Remove me once new cross is released
         run: |
           cargo install cross --git https://github.com/cross-rs/cross
@@ -61,6 +55,12 @@ jobs:
         uses: arduino/setup-protoc@v1
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions-rs/cargo@v1.0.3
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: build
+          args: -p exm --profile production --target ${{ matrix.pair.target }}
 
       - name: Create binary
         run: |
