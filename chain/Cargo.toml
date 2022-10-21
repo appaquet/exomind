@@ -23,7 +23,7 @@ byteorder = "1.4.3"
 exocore-core = {version = "0.1.24", path = "../core"}
 exocore-protos = {version = "0.1.24", path = "../protos"}
 exocore-transport = {version = "0.1.24", path = "../transport", default-features = false}
-futures = "0.3.24"
+futures = "0.3.25"
 itertools = "0.10.5"
 log = "0.4.17"
 serde = { version = "1.0.145", features = ["derive"] }

@@ -15,7 +15,7 @@ exocore-protos = {version = "0.1.24", path = "../../protos"}
 exocore-store = {version = "0.1.24", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.24", path = "../../transport", features = ["p2p-full"]}
 weak-table = "0.3.2"
-futures = "0.3.24"
+futures = "0.3.25"
 libc = "0.2.135"
 log = "0.4.17"
 log4rs = "1.2.0"
