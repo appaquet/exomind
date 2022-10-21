@@ -11,7 +11,7 @@ version = "0.1.15"
 
 [dependencies]
 anyhow = "1.0.65"
-base64 = "0.13.0"
+base64 = "0.13.1"
 chardetng = "0.1.17"
 charset = "0.1.3"
 duration-string = { version = "0.1.1", features = ["serde"] }
