@@ -28,7 +28,7 @@ thiserror = "1.0.37"
 wasm-timer = "0.2.5"
 
 # For server
-hyper = { version = "0.14.20", features = ["full"], optional = true }
+hyper = { version = "0.14.22", features = ["full"], optional = true }
 tokio = { version = "1.21.2", default-features = false, features = ["macros", "time"], optional = true }
 
 [[test]]
