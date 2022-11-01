@@ -41,7 +41,7 @@ log4rs = { version = "1.2.0", optional = true }
 multihash = "0.16.3"
 petname = "1.1.2"
 rand = "0.8"
-serde = "1.0.145"
+serde = "1.0.147"
 serde_derive = "1.0.145"
 serde_json = "1.0.87"
 serde_yaml = "0.9.13"
