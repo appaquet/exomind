@@ -11,7 +11,7 @@ version = "0.1.24"
 
 [dependencies]
 anyhow = "1.0.65"
-base64 = "0.13.0"
+base64 = "0.13.1"
 capnp = { version = "0.14.10", features = ["sync_reader"] }
 chrono = "0.4.22"
 prost = "0.11.0"
