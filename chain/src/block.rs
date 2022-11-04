@@ -76,7 +76,7 @@ pub trait Block {
             .copy_into(data)
             .expect("Couldn't write block into given buffer");
 
-        (&mut data[operations_offset..signatures_offset]).copy_from_slice(operations_data);
+        data[operations_offset..signatures_offset].copy_from_slice(operations_data);
 
         self.signatures()
             .copy_into(&mut data[signatures_offset..])

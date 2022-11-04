@@ -52,7 +52,7 @@ impl<I: FrameReader + Clone> Clone for CapnpFrame<I> {
 /// Frame that wraps a Capnpframe with type annotation.
 pub struct TypedCapnpFrame<I: FrameReader, T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     inner: CapnpFrame<I>,
     reader: capnp::message::Reader<capnp::serialize::OwnedSegments>,
@@ -61,7 +61,7 @@ where
 
 impl<I: FrameReader, T> TypedCapnpFrame<I, T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     pub fn new(data: I) -> Result<TypedCapnpFrame<I, T>, capnp::Error> {
         let frame = CapnpFrame::new(data)?;
@@ -89,7 +89,7 @@ where
         &self.inner
     }
 
-    pub fn get_reader(&self) -> Result<<T as Owned>::Reader, capnp::Error> {
+    pub fn get_reader(&self) -> Result<<T as Owned>::Reader<'_>, capnp::Error> {
         self.reader.get_root()
     }
 
@@ -101,7 +101,7 @@ where
 
 impl<I: FrameReader, T> FrameReader for TypedCapnpFrame<I, T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     type OwnedType = TypedCapnpFrame<CapnpFrame<I::OwnedType>, T>;
 
@@ -121,7 +121,7 @@ where
 
 impl<I: FrameReader + Clone, T> Clone for TypedCapnpFrame<I, T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     fn clone(&self) -> Self {
         Self::from_capnp(self.inner.clone()).unwrap()
@@ -131,7 +131,7 @@ where
 /// Capnproto frame builder
 pub struct CapnpFrameBuilder<T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     builder: Builder<HeapAllocator>,
     phantom: std::marker::PhantomData<T>,
@@ -139,7 +139,7 @@ where
 
 impl<T> CapnpFrameBuilder<T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     pub fn new() -> CapnpFrameBuilder<T> {
         let builder = Builder::new_default();
@@ -149,14 +149,14 @@ where
         }
     }
 
-    pub fn get_builder(&mut self) -> <T as capnp::traits::Owned>::Builder {
+    pub fn get_builder(&mut self) -> <T as capnp::traits::Owned>::Builder<'_> {
         self.builder.get_root().unwrap()
     }
 }
 
 impl<T> FrameBuilder for CapnpFrameBuilder<T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     type OwnedFrameType = TypedCapnpFrame<Bytes, T>;
 
@@ -187,7 +187,7 @@ where
 
 impl<T> Default for CapnpFrameBuilder<T>
 where
-    T: for<'a> MessageType<'a>,
+    T: MessageType,
 {
     fn default() -> Self {
         Self::new()

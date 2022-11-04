@@ -478,9 +478,5 @@ pub(crate) fn get_doc_opt_bool_value(doc: &Document, field: Field) -> Option<boo
 }
 
 pub(crate) fn bool_to_u64(v: bool) -> u64 {
-    if v {
-        1
-    } else {
-        0
-    }
+    u64::from(v)
 }

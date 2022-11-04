@@ -252,7 +252,7 @@ fn wasm_alloc(
 
     let data = mem.data_mut(store);
     let ptr_usize = ptr as usize;
-    (&mut data[ptr_usize..ptr_usize + bytes.len()]).copy_from_slice(bytes);
+    data[ptr_usize..ptr_usize + bytes.len()].copy_from_slice(bytes);
 
     Ok((ptr, bytes.len() as i32))
 }

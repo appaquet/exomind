@@ -2,7 +2,7 @@
 set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-OUTPUT=${1:-lcov}
+OUTPUT=${1:-html}
 
 OUTPUT_ARGS=""
 if [[ "$OUTPUT" == "html" ]]; then

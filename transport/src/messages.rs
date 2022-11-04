@@ -29,7 +29,7 @@ impl OutMessage {
         frame: CapnpFrameBuilder<T>,
     ) -> Result<OutMessage, Error>
     where
-        T: for<'a> MessageType<'a>,
+        T: MessageType,
     {
         let mut envelope_builder = CapnpFrameBuilder::<envelope::Owned>::new();
         let mut envelope_message_builder = envelope_builder.get_builder();
@@ -142,11 +142,9 @@ impl InMessage {
         Ok(data)
     }
 
-    pub fn get_data_as_framed_message<'d, T>(
-        &'d self,
-    ) -> Result<TypedCapnpFrame<&'d [u8], T>, Error>
+    pub fn get_data_as_framed_message<T>(&self) -> Result<TypedCapnpFrame<&'_ [u8], T>, Error>
     where
-        T: for<'a> MessageType<'a>,
+        T: MessageType,
     {
         let reader = self.envelope.get_reader()?;
         let data = reader.get_data()?;
@@ -169,7 +167,7 @@ impl InMessage {
         frame: CapnpFrameBuilder<T>,
     ) -> Result<OutMessage, Error>
     where
-        T: for<'a> MessageType<'a>,
+        T: MessageType,
     {
         let reply_token = self.get_reply_token()?;
         reply_token.to_response_message(cell, frame)
@@ -202,7 +200,7 @@ impl MessageReplyToken {
         frame: CapnpFrameBuilder<T>,
     ) -> Result<OutMessage, Error>
     where
-        T: for<'a> MessageType<'a>,
+        T: MessageType,
     {
         Ok(
             OutMessage::from_framed_message(cell, self.service_type, frame)?
