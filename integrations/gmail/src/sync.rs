@@ -186,9 +186,7 @@ impl AccountSynchronizer {
     }
 
     pub async fn synchronize_exomind_history(&mut self) -> anyhow::Result<()> {
-        let last_operation_id = if let Some(last_operation) = self.last_exomind_operation {
-            last_operation
-        } else {
+        let Some(last_operation_id) = self.last_exomind_operation else {
             // never fetched through history, we fetch last exomind history action for next sync via history
             if let Some(last_action) = self.latest_exomind_history_action().await? {
                 self.last_exomind_operation = Some(last_action.operation_id());
@@ -248,9 +246,7 @@ impl AccountSynchronizer {
     }
 
     pub fn update_last_gmail_history(&mut self, history_id: Option<HistoryId>) {
-        let history_id = if let Some(history_id) = history_id {
-            history_id
-        } else {
+        let Some(history_id) = history_id else {
             return;
         };
 
@@ -266,9 +262,7 @@ impl AccountSynchronizer {
     }
 
     pub fn update_last_exomind_operation(&mut self, operation_id: Option<OperationId>) {
-        let operation_id = if let Some(operation_id) = operation_id {
-            operation_id
-        } else {
+        let Some(operation_id) = operation_id else {
             return;
         };
 

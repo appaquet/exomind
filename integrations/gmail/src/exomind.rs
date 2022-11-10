@@ -188,9 +188,7 @@ impl ExomindClient {
             // check unread flag
             for unread_trait in entity.traits_of_type::<Unread>() {
                 let unread_ref = unread_trait.instance.entity.as_ref();
-                let unread_ref_trait = if let Some(id) = unread_ref.map(|f| &f.trait_id) {
-                    id
-                } else {
+                let Some(unread_ref_trait) = unread_ref.map(|f| &f.trait_id) else {
                     continue;
                 };
 
