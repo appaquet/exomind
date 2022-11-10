@@ -107,9 +107,7 @@ impl GmailClient {
 
         let mut threads = Vec::new();
         for partial_thread in partial_threads {
-            let thread_id = if let Some(id) = partial_thread.id.as_deref() {
-                id
-            } else {
+            let Some(thread_id) = partial_thread.id.as_deref() else {
                 continue;
             };
 
