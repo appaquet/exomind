@@ -54,7 +54,7 @@ impl Directory for WebDirectory {
             let key = storage
                 .key(i)
                 .map_err(|err| anyhow!("failed to get storage item {}: {:?}", i, err))?;
-            let key = if let Some(key) = key { key } else { continue };
+            let Some(key) = key else { continue };
 
             if key.starts_with(&prefix) {
                 let file = WebFileStat::new(&storage, key)?;
@@ -73,9 +73,7 @@ impl Directory for WebDirectory {
     }
 
     fn exists(&self, path: &Path) -> bool {
-        let key = if let Ok(key) = path_to_key(path, false) {
-            key
-        } else {
+        let Ok(key) = path_to_key(path, false) else {
             return false;
         };
 

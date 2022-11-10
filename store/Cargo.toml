@@ -28,7 +28,7 @@ remote = ["exocore-core", "exocore-transport"]
 tests-utils = []
 
 [dependencies]
-anyhow = "1.0.65"
+anyhow = "1.0.66"
 async-trait = "0.1.58"
 bytes = "1.2.1"
 chrono = { version = "0.4.22", features = ["serde"] }
@@ -50,7 +50,7 @@ crc = { version = "3.0.0", optional = true }
 extsort = { version = "0.4.2", optional = true }
 lru = { version = "0.8.1", optional = true }
 serde = { version = "1.0.147", optional = true }
-serde_derive = { version = "1.0.145", optional = true }
+serde_derive = { version = "1.0.147", optional = true }
 serde_json = { version = "1.0.87", optional = true }
 tantivy = { version = "0.18.1", optional = true }
 

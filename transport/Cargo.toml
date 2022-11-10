@@ -18,14 +18,14 @@ p2p-web = ["p2p-base", "libp2p/wasm-ext-websocket", "libp2p/wasm-bindgen", "gloo
 tests-utils = ["exocore-core/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.65"
+anyhow = "1.0.66"
 byteorder = "1.4.3"
 bytes = "1.2.1"
 exocore-core = {version = "0.1.24", path = "../core"}
 exocore-protos = {version = "0.1.24", path = "../protos"}
 futures = "0.3.25"
 gloo-timers = {version = "=0.2.2", optional = true}# force version because of wasm setTimeout bug: https://github.com/rustwasm/gloo/issues/187
-hyper = { version = "0.14.22", features = ["full"], optional = true }
+hyper = { version = "0.14.23", features = ["full"], optional = true }
 libp2p = { version = "0.49.0", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "dns-tokio", "tcp-tokio"] }
 log = "0.4.17"
 pin-project = "1.0.12"

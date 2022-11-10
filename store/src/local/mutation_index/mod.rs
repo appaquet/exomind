@@ -440,11 +440,9 @@ impl MutationIndex {
             }
         };
 
-        let message_mappings = if let Some(message_mappings) =
+        let Some(message_mappings) =
             self.schema.dynamic_fields.get(dyn_message.full_name())
-        {
-            message_mappings
-        } else {
+        else {
             // field is not indexed if we don't have a mapping for it
             return;
         };
@@ -518,9 +516,7 @@ impl MutationIndex {
             return;
         }
 
-        let mapped_field = if let Some(mapped_field) = message_mappings.get(&field_name) {
-            mapped_field
-        } else {
+        let Some(mapped_field) = message_mappings.get(&field_name) else {
             // field is not indexed if we don't have a mapping for it
             return;
         };

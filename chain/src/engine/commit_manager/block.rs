@@ -69,11 +69,7 @@ impl PendingBlocks {
         // then we get all operations for each block proposal
         let mut blocks = HashMap::<OperationId, PendingBlock>::new();
         for group_id in groups_id.iter_mut() {
-            let group_operations = if let Some(group_operations) =
-                pending_store.get_group_operations(*group_id)?
-            {
-                group_operations
-            } else {
+            let Some(group_operations) = pending_store.get_group_operations(*group_id)? else {
                 warn!(
                     "Didn't have any operations for block proposal with group_id={}, which shouldn't be possible",
                     group_id
@@ -277,9 +273,7 @@ impl PendingBlock {
             return false;
         };
 
-        let block = if let Ok(block) = self.proposal.get_block() {
-            block
-        } else {
+        let Ok(block) = self.proposal.get_block() else {
             return false;
         };
 

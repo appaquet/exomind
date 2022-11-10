@@ -10,9 +10,9 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.24"
 
 [dependencies]
-anyhow = "1.0.65"
+anyhow = "1.0.66"
 bytes = "1.2.1"
-clap = { version = "4.0.18", features = ["derive", "env"] }
+clap = { version = "4.0.22", features = ["derive", "env"] }
 console = "0.15.2"
 dialoguer = "0.10.2"
 dirs-next = "2.0.0"
@@ -24,13 +24,13 @@ exocore-protos = {version = "0.1.24", path = "../protos"}
 exocore-store = {version = "0.1.24", path = "../store"}
 exocore-transport = {version = "0.1.24", path = "../transport", features = ["http-server"]}
 futures = "0.3.25"
-indicatif = "0.17.1"
+indicatif = "0.17.2"
 log = "0.4.17"
 log4rs = "1.2.0"
 rand = "0.8"
 reqwest = { version = "0.11.12", default-features = false, features = ["rustls-tls"] }
 serde = "1.0.147"
-serde_derive = "1.0.145"
+serde_derive = "1.0.147"
 serde_json = "1.0.87"
 tempfile = "3.3.0"
 thiserror = "1.0.37"

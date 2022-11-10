@@ -289,9 +289,7 @@ impl TraitAggregator {
         let op_id = mutation.operation_id;
         let op_time = ConsistentTimestamp::from(op_id).to_datetime();
 
-        let put_trait = if let MutationType::TraitPut(put_trait) = &mutation.mutation_type {
-            put_trait
-        } else {
+        let MutationType::TraitPut(put_trait) = &mutation.mutation_type else {
             return;
         };
 
@@ -344,9 +342,7 @@ fn projection_matches_trait(trait_type: Option<&str>, projection: &Projection) -
         return true;
     }
 
-    let trait_type = if let Some(trait_type) = trait_type {
-        trait_type
-    } else {
+    let Some(trait_type) = trait_type else {
         return false;
     };
 
@@ -368,9 +364,7 @@ pub fn project_trait_fields(
     trt: &mut Trait,
     projection: &Projection,
 ) -> Result<(), Error> {
-    let any_msg = if let Some(msg) = &trt.message {
-        msg
-    } else {
+    let Some(any_msg) = &trt.message  else {
         return Ok(());
     };
 

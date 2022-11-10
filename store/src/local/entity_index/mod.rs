@@ -732,9 +732,7 @@ where
             self.chain_handle.get_operation(operation_id)?
         };
 
-        let operation = if let Some(operation) = operation {
-            operation
-        } else {
+        let Some(operation) = operation else {
             return Ok(None);
         };
 

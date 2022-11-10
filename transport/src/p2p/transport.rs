@@ -214,9 +214,7 @@ impl Libp2pTransport {
 
             // Poll the swarm to complete its job
             while let Poll::Ready(event) = swarm.poll_next_unpin(cx) {
-                let event = if let Some(event) = event {
-                    event
-                } else {
+                let Some(event) = event else {
                     continue;
                 };
 
@@ -339,9 +337,7 @@ fn dispatch_message(
     })?;
 
     let key = (cell_id, service_type);
-    let service_handle = if let Some(service_handle) = inner.service_handles.get_mut(&key) {
-        service_handle
-    } else {
+    let Some(service_handle) = inner.service_handles.get_mut(&key) else {
         return Err(Error::Other(format!(
             "Couldn't find transport for service & cell {:?}",
             key

@@ -66,9 +66,7 @@ impl Directory for ScopedDirectory {
     }
 
     fn exists(&self, path: &std::path::Path) -> bool {
-        let path = if let Ok(path) = self.join_path(path, true) {
-            path
-        } else {
+        let Ok(path) = self.join_path(path, true) else {
             return false;
         };
 

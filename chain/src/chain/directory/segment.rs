@@ -529,9 +529,7 @@ impl SegmentFile {
         self.maybe_mmap_write()?;
 
         let mut mmap = self.mmap.write().unwrap();
-        let mmap = if let SegmentMmap::Write(mmap) = &mut *mmap {
-            mmap
-        } else {
+        let SegmentMmap::Write(mmap) = &mut *mmap else {
             return Err(Error::UnexpectedState(anyhow!(
                 "Expected map to be writable"
             )));

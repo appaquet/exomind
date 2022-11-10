@@ -115,9 +115,7 @@ impl GarbageCollector {
         let min_op_time = self.clock.now_chrono() - self.trait_versions_min_age;
         let mut deletions = Vec::new();
         for entity_id in &entity_ids {
-            let sorted_mutations = if let Ok(sorted_mutations) = entity_fetcher(entity_id) {
-                sorted_mutations
-            } else {
+            let Ok(sorted_mutations) = entity_fetcher(entity_id) else {
                 error!("couldn't fetch mutations for entity {}", entity_id);
                 continue;
             };

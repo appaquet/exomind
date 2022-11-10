@@ -61,23 +61,17 @@ impl IndexOperation {
     pub fn from_pending_engine_operation(
         operation: EngineOperation,
     ) -> SmallVec<[IndexOperation; 1]> {
-        let entity_mutation = if let Some(mutation) = Self::extract_entity_mutation(&operation) {
-            mutation
-        } else {
+        let Some(entity_mutation) = Self::extract_entity_mutation(&operation) else {
             return smallvec![];
         };
 
-        let mutation = if let Some(mutation) = entity_mutation.mutation {
-            mutation
-        } else {
+        let Some(mutation) = entity_mutation.mutation else {
             return smallvec![];
         };
 
         match mutation {
             Mutation::PutTrait(trt_mut) => {
-                let trt = if let Some(trt) = trt_mut.r#trait {
-                    trt
-                } else {
+                let Some(trt) = trt_mut.r#trait else {
                     return smallvec![];
                 };
 
@@ -119,9 +113,7 @@ impl IndexOperation {
         operation: EngineOperation,
         block_offset: BlockOffset,
     ) -> (SmallVec<[IndexOperation; 1]>, EntityId) {
-        let entity_mutation = if let Some(mutation) = Self::extract_entity_mutation(&operation) {
-            mutation
-        } else {
+        let Some(entity_mutation) = Self::extract_entity_mutation(&operation) else {
             return (smallvec![], String::new());
         };
 
@@ -140,17 +132,13 @@ impl IndexOperation {
         operation_id: OperationId,
         block_offset: BlockOffset,
     ) -> SmallVec<[IndexOperation; 1]> {
-        let mutation = if let Some(mutation) = entity_mutation.mutation {
-            mutation
-        } else {
+        let Some(mutation) = entity_mutation.mutation else {
             return smallvec![];
         };
 
         match mutation {
             Mutation::PutTrait(trait_put) => {
-                let trt = if let Some(trt) = trait_put.r#trait {
-                    trt
-                } else {
+                let Some(trt) = trait_put.r#trait else {
                     return smallvec![];
                 };
 

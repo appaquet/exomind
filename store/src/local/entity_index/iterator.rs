@@ -169,9 +169,7 @@ impl<'s> ChainEntityIterator<'s> {
         };
 
         for (_trait_id, trait_aggr) in aggr.traits {
-            let (mut_meta, _put_mut) = if let Some(tup) = trait_aggr.last_put_mutation() {
-                tup
-            } else {
+            let Some((mut_meta, _put_mut)) = trait_aggr.last_put_mutation() else {
                 continue;
             };
 

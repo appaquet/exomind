@@ -269,9 +269,7 @@ impl Inner {
             }
         }
 
-        let request_id = if let Some(rendez_vous_id) = in_message.rendez_vous_id {
-            rendez_vous_id
-        } else {
+        let Some(rendez_vous_id) = in_message.rendez_vous_id else {
             return Err(anyhow!(
                 "Got an InMessage without a rendez_vous_id (type={:?} from={})",
                 in_message.typ,
@@ -282,24 +280,24 @@ impl Inner {
 
         match IncomingMessage::parse_incoming_message(&in_message) {
             Ok(IncomingMessage::MutationResponse(mutation)) => {
-                if let Some(pending_request) = inner.pending_mutations.remove(&request_id) {
+                if let Some(pending_request) = inner.pending_mutations.remove(&rendez_vous_id) {
                     let _ = pending_request.result_sender.send(Ok(mutation));
                 } else {
                     return Err(anyhow!(
                         "Couldn't find pending mutation for mutation response (request_id={:?} type={:?} from={})",
-                        request_id, in_message.typ, in_message.source
+                        rendez_vous_id, in_message.typ, in_message.source
                     ).into());
                 }
             }
             Ok(IncomingMessage::QueryResponse(result)) => {
-                if let Some(pending_request) = inner.pending_queries.remove(&request_id) {
+                if let Some(pending_request) = inner.pending_queries.remove(&rendez_vous_id) {
                     let _ = pending_request.result_sender.send(Ok(result));
-                } else if let Some(watched_query) = inner.watched_queries.get_mut(&request_id) {
+                } else if let Some(watched_query) = inner.watched_queries.get_mut(&rendez_vous_id) {
                     let _ = watched_query.result_sender.try_send(Ok(result));
                 } else {
                     return Err(anyhow!(
                         "Couldn't find pending query for query response (request_id={:?} type={:?} from={})",
-                        request_id, in_message.typ, in_message.source
+                        rendez_vous_id, in_message.typ, in_message.source
                     ).into());
                 }
             }
@@ -307,17 +305,20 @@ impl Inner {
                 if inner.config.watched_re_register_remote_dropped
                     && err.contains("unregistered") =>
             {
-                if let Some(watched_query) = inner.watched_queries.get_mut(&request_id) {
+                if let Some(watched_query) = inner.watched_queries.get_mut(&rendez_vous_id) {
                     debug!("Query got unregistered by remote. Re-registering...");
                     watched_query.force_register();
                 }
             }
             Err(err) => {
-                if let Some(pending_request) = inner.pending_mutations.remove(&request_id) {
+                if let Some(pending_request) = inner.pending_mutations.remove(&rendez_vous_id) {
                     let _ = pending_request.result_sender.send(Err(err));
-                } else if let Some(mut watched_query) = inner.watched_queries.remove(&request_id) {
+                } else if let Some(mut watched_query) =
+                    inner.watched_queries.remove(&rendez_vous_id)
+                {
                     let _ = watched_query.result_sender.try_send(Err(err));
-                } else if let Some(pending_request) = inner.pending_queries.remove(&request_id) {
+                } else if let Some(pending_request) = inner.pending_queries.remove(&rendez_vous_id)
+                {
                     let _ = pending_request.result_sender.send(Err(err));
                 }
             }

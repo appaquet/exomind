@@ -333,9 +333,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
                     .ok_or(EngineError::UninitializedChain)?;
                 let prev_block_op_id = previous_block.get_proposed_operation_id()?;
                 let prev_block_time = ConsistentTimestamp::from(prev_block_op_id);
-                let previous_block_elapsed = if let Some(elapsed) = now - prev_block_time {
-                    elapsed
-                } else {
+                let Some(previous_block_elapsed) = now - prev_block_time else {
                     return Ok(false);
                 };
 

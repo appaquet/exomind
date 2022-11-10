@@ -157,9 +157,7 @@ impl CellConfigExt for CellConfig {
     }
 
     fn add_node(&mut self, node: CellNodeConfig) {
-        let node_pk = if let Some(node_pk) = node.node.as_ref().map(|n| n.public_key.as_str()) {
-            node_pk
-        } else {
+        let Some(node_pk) = node.node.as_ref().map(|n| n.public_key.as_str()) else {
             return;
         };
 

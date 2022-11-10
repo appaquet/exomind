@@ -360,9 +360,7 @@ impl ChainStore for DirectoryChainStore {
     }
 
     fn get_last_block(&self) -> Result<Option<DataBlock<ChainData>>, Error> {
-        let last_segment = if let Some(last_segment) = self.segments.last() {
-            last_segment
-        } else {
+        let Some(last_segment) = self.segments.last() else {
             return Ok(None);
         };
 

@@ -63,9 +63,7 @@ impl WatchedQuery {
             loop {
                 futures::select! {
                     result = results.next().fuse() => {
-                        let result = if let Some(result) = result {
-                            result
-                        } else {
+                        let Some(result) = result else {
                             return Ok(());
                         };
 

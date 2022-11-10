@@ -382,9 +382,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             return Ok(());
         }
 
-        let leader_node_id = if let Some(leader_node_id) = self.leader.clone() {
-            leader_node_id
-        } else {
+        let Some(leader_node_id) = self.leader.clone() else {
             return Ok(());
         };
 

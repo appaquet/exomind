@@ -142,9 +142,7 @@ fn convert_field_ref(
             None => Err(Error::NoSuchField(field_id)),
         },
         ReflectFieldRef::Repeated(r) => {
-            let inner_field_type = if let FieldType::Repeated(inner) = field_type {
-                inner
-            } else {
+            let FieldType::Repeated(inner_field_type) = field_type else {
                 return Err(Error::Other(anyhow!(
                     "expected repeated field type, got {field_type:?} at field {field_id:?}"
                 )));

@@ -49,9 +49,7 @@ impl<S: Store> Applications<S> {
     ) -> Result<Applications<S>, Error> {
         let mut apps = Vec::new();
         for cell_app in cell.applications().get() {
-            let app = if let Some(app) = cell_app.get() {
-                app
-            } else {
+            let Some(app) = cell_app.get()  else {
                 warn!(
                     "Application '{}' (id={}) not loaded. Run unpack to load them.",
                     cell_app.name(),
@@ -61,9 +59,7 @@ impl<S: Store> Applications<S> {
             };
 
             let app_manifest = app.manifest();
-            let module = if let Some(module) = &app_manifest.module {
-                module
-            } else {
+            let Some(module) = &app_manifest.module else {
                 continue;
             };
 
@@ -168,9 +164,7 @@ impl<S: Store> Applications<S> {
                         }
                     });
 
-                    let in_messages = if let Some(in_messages) = in_messages {
-                        in_messages
-                    } else {
+                    let Some(in_messages) = in_messages else {
                         info!(
                             "{}: In message receiver returned none. Stopping app runtime",
                             app_prefix

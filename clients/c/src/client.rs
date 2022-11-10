@@ -304,9 +304,7 @@ pub unsafe extern "C" fn exocore_cell_generate_auth_token(
 
     let auth_token =
         exocore_core::sec::auth_token::AuthToken::new(&client.cell, &client.clock, expiration);
-    let auth_token = if let Ok(token) = auth_token {
-        token
-    } else {
+    let Ok(auth_token) = auth_token else {
         return CString::new("").unwrap().into_raw();
     };
 

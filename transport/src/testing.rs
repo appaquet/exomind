@@ -146,9 +146,7 @@ impl Future for MockTransportServiceHandle {
             let handles_sink_weak = Weak::clone(&self.service_sinks);
             spawn_future(async move {
                 while let Some(OutEvent::Message(msg)) = outgoing_stream.next().await {
-                    let handles_sink = if let Some(handles_sink) = handles_sink_weak.upgrade() {
-                        handles_sink
-                    } else {
+                    let Some(handles_sink) = handles_sink_weak.upgrade() else {
                         return;
                     };
                     let mut handles_sink = handles_sink.lock().unwrap();

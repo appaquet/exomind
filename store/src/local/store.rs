@@ -220,9 +220,7 @@ where
         let last_user_query = last_user_query_shared.clone();
         let weak_inner = Arc::downgrade(&self.inner);
         let chain_indexer = async move {
-            let interval_dur = if let Some(dur) = self.config.chain_index_deferred_interval {
-                dur
-            } else {
+            let Some(interval_dur) = self.config.chain_index_deferred_interval else {
                 future::pending::<()>().await; // deferred disabled, wait forever
                 return Ok(());
             };
