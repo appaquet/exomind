@@ -5,5 +5,5 @@ pub fn generate_id() -> String {
 }
 
 pub fn generate_prefixed_id(prefix: &str) -> String {
-    format!("{}{}", prefix, Uuid::new_v4().to_simple())
+    format!("{}{}", prefix, Uuid::new_v4().as_simple())
 }

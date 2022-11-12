@@ -32,7 +32,7 @@ anyhow = "1.0.66"
 bs58 = "0.4.0"
 byteorder = "1.4.3"
 bytes = "1.2.1"
-chrono = "0.4.22"
+chrono = "0.4.23"
 exocore-protos = {version = "0.1.24", path = "../protos"}
 futures = { version = "0.3.25", features = ["async-await"] }
 libp2p = { version = "0.49.0", features = ["noise", "secp256k1"], default-features = false }
@@ -48,7 +48,7 @@ serde_yaml = "0.9.14"
 shadow-rs = { version = "0.17.1", default-features = false }
 thiserror = "1.0.37"
 url = "2.3.1"
-uuid = { version = "0.8.2", features = ["v4", "wasm-bindgen"] }
+uuid = { version = "1.2.1", features = ["v4", "wasm-bindgen"] }
 wasm-timer = "0.2.5"
 
 # web
@@ -58,7 +58,7 @@ web-sys = { version = "0.3.60", features = ["Storage"], optional = true }
 getrandom = "0.2.8"
 wasm-bindgen = "0.2.83"
 wasm-bindgen-futures = "0.4.33"
-chrono = { version = "0.4.22", default-features = false, features = [] }
+chrono = { version = "0.4.23", default-features = false, features = [] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1.21.2", features = ["rt"], default-features = false }

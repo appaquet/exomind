@@ -16,7 +16,7 @@ server = ["hyper", "tokio"]
 [dependencies]
 anyhow = "1.0.66"
 base64 = "0.13.1"
-chrono = { version = "0.4.22", features = ["serde"] }
+chrono = { version = "0.4.23", features = ["serde"] }
 futures = "0.3.25"
 log = "0.4.17"
 rand = "0.8"
