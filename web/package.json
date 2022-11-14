@@ -103,7 +103,7 @@
     "linkify-html": "^4.0.0",
     "linkifyjs": "^4.0.0",
     "lodash": "^4.17.21",
-    "mobx": "^6.6.0",
+    "mobx": "^6.7.0",
     "mobx-react": "^7.5.2",
     "prop-types": "15.8.1",
     "protobufjs": "^7.0.0",
