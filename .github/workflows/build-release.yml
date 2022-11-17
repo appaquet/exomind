@@ -116,7 +116,7 @@ jobs:
           profile: minimal
           target: wasm32-wasi
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1

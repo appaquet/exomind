@@ -23,7 +23,7 @@ jobs:
           profile: minimal
           components: rustfmt, clippy
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
@@ -70,7 +70,7 @@ jobs:
           toolchain: stable
           profile: minimal
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with:
           key: bust-1
 
@@ -109,7 +109,7 @@ jobs:
           target: ${{ matrix.pair.target }}
           profile: minimal
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install master version of cross # TODO: Remove me once new cross is released
         run: |
@@ -204,7 +204,7 @@ jobs:
           profile: minimal
           target: wasm32-wasi
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
