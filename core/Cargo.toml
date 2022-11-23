@@ -31,7 +31,7 @@ web = [
 anyhow = "1.0.66"
 bs58 = "0.4.0"
 byteorder = "1.4.3"
-bytes = "1.2.1"
+bytes = "1.3.0"
 chrono = "0.4.23"
 exocore-protos = {version = "0.1.24", path = "../protos"}
 futures = { version = "0.3.25", features = ["async-await"] }
