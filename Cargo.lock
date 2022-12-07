@@ -1559,7 +1559,7 @@ dependencies = [
  "libp2p",
  "log",
  "log4rs",
- "multihash 0.17.0",
+ "multihash 0.18.0",
  "petname",
  "rand 0.8.5",
  "serde",
@@ -3050,9 +3050,9 @@ dependencies = [
 
 [[package]]
 name = "multihash"
-version = "0.17.0"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "835d6ff01d610179fbce3de1694d007e500bf33a7f29689838941d6bf783ae40"
+checksum = "15e5d911412e631e1de11eb313e4dd71f73fd964401102aab23d6c8327c431ba"
 dependencies = [
  "blake2b_simd",
  "blake2s_simd",
