@@ -11,7 +11,7 @@ version = "0.1.15"
 
 [dependencies]
 exocore = { version = "0.1.24", default-features = false, features = ["protos"] }
-prost = "0.11.3"
+prost = "0.11.5"
 prost-types = "0.11.2"
 
 [build-dependencies]
