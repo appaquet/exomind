@@ -18,7 +18,7 @@ mmap = ["memmap2"]
 tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.66"
+anyhow = "1.0.68"
 byteorder = "1.4.3"
 exocore-core = {version = "0.1.24", path = "../core"}
 exocore-protos = {version = "0.1.24", path = "../protos"}
@@ -26,8 +26,8 @@ exocore-transport = {version = "0.1.24", path = "../transport", default-features
 futures = "0.3.25"
 itertools = "0.10.5"
 log = "0.4.17"
-serde = { version = "1.0.151", features = ["derive"] }
-thiserror = "1.0.37"
+serde = { version = "1.0.152", features = ["derive"] }
+thiserror = "1.0.38"
 bytes = "1.3.0"
 
 # For directory chain

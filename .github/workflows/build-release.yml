@@ -54,7 +54,7 @@ jobs:
 
       - name: Install master version of cross # TODO: Remove me once new cross is released
         run: |
-          cargo install cross --git https://github.com/cross-rs/cross
+          cargo install cross --locked --git https://github.com/cross-rs/cross
 
       - uses: actions-rs/cargo@v1.0.3
         with:

@@ -8,7 +8,7 @@ version = "0.1.24"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.66"
+anyhow = "1.0.68"
 console_error_panic_hook = "0.1.7"
 exocore-core = {version = "0.1.24", path = "../../core", default-features = false, features=["web"]}
 exocore-discovery = {version = "0.1.24", path = "../../discovery", default-features = false}
@@ -18,7 +18,7 @@ exocore-transport = {version = "0.1.24", path = "../../transport", default-featu
 futures = "0.3.25"
 js-sys = "0.3.60"
 log = "0.4.17"
-thiserror = "1.0.37"
+thiserror = "1.0.38"
 wasm-bindgen = { version = "0.2.83", features = ["serde-serialize"] }# serde for serialization from JsValue
 wasm-bindgen-futures = "0.4.33"
 wasm-logger = "0.2.0"
