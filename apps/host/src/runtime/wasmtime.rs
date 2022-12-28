@@ -154,28 +154,28 @@ fn bootstrap_instance(
 ) -> Result<(FuncTick, FuncSendMessage), Error> {
     // Initialize environment
     let exocore_init = instance
-        .get_typed_func::<(), (), _>(&mut store, "__exocore_init")
+        .get_typed_func::<(), ()>(&mut store, "__exocore_init")
         .map_err(|err| Error::MissingFunction(err, "__exocore_init"))?;
     exocore_init.call(&mut store, ())?;
 
     // Create application instance
     let exocore_app_init = instance
-        .get_typed_func::<(), (), _>(&mut store, "__exocore_app_init")
+        .get_typed_func::<(), ()>(&mut store, "__exocore_app_init")
         .map_err(|err| Error::MissingFunction(err, "__exocore_app_init"))?;
     exocore_app_init.call(&mut store, ())?;
 
     // Boot the application
     let exocore_app_boot = instance
-        .get_typed_func::<(), (), _>(&mut store, "__exocore_app_boot")
+        .get_typed_func::<(), ()>(&mut store, "__exocore_app_boot")
         .map_err(|err| Error::MissingFunction(err, "__exocore_app_boot"))?;
     exocore_app_boot.call(&mut store, ())?;
 
     // Extract tick & message sending functions
     let exocore_tick = instance
-        .get_typed_func::<(), u64, _>(&mut store, "__exocore_tick")
+        .get_typed_func::<(), u64>(&mut store, "__exocore_tick")
         .map_err(|err| Error::MissingFunction(err, "__exocore_tick"))?;
     let exocore_send_message = instance
-        .get_typed_func::<(i32, i32), u32, _>(&mut store, "__exocore_in_message")
+        .get_typed_func::<(i32, i32), u32>(&mut store, "__exocore_in_message")
         .map_err(|err| Error::MissingFunction(err, "__exocore_in_message"))?;
 
     Ok((exocore_tick, exocore_send_message))
@@ -246,7 +246,7 @@ fn wasm_alloc(
     };
 
     let alloc = instance
-        .get_typed_func::<i32, i32, _>(&mut store, "__exocore_alloc")
+        .get_typed_func::<i32, i32>(&mut store, "__exocore_alloc")
         .map_err(|err| Error::MissingFunction(err, "__exocore_alloc"))?;
     let ptr = alloc.call(&mut store, bytes.len() as i32)?;
 
@@ -264,7 +264,7 @@ fn wasm_free(
     size: i32,
 ) -> Result<(), Error> {
     let alloc = instance
-        .get_typed_func::<(i32, i32), (), _>(&mut store, "__exocore_free")
+        .get_typed_func::<(i32, i32), ()>(&mut store, "__exocore_free")
         .map_err(|err| Error::MissingFunction(err, "__exocore_free"))?;
     alloc.call(&mut store, (ptr, size))?;
 
@@ -277,15 +277,6 @@ fn unix_timestamp() -> u64 {
     now.duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos() as u64
-}
-
-impl From<Error> for wasmtime::Trap {
-    fn from(err: Error) -> Self {
-        match err {
-            Error::Trap(t) => t,
-            other => wasmtime::Trap::new(other.to_string()),
-        }
-    }
 }
 
 #[cfg(test)]

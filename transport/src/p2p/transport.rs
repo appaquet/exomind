@@ -11,7 +11,12 @@ use exocore_core::{
 };
 use exocore_protos::generated::common_capnp::envelope;
 use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
-use libp2p::{core::PeerId, ping, swarm::Swarm, NetworkBehaviour, Transport};
+use libp2p::{
+    core::PeerId,
+    ping,
+    swarm::{NetworkBehaviour, Swarm},
+    Transport,
+};
 
 use super::{
     behaviour::{ExocoreBehaviour, ExocoreBehaviourEvent, ExocoreBehaviourMessage, PeerStatus},
@@ -130,16 +135,20 @@ impl Libp2pTransport {
             // to spawn tcp related futures, but Tokio requires to be spawn from
             // within its runtime.
             struct CoreExecutor;
-            impl libp2p::core::Executor for CoreExecutor {
+            impl libp2p::swarm::Executor for CoreExecutor {
                 fn exec(&self, f: std::pin::Pin<Box<dyn Future<Output = ()> + Send>>) {
                     exocore_core::futures::spawn_future(f)
                 }
             }
 
-            libp2p::swarm::SwarmBuilder::new(transport, behaviour, *self.local_node.peer_id())
-                .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
-                .executor(Box::new(CoreExecutor))
-                .build()
+            libp2p::swarm::SwarmBuilder::with_executor(
+                transport,
+                behaviour,
+                *self.local_node.peer_id(),
+                CoreExecutor,
+            )
+            .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
+            .build()
         };
 
         let listen_addresses = self.config.listen_addresses(&self.local_node)?;
@@ -407,7 +416,7 @@ pub fn build_transport(
     let transport = {
         let dns_tcp = || {
             libp2p::dns::TokioDnsConfig::custom(
-                libp2p::tcp::TokioTcpTransport::new(libp2p::tcp::GenTcpConfig::new().nodelay(true)),
+                libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::new().nodelay(true)),
                 libp2p::dns::ResolverConfig::google(),
                 Default::default(),
             )
