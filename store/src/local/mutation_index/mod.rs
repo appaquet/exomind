@@ -28,7 +28,6 @@ pub use results::*;
 use tantivy::{
     collector::{Collector, Count, MultiCollector, TopDocs},
     directory::MmapDirectory,
-    fastfield::FastFieldReader,
     query::{AllQuery, TermQuery},
     schema::{Field, IndexRecordOption},
     DocAddress, Document, Index as TantivyIndex, IndexReader, IndexSettings, IndexSortByField,
@@ -303,7 +302,7 @@ impl MutationIndex {
             QueryParser::parse(&self.index, &self.schema, &self.config, query.borrow())?;
 
         let searcher = self.index_reader.searcher();
-        let results = self.execute_tantivy_query_with_paging(searcher, parsed_query)?;
+        let results = self.execute_tantivy_query_with_paging(&searcher, parsed_query)?;
 
         Ok(results)
     }
@@ -362,7 +361,7 @@ impl MutationIndex {
             trait_name: None,
         };
 
-        let mut results = self.execute_tantivy_query_with_paging(searcher, parsed_query)?;
+        let mut results = self.execute_tantivy_query_with_paging(&searcher, parsed_query)?;
 
         // because of the way we index pending (we may have pending store events after
         // indexing it after first), we need to make sure we don't include any
@@ -807,8 +806,10 @@ impl MutationIndex {
                     .expect("Field requested is not a i64/u64 fast field.");
                 move |doc_id| OrderingValueWrapper {
                     value: OrderingValue {
-                        value: Some(ordering_value::Value::Uint64(sort_fast_field.get(doc_id))),
-                        operation_id: operation_id_reader.get(doc_id),
+                        value: Some(ordering_value::Value::Uint64(
+                            sort_fast_field.get_val(doc_id),
+                        )),
+                        operation_id: operation_id_reader.get_val(doc_id),
                     },
                     reverse: ascending,
                     ignore: false,
@@ -842,11 +843,11 @@ impl MutationIndex {
                     .unwrap();
 
                 move |doc_id, score| {
-                    let operation_id = operation_id_reader.get(doc_id);
+                    let operation_id = operation_id_reader.get_val(doc_id);
 
                     // boost by date if needed
                     let score = if !no_recency_boost {
-                        let mut modification_date = modification_date_reader.get(doc_id);
+                        let mut modification_date = modification_date_reader.get_val(doc_id);
                         if modification_date == 0 {
                             modification_date = operation_id;
                         }
