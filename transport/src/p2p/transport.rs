@@ -122,9 +122,13 @@ impl Libp2pTransport {
                 .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)))
                 .boxed();
 
-            libp2p::swarm::SwarmBuilder::new(transport, behaviour, *self.local_node.peer_id())
-                .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
-                .build()
+            libp2p::swarm::SwarmBuilder::without_executor(
+                transport,
+                behaviour,
+                *self.local_node.peer_id(),
+            )
+            .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
+            .build()
         };
 
         #[cfg(feature = "p2p-full")]
