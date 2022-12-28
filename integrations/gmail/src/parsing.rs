@@ -109,7 +109,12 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
                     )
                 })?;
 
-            let body_bytes = base64::decode_config(body_bytes, base64::URL_SAFE)
+            let engine = base64::engine::fast_portable::FastPortable::from(
+                &base64::alphabet::URL_SAFE,
+                Default::default(),
+            );
+
+            let body_bytes = base64::decode_engine(body_bytes.as_bytes(), &engine)
                 .map_err(|err| anyhow!("Couldn't base64 decode body: {}", err))?;
 
             let encoding = mailparse::parse_content_type(content_type);
