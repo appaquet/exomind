@@ -38,7 +38,7 @@ class EntityListViewController: UITableViewController {
         set {
             self.tableView.allowsMultipleSelectionDuringEditing = newValue
             self.tableView.setEditing(newValue, animated: true)
-            self.setupSelectedItemTabBarActions()
+            self.setupSelectedItemToolbarActions()
         }
         get {
             self.tableView.isEditing
@@ -178,7 +178,7 @@ class EntityListViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if self.editMode {
-            self.setupSelectedItemTabBarActions()
+            self.setupSelectedItemToolbarActions()
             return
         }
 
@@ -190,13 +190,13 @@ class EntityListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        self.setupSelectedItemTabBarActions()
+        self.setupSelectedItemToolbarActions()
     }
 
     override func tableView(_ tableView: UITableView, leadingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
               let actionsForEntity = self.actionsForEntity
-                else {
+        else {
             return nil
         }
 
@@ -217,7 +217,7 @@ class EntityListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
               let actionsForEntity = self.actionsForEntity
-                else {
+        else {
             return nil
         }
 
@@ -237,7 +237,7 @@ class EntityListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         guard let entity = self.collectionData.element(at: (indexPath as NSIndexPath).item)?.entity,
               let actionsForEntity = self.actionsForEntity
-                else {
+        else {
             return nil
         }
 
@@ -371,9 +371,10 @@ class EntityListViewController: UITableViewController {
         }
     }
 
-    private func setupSelectedItemTabBarActions() {
+    private func setupSelectedItemToolbarActions() {
         if !self.editMode {
             self.navigationController?.setToolbarHidden(true, animated: true)
+            return
         }
 
         let selectedPaths = self.tableView.indexPathsForSelectedRows ?? []
