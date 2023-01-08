@@ -682,7 +682,7 @@ fn is_node_commit_turn(
         .ok_or(EngineError::MyNodeNotFound)? as u64;
 
     let commit_interval = config.commit_maximum_interval.as_nanos() as f64;
-    let epoch = (now.0 as f64 / commit_interval as f64).floor() as u64;
+    let epoch = (now.0 as f64 / commit_interval).floor() as u64;
     let node_turn = epoch % (sorted_nodes.len() as u64);
     Ok(node_turn == my_node_position)
 }

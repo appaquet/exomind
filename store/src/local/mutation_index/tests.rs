@@ -683,19 +683,19 @@ fn sort_by_field() -> anyhow::Result<()> {
     let q1 = Q::with_trait_query::<TestMessage>(TQ::matches("subject").build())
         .order_by_field("uint3", false)
         .count(10);
-    let res1 = index.search(&q1.clone().build())?;
+    let res1 = index.search(q1.clone().build())?;
     let trt1 = extract_traits_id(&res1);
     assert_eq!(trt1[0], "trait19");
     assert_eq!(trt1[9], "trait10");
 
     let q2 = q1.clone().with_paging(res1.next_page.unwrap());
-    let res2 = index.search(&q2.build())?;
+    let res2 = index.search(q2.build())?;
     let trt2 = extract_traits_id(&res2);
     assert_eq!(trt2[0], "trait9");
     assert_eq!(trt2[9], "trait0");
 
     let q3 = q1.count(20).order_ascending(true);
-    let res3 = index.search(&q3.build())?;
+    let res3 = index.search(q3.build())?;
     let trt3 = extract_traits_id(&res3);
     assert_eq!(trt3[0], "trait0");
     assert_eq!(trt3[19], "trait19");

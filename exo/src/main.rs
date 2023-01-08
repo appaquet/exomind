@@ -123,7 +123,7 @@ async fn main() -> anyhow::Result<()> {
 
     let ctx = Context {
         options,
-        dialog_theme: Box::new(dialoguer::theme::ColorfulTheme::default()),
+        dialog_theme: Box::<dialoguer::theme::ColorfulTheme>::default(),
     };
 
     let result = match &ctx.options.subcommand {

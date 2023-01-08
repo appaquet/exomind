@@ -141,7 +141,7 @@ fn new_operation_among_current_operations() -> anyhow::Result<()> {
     // generate operations with even operation id
     let generator_node = &cluster.nodes[0];
     let ops_generator = (0..=50).map(|i| {
-        let (group_id, operation_id) = (((i * 2) % 10 + 1) as u64, i * 2_u64);
+        let (group_id, operation_id) = (((i * 2) % 10 + 1), i * 2_u64);
         create_dummy_new_entry_op(generator_node, operation_id, group_id)
     });
 

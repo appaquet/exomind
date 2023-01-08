@@ -468,7 +468,7 @@ async fn cmd_node_add(
     ));
     print_info(format!(
         "Addresses: {}",
-        style_value(&node_config.addresses.clone().unwrap_or_default())
+        style_value(node_config.addresses.clone().unwrap_or_default())
     ));
 
     if !cell_node.roles.is_empty() {

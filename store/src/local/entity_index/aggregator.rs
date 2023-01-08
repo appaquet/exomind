@@ -669,7 +669,7 @@ pub(crate) mod tests {
             // trait deletion counts as modification
             let mutations = vec![
                 mock_put_trait(&t1, TYPE1, Some(2), 10, None, None),
-                mock_put_trait(&t2, TYPE1, Some(2), 11, None, None),
+                mock_put_trait(t2, TYPE1, Some(2), 11, None, None),
                 mock_delete_trait(&t1, Some(3), 12),
             ];
             let em = EntityAggregator::new(mutations.into_iter());

@@ -20,6 +20,7 @@ where
     let result: R;
     let editor = std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
     loop {
+        #[allow(clippy::needless_borrow)] // https://github.com/rust-lang/rust-clippy/issues/9778
         Command::new(&editor)
             .arg(temp_file.path().as_os_str())
             .status()

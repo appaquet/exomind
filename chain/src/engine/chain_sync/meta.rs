@@ -196,10 +196,7 @@ impl BlockMetadata {
             .checked_sub(end_count)
             .unwrap_or(range_blocks_count);
 
-        for (blocks_count, current_block) in blocks_iter
-            .enumerate()
-            .take(range_blocks_count as usize + 1)
-        {
+        for (blocks_count, current_block) in blocks_iter.enumerate().take(range_blocks_count + 1) {
             let current_block = current_block?;
 
             // we always include metadata if the block is within the first `begin_count` or

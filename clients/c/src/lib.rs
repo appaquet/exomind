@@ -17,8 +17,11 @@ pub mod utils;
 ///
 /// This method can be called multiple times without problems as it makes sure
 /// its logic is only executed once.
+///
+/// # Safety
+/// * `log_file` should be a valid C string.
 #[no_mangle]
-pub extern "C" fn exocore_init(log_level: usize, log_file: *const c_char) {
+pub unsafe extern "C" fn exocore_init(log_level: usize, log_file: *const c_char) {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
         let log_level = match log_level {

@@ -36,7 +36,7 @@ pub unsafe extern "C" fn exocore_discovery_new(
         CStr::from_ptr(service_url).to_string_lossy().to_string()
     };
 
-    let client = match Client::new(&service_url) {
+    let client = match Client::new(service_url) {
         Ok(cli) => cli,
         Err(err) => {
             error!("Couldn't create discovery client: {}", err);

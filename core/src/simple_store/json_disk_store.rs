@@ -75,7 +75,7 @@ mod test {
         assert!(store.is_err());
 
         let file = dir.path().join("file");
-        let store = JsonDiskStore::<String>::new(&file);
+        let store = JsonDiskStore::<String>::new(file);
         assert!(store.is_ok());
     }
 
@@ -83,7 +83,7 @@ mod test {
     fn test_write_read() {
         let dir = tempdir().unwrap();
         let file = dir.path().join("store");
-        let store = JsonDiskStore::<TestStruct>::new(&file).unwrap();
+        let store = JsonDiskStore::<TestStruct>::new(file).unwrap();
 
         let data = TestStruct {
             data: "hello".to_string(),

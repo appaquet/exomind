@@ -594,7 +594,7 @@ impl<'s> Iterator for SegmentBlockIterator<'s> {
         let block_res = self.segment.get_block(self.current_offset);
         match block_res {
             Ok(block) => {
-                self.current_offset += block.total_size() as usize;
+                self.current_offset += block.total_size();
                 Some(block)
             }
             Err(other) => {
@@ -625,7 +625,7 @@ mod tests {
             let segment =
                 DirectorySegment::create(Default::default(), dir.path(), &block, tracker.clone())?;
             assert_eq!(segment.first_block_offset, 1234);
-            assert_eq!(segment.next_file_offset as usize, block.total_size());
+            assert_eq!(segment.next_file_offset, block.total_size());
             assert_eq!(
                 segment.next_block_offset as usize,
                 1234 + block.total_size()
@@ -640,7 +640,7 @@ mod tests {
                 tracker,
             )?;
             assert_eq!(segment.first_block_offset, 1234);
-            assert_eq!(segment.next_file_offset as usize, block.total_size());
+            assert_eq!(segment.next_file_offset, block.total_size());
             assert_eq!(
                 segment.next_block_offset as usize,
                 1234 + block.total_size()

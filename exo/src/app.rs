@@ -132,7 +132,7 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
                 .expect("Couldn't start zip file");
 
             let abs_file = app_dir.join(file);
-            let mut schema_file = File::open(&abs_file).expect("Couldn't open app schema");
+            let mut schema_file = File::open(abs_file).expect("Couldn't open app schema");
             std::io::copy(&mut schema_file, &mut zip_archive)
                 .expect("Couldn't copy app schema to zip");
         }

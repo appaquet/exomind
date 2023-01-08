@@ -957,7 +957,7 @@ pub mod tests {
         let operation_data: Vec<u8> = b"d".repeat(operation_data_size % 13 + 1);
 
         // only true for tests
-        let operation_id = offset as u64 + 1;
+        let operation_id = offset + 1;
         let operations = vec![
             crate::operation::OperationBuilder::new_entry(
                 operation_id,
@@ -969,7 +969,7 @@ pub mod tests {
             .frame,
         ];
 
-        let proposed_operation_id = offset as u64;
+        let proposed_operation_id = offset;
         let block_operations = BlockOperations::from_operations(operations.into_iter()).unwrap();
         BlockBuilder::build_with_prev_info(
             full_cell.cell(),

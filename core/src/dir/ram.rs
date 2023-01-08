@@ -166,7 +166,7 @@ impl Seek for RamFile {
         let data = self.data.bytes.read().unwrap();
         let len = data.len();
         let pos = match pos {
-            SeekFrom::Start(pos) => pos as u64,
+            SeekFrom::Start(pos) => pos,
             SeekFrom::End(pos) => (len as i64 + pos) as u64,
             SeekFrom::Current(pos) => (self.cursor as i64 + pos) as u64,
         };
