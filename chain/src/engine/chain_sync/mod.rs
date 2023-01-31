@@ -7,13 +7,10 @@ use exocore_core::{
     framing::{CapnpFrameBuilder, FrameReader, TypedCapnpFrame},
     time::Clock,
 };
-use exocore_protos::{
-    capnp::traits::ToU16,
-    generated::{
-        data_chain_capnp::block_partial_header,
-        data_transport_capnp::{
-            chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
-        },
+use exocore_protos::generated::{
+    data_chain_capnp::block_partial_header,
+    data_transport_capnp::{
+        chain_sync_request, chain_sync_request::RequestedDetails, chain_sync_response,
     },
 };
 use node_info::{NodeStatus, NodeSyncInfo};
@@ -226,12 +223,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
             request_reader.get_to_offset(),
         );
         let requested_details = request_reader.get_requested_details()?;
+        let requested_details_u16: u16 = requested_details.into();
         debug!(
             "Got request from node {} for offset from {} to offset {} requested_details={}",
-            from_node,
-            from_offset,
-            to_offset,
-            requested_details.to_u16()
+            from_node, from_offset, to_offset, requested_details_u16
         );
 
         let node_info = self.get_or_create_node_info_mut(from_node.id());
@@ -270,7 +265,7 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         } else {
             return Err(ChainSyncError::InvalidSyncRequest(anyhow!(
                 "Unsupported requested details: {:?}",
-                requested_details.to_u16()
+                requested_details_u16
             ))
             .into());
         }
@@ -473,12 +468,10 @@ impl<CS: ChainStore> ChainSynchronizer<CS> {
         request_builder.set_to_offset(to_offset);
         request_builder.set_requested_details(requested_details);
 
+        let requested_details_u16: u16 = requested_details.into();
         debug!(
             "Sending sync_request to node={} from_offset={} to_offset={} requested_details={:?}",
-            node_info.node_id,
-            from_offset,
-            to_offset,
-            requested_details.to_u16(),
+            node_info.node_id, from_offset, to_offset, requested_details_u16,
         );
 
         frame_builder

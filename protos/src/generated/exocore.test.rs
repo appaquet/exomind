@@ -1,4 +1,4 @@
-#![allow(clippy::derive_partial_eq_without_eq)]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMessage {
     #[prost(string, tag = "1")]
@@ -43,6 +43,7 @@ pub struct TestMessage {
 }
 /// Nested message and enum types in `TestMessage`.
 pub mod test_message {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Fields {
         #[prost(string, tag = "4")]
@@ -51,11 +52,13 @@ pub mod test_message {
         OneofInt1(u32),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestStruct {
     #[prost(string, tag = "1")]
     pub string1: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMessage2 {
     #[prost(string, tag = "1")]

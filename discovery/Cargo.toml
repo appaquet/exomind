@@ -17,7 +17,7 @@ server = ["hyper", "tokio"]
 anyhow = "1.0.68"
 base64 = "0.21.0"
 chrono = { version = "0.4.23", features = ["serde"] }
-futures = "0.3.25"
+futures = "0.3.26"
 log = "0.4.17"
 rand = "0.8"
 reqwest = { version = "0.11.14", default-features = false, features = ["json", "rustls-tls"] }
@@ -29,7 +29,7 @@ wasm-timer = "0.2.5"
 
 # For server
 hyper = { version = "0.14.23", features = ["full"], optional = true }
-tokio = { version = "1.24.2", default-features = false, features = ["macros", "time"], optional = true }
+tokio = { version = "1.25.0", default-features = false, features = ["macros", "time"], optional = true }
 
 [[test]]
 name = "discovery"

@@ -1,5 +1,6 @@
-#![allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Manifest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -13,7 +14,9 @@ pub struct Manifest {
     #[prost(message, optional, tag = "5")]
     pub module: ::core::option::Option<ManifestModule>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ManifestSchema {
     #[prost(oneof = "manifest_schema::Source", tags = "1")]
     #[serde(flatten)]
@@ -23,13 +26,16 @@ pub struct ManifestSchema {
 pub mod manifest_schema {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Source {
         #[prost(string, tag = "1")]
         File(::prost::alloc::string::String),
     }
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ManifestModule {
     #[prost(string, tag = "1")]
     pub file: ::prost::alloc::string::String,
@@ -38,6 +44,7 @@ pub struct ManifestModule {
     pub multihash: ::prost::alloc::string::String,
 }
 /// Message sent to application running in WASM from runtime.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct InMessage {
     #[prost(enumeration = "in_message::InMessageType", tag = "1")]
@@ -74,9 +81,19 @@ pub mod in_message {
                 InMessageType::StoreMutationResult => "STORE_MUTATION_RESULT",
             }
         }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "INVALID" => Some(Self::Invalid),
+                "STORE_ENTITY_RESULTS" => Some(Self::StoreEntityResults),
+                "STORE_MUTATION_RESULT" => Some(Self::StoreMutationResult),
+                _ => None,
+            }
+        }
     }
 }
 /// Message sent from application running in WASM to runtime.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OutMessage {
     #[prost(enumeration = "out_message::OutMessageType", tag = "1")]
@@ -111,6 +128,15 @@ pub mod out_message {
                 OutMessageType::StoreMutationRequest => "STORE_MUTATION_REQUEST",
             }
         }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "INVALID" => Some(Self::Invalid),
+                "STORE_ENTITY_QUERY" => Some(Self::StoreEntityQuery),
+                "STORE_MUTATION_REQUEST" => Some(Self::StoreMutationRequest),
+                _ => None,
+            }
+        }
     }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
@@ -131,6 +157,15 @@ impl MessageStatus {
             MessageStatus::Ok => "MESSAGE_STATUS_OK",
             MessageStatus::Unhandled => "MESSAGE_STATUS_UNHANDLED",
             MessageStatus::DecodeError => "MESSAGE_STATUS_DECODE_ERROR",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "MESSAGE_STATUS_OK" => Some(Self::Ok),
+            "MESSAGE_STATUS_UNHANDLED" => Some(Self::Unhandled),
+            "MESSAGE_STATUS_DECODE_ERROR" => Some(Self::DecodeError),
+            _ => None,
         }
     }
 }

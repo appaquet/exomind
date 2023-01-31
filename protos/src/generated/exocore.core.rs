@@ -1,4 +1,4 @@
-#![allow(clippy::derive_partial_eq_without_eq)]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AuthToken {
     #[prost(bytes = "vec", tag = "1")]
@@ -6,6 +6,7 @@ pub struct AuthToken {
     #[prost(bytes = "vec", tag = "2")]
     pub signature: ::prost::alloc::vec::Vec<u8>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AuthTokenData {
     #[prost(bytes = "vec", tag = "1")]
@@ -17,7 +18,9 @@ pub struct AuthTokenData {
     #[prost(message, optional, tag = "4")]
     pub expiration_date: ::core::option::Option<::prost_types::Timestamp>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct LocalNodeConfig {
     #[prost(string, tag = "1")]
     pub keypair: ::prost::alloc::string::String,
@@ -42,7 +45,9 @@ pub struct LocalNodeConfig {
     #[prost(message, optional, tag = "9")]
     pub chain: ::core::option::Option<ChainConfig>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NodeAddresses {
     #[prost(string, repeated, tag = "1")]
     #[serde(default)]
@@ -51,7 +56,9 @@ pub struct NodeAddresses {
     #[serde(default)]
     pub http: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NodeCellConfig {
     #[prost(string, tag = "3")]
     #[serde(default)]
@@ -64,6 +71,7 @@ pub struct NodeCellConfig {
 pub mod node_cell_config {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Location {
         #[prost(message, tag = "1")]
@@ -71,7 +79,9 @@ pub mod node_cell_config {
     }
 }
 /// Entity store configuration for the node (i.e. not global)
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NodeStoreConfig {
     /// Entity index config.
     #[prost(message, optional, tag = "1")]
@@ -82,7 +92,9 @@ pub struct NodeStoreConfig {
     #[serde(default)]
     pub query_parallelism: ::core::option::Option<u32>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ChainConfig {
     /// Maximum size in bytes per segment. This is a soft limit since the last
     /// block could overflow that maximum. This should be small enough so
@@ -99,7 +111,9 @@ pub struct ChainConfig {
     pub segment_max_open_mmap: ::core::option::Option<u32>,
 }
 /// Configuration of the entity index
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityIndexConfig {
     /// What is the minimum depth that a block needs to be the chain to be
     /// indexed. This is required to lower the odds that we are going to
@@ -154,7 +168,9 @@ pub struct EntityIndexConfig {
     pub garbage_collector: ::core::option::Option<EntityGarbageCollectorConfig>,
 }
 /// Trait index configuration
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationIndexConfig {
     /// Number of indexing threads.
     #[prost(message, optional, tag = "1")]
@@ -170,7 +186,9 @@ pub struct MutationIndexConfig {
     pub entity_mutations_cache_size: ::core::option::Option<u32>,
 }
 /// Configuration for entity garbage collector.
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityGarbageCollectorConfig {
     /// How often the garbage collection process will run in seconds.
     ///
@@ -186,7 +204,9 @@ pub struct EntityGarbageCollectorConfig {
     #[serde(default)]
     pub queue_size: ::core::option::Option<u32>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CellConfig {
     #[prost(string, tag = "1")]
     pub public_key: ::prost::alloc::string::String,
@@ -205,7 +225,9 @@ pub struct CellConfig {
     #[serde(default)]
     pub apps: ::prost::alloc::vec::Vec<CellApplicationConfig>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CellNodeConfig {
     #[prost(message, optional, tag = "1")]
     pub node: ::core::option::Option<NodeConfig>,
@@ -250,9 +272,21 @@ pub mod cell_node_config {
                 Role::AppHostRole => "APP_HOST_ROLE",
             }
         }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "INVALID_ROLE" => Some(Self::InvalidRole),
+                "CHAIN_ROLE" => Some(Self::ChainRole),
+                "STORE_ROLE" => Some(Self::StoreRole),
+                "APP_HOST_ROLE" => Some(Self::AppHostRole),
+                _ => None,
+            }
+        }
     }
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct NodeConfig {
     #[prost(string, tag = "1")]
     pub public_key: ::prost::alloc::string::String,
@@ -265,7 +299,9 @@ pub struct NodeConfig {
     #[prost(message, optional, tag = "4")]
     pub addresses: ::core::option::Option<NodeAddresses>,
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, ::prost::Message)]
+#[derive(Serialize, Deserialize)]
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CellApplicationConfig {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
@@ -283,6 +319,7 @@ pub struct CellApplicationConfig {
 pub mod cell_application_config {
     #[derive(Serialize, Deserialize)]
     #[serde(rename_all = "lowercase")]
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Location {
         /// Manifest is inline within the config.
@@ -290,6 +327,7 @@ pub mod cell_application_config {
         Inline(super::super::apps::Manifest),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BuildInfo {
     #[prost(string, tag = "1")]

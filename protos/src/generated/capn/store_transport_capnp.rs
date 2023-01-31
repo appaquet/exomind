@@ -25,9 +25,9 @@ pub mod mutation_request {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -35,10 +35,8 @@ pub mod mutation_request {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -57,7 +55,7 @@ pub mod mutation_request {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -89,9 +87,9 @@ pub mod mutation_request {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -103,31 +101,30 @@ pub mod mutation_request {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -136,17 +133,19 @@ pub mod mutation_request {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_request(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
@@ -157,7 +156,7 @@ pub mod mutation_request {
         }
         #[inline]
         pub fn set_request(&mut self, value: ::capnp::data::Reader<'_>) {
-            self.builder.get_pointer_field(0).set_data(value);
+            self.builder.reborrow().get_pointer_field(0).set_data(value);
         }
         #[inline]
         pub fn init_request(self, size: u32) -> ::capnp::data::Builder<'a> {
@@ -165,7 +164,7 @@ pub mod mutation_request {
         }
         #[inline]
         pub fn has_request(&self) -> bool {
-            !self.builder.get_pointer_field(0).is_null()
+            !self.builder.is_pointer_field_null(0)
         }
     }
 
@@ -173,8 +172,8 @@ pub mod mutation_request {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }
@@ -208,9 +207,9 @@ pub mod mutation_response {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -218,10 +217,8 @@ pub mod mutation_response {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -240,7 +237,7 @@ pub mod mutation_response {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -283,9 +280,9 @@ pub mod mutation_response {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -297,31 +294,30 @@ pub mod mutation_response {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -330,17 +326,19 @@ pub mod mutation_response {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_response(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
@@ -351,7 +349,7 @@ pub mod mutation_response {
         }
         #[inline]
         pub fn set_response(&mut self, value: ::capnp::data::Reader<'_>) {
-            self.builder.get_pointer_field(0).set_data(value);
+            self.builder.reborrow().get_pointer_field(0).set_data(value);
         }
         #[inline]
         pub fn init_response(self, size: u32) -> ::capnp::data::Builder<'a> {
@@ -359,7 +357,7 @@ pub mod mutation_response {
         }
         #[inline]
         pub fn has_response(&self) -> bool {
-            !self.builder.get_pointer_field(0).is_null()
+            !self.builder.is_pointer_field_null(0)
         }
         #[inline]
         pub fn get_error(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
@@ -370,7 +368,7 @@ pub mod mutation_response {
         }
         #[inline]
         pub fn set_error(&mut self, value: ::capnp::text::Reader<'_>) {
-            self.builder.get_pointer_field(1).set_text(value);
+            self.builder.reborrow().get_pointer_field(1).set_text(value);
         }
         #[inline]
         pub fn init_error(self, size: u32) -> ::capnp::text::Builder<'a> {
@@ -378,7 +376,7 @@ pub mod mutation_response {
         }
         #[inline]
         pub fn has_error(&self) -> bool {
-            !self.builder.get_pointer_field(1).is_null()
+            !self.builder.is_pointer_field_null(1)
         }
     }
 
@@ -386,8 +384,8 @@ pub mod mutation_response {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }
@@ -421,9 +419,9 @@ pub mod query_request {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -431,10 +429,8 @@ pub mod query_request {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -453,7 +449,7 @@ pub mod query_request {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -485,9 +481,9 @@ pub mod query_request {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -499,31 +495,30 @@ pub mod query_request {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -532,17 +527,19 @@ pub mod query_request {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_request(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
@@ -553,7 +550,7 @@ pub mod query_request {
         }
         #[inline]
         pub fn set_request(&mut self, value: ::capnp::data::Reader<'_>) {
-            self.builder.get_pointer_field(0).set_data(value);
+            self.builder.reborrow().get_pointer_field(0).set_data(value);
         }
         #[inline]
         pub fn init_request(self, size: u32) -> ::capnp::data::Builder<'a> {
@@ -561,7 +558,7 @@ pub mod query_request {
         }
         #[inline]
         pub fn has_request(&self) -> bool {
-            !self.builder.get_pointer_field(0).is_null()
+            !self.builder.is_pointer_field_null(0)
         }
     }
 
@@ -569,8 +566,8 @@ pub mod query_request {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }
@@ -604,9 +601,9 @@ pub mod query_response {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -614,10 +611,8 @@ pub mod query_response {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -636,7 +631,7 @@ pub mod query_response {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -679,9 +674,9 @@ pub mod query_response {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -693,31 +688,30 @@ pub mod query_response {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -726,17 +720,19 @@ pub mod query_response {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_response(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
@@ -747,7 +743,7 @@ pub mod query_response {
         }
         #[inline]
         pub fn set_response(&mut self, value: ::capnp::data::Reader<'_>) {
-            self.builder.get_pointer_field(0).set_data(value);
+            self.builder.reborrow().get_pointer_field(0).set_data(value);
         }
         #[inline]
         pub fn init_response(self, size: u32) -> ::capnp::data::Builder<'a> {
@@ -755,7 +751,7 @@ pub mod query_response {
         }
         #[inline]
         pub fn has_response(&self) -> bool {
-            !self.builder.get_pointer_field(0).is_null()
+            !self.builder.is_pointer_field_null(0)
         }
         #[inline]
         pub fn get_error(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
@@ -766,7 +762,7 @@ pub mod query_response {
         }
         #[inline]
         pub fn set_error(&mut self, value: ::capnp::text::Reader<'_>) {
-            self.builder.get_pointer_field(1).set_text(value);
+            self.builder.reborrow().get_pointer_field(1).set_text(value);
         }
         #[inline]
         pub fn init_error(self, size: u32) -> ::capnp::text::Builder<'a> {
@@ -774,7 +770,7 @@ pub mod query_response {
         }
         #[inline]
         pub fn has_error(&self) -> bool {
-            !self.builder.get_pointer_field(1).is_null()
+            !self.builder.is_pointer_field_null(1)
         }
     }
 
@@ -782,8 +778,8 @@ pub mod query_response {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }
@@ -817,9 +813,9 @@ pub mod watched_query_request {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -827,10 +823,8 @@ pub mod watched_query_request {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -849,7 +843,7 @@ pub mod watched_query_request {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -881,9 +875,9 @@ pub mod watched_query_request {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -895,31 +889,30 @@ pub mod watched_query_request {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -928,17 +921,19 @@ pub mod watched_query_request {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_request(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
@@ -949,7 +944,7 @@ pub mod watched_query_request {
         }
         #[inline]
         pub fn set_request(&mut self, value: ::capnp::data::Reader<'_>) {
-            self.builder.get_pointer_field(0).set_data(value);
+            self.builder.reborrow().get_pointer_field(0).set_data(value);
         }
         #[inline]
         pub fn init_request(self, size: u32) -> ::capnp::data::Builder<'a> {
@@ -957,7 +952,7 @@ pub mod watched_query_request {
         }
         #[inline]
         pub fn has_request(&self) -> bool {
-            !self.builder.get_pointer_field(0).is_null()
+            !self.builder.is_pointer_field_null(0)
         }
     }
 
@@ -965,8 +960,8 @@ pub mod watched_query_request {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }
@@ -1000,9 +995,9 @@ pub mod watched_query_response {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -1010,10 +1005,8 @@ pub mod watched_query_response {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -1032,7 +1025,7 @@ pub mod watched_query_response {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -1075,9 +1068,9 @@ pub mod watched_query_response {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -1089,31 +1082,30 @@ pub mod watched_query_response {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -1122,17 +1114,19 @@ pub mod watched_query_response {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_response(self) -> ::capnp::Result<::capnp::data::Builder<'a>> {
@@ -1143,7 +1137,7 @@ pub mod watched_query_response {
         }
         #[inline]
         pub fn set_response(&mut self, value: ::capnp::data::Reader<'_>) {
-            self.builder.get_pointer_field(0).set_data(value);
+            self.builder.reborrow().get_pointer_field(0).set_data(value);
         }
         #[inline]
         pub fn init_response(self, size: u32) -> ::capnp::data::Builder<'a> {
@@ -1151,7 +1145,7 @@ pub mod watched_query_response {
         }
         #[inline]
         pub fn has_response(&self) -> bool {
-            !self.builder.get_pointer_field(0).is_null()
+            !self.builder.is_pointer_field_null(0)
         }
         #[inline]
         pub fn get_error(self) -> ::capnp::Result<::capnp::text::Builder<'a>> {
@@ -1162,7 +1156,7 @@ pub mod watched_query_response {
         }
         #[inline]
         pub fn set_error(&mut self, value: ::capnp::text::Reader<'_>) {
-            self.builder.get_pointer_field(1).set_text(value);
+            self.builder.reborrow().get_pointer_field(1).set_text(value);
         }
         #[inline]
         pub fn init_error(self, size: u32) -> ::capnp::text::Builder<'a> {
@@ -1170,7 +1164,7 @@ pub mod watched_query_response {
         }
         #[inline]
         pub fn has_error(&self) -> bool {
-            !self.builder.get_pointer_field(1).is_null()
+            !self.builder.is_pointer_field_null(1)
         }
     }
 
@@ -1178,8 +1172,8 @@ pub mod watched_query_response {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }
@@ -1213,9 +1207,9 @@ pub mod unwatch_query_request {
     impl<'a> ::capnp::traits::HasTypeId for Reader<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructReader<'a> for Reader<'a> {
-        fn new(reader: ::capnp::private::layout::StructReader<'a>) -> Reader<'a> {
-            Reader { reader }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructReader<'a>> for Reader<'a> {
+        fn from(reader: ::capnp::private::layout::StructReader<'a>) -> Self {
+            Self { reader }
         }
     }
 
@@ -1223,10 +1217,8 @@ pub mod unwatch_query_request {
         fn get_from_pointer(
             reader: &::capnp::private::layout::PointerReader<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Reader<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructReader::new(
-                reader.get_struct(default)?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(reader.get_struct(default)?.into())
         }
     }
 
@@ -1245,7 +1237,7 @@ pub mod unwatch_query_request {
 
     impl<'a> Reader<'a> {
         pub fn reborrow(&self) -> Reader<'_> {
-            Reader { ..*self }
+            Self { ..*self }
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
@@ -1270,9 +1262,9 @@ pub mod unwatch_query_request {
     impl<'a> ::capnp::traits::HasTypeId for Builder<'a> {
         const TYPE_ID: u64 = _private::TYPE_ID;
     }
-    impl<'a> ::capnp::traits::FromStructBuilder<'a> for Builder<'a> {
-        fn new(builder: ::capnp::private::layout::StructBuilder<'a>) -> Builder<'a> {
-            Builder { builder }
+    impl<'a> ::core::convert::From<::capnp::private::layout::StructBuilder<'a>> for Builder<'a> {
+        fn from(builder: ::capnp::private::layout::StructBuilder<'a>) -> Self {
+            Self { builder }
         }
     }
 
@@ -1284,31 +1276,30 @@ pub mod unwatch_query_request {
     }
 
     impl<'a> ::capnp::traits::FromPointerBuilder<'a> for Builder<'a> {
-        fn init_pointer(
-            builder: ::capnp::private::layout::PointerBuilder<'a>,
-            _size: u32,
-        ) -> Builder<'a> {
-            ::capnp::traits::FromStructBuilder::new(
-                builder.init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE),
-            )
+        fn init_pointer(builder: ::capnp::private::layout::PointerBuilder<'a>, _size: u32) -> Self {
+            builder
+                .init_struct(<Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE)
+                .into()
         }
         fn get_from_pointer(
             builder: ::capnp::private::layout::PointerBuilder<'a>,
             default: ::core::option::Option<&'a [capnp::Word]>,
-        ) -> ::capnp::Result<Builder<'a>> {
-            ::core::result::Result::Ok(::capnp::traits::FromStructBuilder::new(
-                builder.get_struct(
-                    <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
-                    default,
-                )?,
-            ))
+        ) -> ::capnp::Result<Self> {
+            ::core::result::Result::Ok(
+                builder
+                    .get_struct(
+                        <Self as ::capnp::traits::HasStructSize>::STRUCT_SIZE,
+                        default,
+                    )?
+                    .into(),
+            )
         }
     }
 
     impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
-        fn set_pointer_builder<'b>(
-            pointer: ::capnp::private::layout::PointerBuilder<'b>,
-            value: Reader<'a>,
+        fn set_pointer_builder(
+            mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
+            value: Self,
             canonicalize: bool,
         ) -> ::capnp::Result<()> {
             pointer.set_struct(&value.reader, canonicalize)
@@ -1317,17 +1308,19 @@ pub mod unwatch_query_request {
 
     impl<'a> Builder<'a> {
         pub fn into_reader(self) -> Reader<'a> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.into_reader().into()
         }
         pub fn reborrow(&mut self) -> Builder<'_> {
-            Builder { ..*self }
+            Builder {
+                builder: self.builder.reborrow(),
+            }
         }
         pub fn reborrow_as_reader(&self) -> Reader<'_> {
-            ::capnp::traits::FromStructReader::new(self.builder.into_reader())
+            self.builder.as_reader().into()
         }
 
         pub fn total_size(&self) -> ::capnp::Result<::capnp::MessageSize> {
-            self.builder.into_reader().total_size()
+            self.builder.as_reader().total_size()
         }
         #[inline]
         pub fn get_token(self) -> u64 {
@@ -1343,8 +1336,8 @@ pub mod unwatch_query_request {
         _typeless: ::capnp::any_pointer::Pipeline,
     }
     impl ::capnp::capability::FromTypelessPipeline for Pipeline {
-        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Pipeline {
-            Pipeline {
+        fn new(typeless: ::capnp::any_pointer::Pipeline) -> Self {
+            Self {
                 _typeless: typeless,
             }
         }

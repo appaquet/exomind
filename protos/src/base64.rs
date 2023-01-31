@@ -1,3 +1,4 @@
+use base64::Engine;
 use serde::{Deserialize, Deserializer, Serializer};
 
 // Used to allow base64 encoding of bytes in serde
@@ -13,7 +14,7 @@ where
     T: AsRef<[u8]>,
     S: Serializer,
 {
-    serializer.serialize_str(&base64::encode(key.as_ref()))
+    serializer.serialize_str(&base64::engine::general_purpose::STANDARD.encode(key.as_ref()))
 }
 
 pub fn from_base64<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
@@ -21,6 +22,9 @@ where
     D: Deserializer<'de>,
 {
     use serde::de::Error;
-    String::deserialize(deserializer)
-        .and_then(|string| base64::decode(string).map_err(|err| Error::custom(err.to_string())))
+    String::deserialize(deserializer).and_then(|string| {
+        base64::engine::general_purpose::STANDARD
+            .decode(string)
+            .map_err(|err| Error::custom(err.to_string()))
+    })
 }

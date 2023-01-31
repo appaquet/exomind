@@ -3,6 +3,7 @@ use std::{
     str::FromStr,
 };
 
+use base64::{engine::general_purpose::STANDARD, Engine};
 use chrono::{DateTime, Utc};
 use rand::Rng;
 
@@ -116,7 +117,7 @@ pub struct Payload {
 
 impl Payload {
     pub fn decode_payload(&self) -> Result<Vec<u8>, PayloadError> {
-        let b64_payload = base64::decode(&self.data)?;
+        let b64_payload = STANDARD.decode(&self.data)?;
         Ok(b64_payload)
     }
 }

@@ -1,4 +1,4 @@
-#![allow(clippy::derive_partial_eq_without_eq)]
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Entity {
     #[prost(string, tag = "1")]
@@ -14,6 +14,7 @@ pub struct Entity {
     #[prost(uint64, tag = "8")]
     pub last_operation_id: u64,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Trait {
     #[prost(string, tag = "1")]
@@ -31,6 +32,7 @@ pub struct Trait {
     #[prost(enumeration = "TraitDetails", tag = "5")]
     pub details: i32,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Reference {
     #[prost(string, tag = "1")]
@@ -56,7 +58,16 @@ impl TraitDetails {
             TraitDetails::Partial => "TRAIT_DETAILS_PARTIAL",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "TRAIT_DETAILS_FULL" => Some(Self::Full),
+            "TRAIT_DETAILS_PARTIAL" => Some(Self::Partial),
+            _ => None,
+        }
+    }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityQuery {
     /// Optional projections on traits and fields to be returned.
@@ -96,6 +107,7 @@ pub struct EntityQuery {
 /// Nested message and enum types in `EntityQuery`.
 pub mod entity_query {
     /// Main search predicate on individual traits of the entity.
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Predicate {
         #[prost(message, tag = "1")]
@@ -118,6 +130,7 @@ pub mod entity_query {
         Test(super::TestPredicate),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Projection {
     /// If specified, a prefix match will be done against traits' Protobuf full
@@ -138,6 +151,7 @@ pub struct Projection {
     pub field_group_ids: ::prost::alloc::vec::Vec<u32>,
 }
 /// Query entities by text match on all indexed fields across all traits.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MatchPredicate {
     /// Text query.
@@ -148,6 +162,7 @@ pub struct MatchPredicate {
     pub no_fuzzy: bool,
 }
 /// Query entities by IDs.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct IdsPredicate {
     #[prost(string, repeated, tag = "1")]
@@ -156,21 +171,25 @@ pub struct IdsPredicate {
 /// Query entities by mutations' operation ids.
 /// Used to return entities on which mutations with these operation ids were
 /// applied and indexed.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OperationsPredicate {
     #[prost(uint64, repeated, tag = "1")]
     pub operation_ids: ::prost::alloc::vec::Vec<u64>,
 }
 /// Query all entities.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct AllPredicate {}
 /// Used for tests.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestPredicate {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
 /// Boolean query constructed of different sub-queries with boolean operators.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct BooleanPredicate {
     #[prost(message, repeated, tag = "1")]
@@ -178,6 +197,7 @@ pub struct BooleanPredicate {
 }
 /// Nested message and enum types in `BooleanPredicate`.
 pub mod boolean_predicate {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Message)]
     pub struct SubQuery {
         #[prost(enumeration = "Occur", tag = "1")]
@@ -187,6 +207,7 @@ pub mod boolean_predicate {
     }
     /// Nested message and enum types in `SubQuery`.
     pub mod sub_query {
+        #[allow(clippy::derive_partial_eq_without_eq)]
         #[derive(Clone, PartialEq, ::prost::Oneof)]
         pub enum Predicate {
             #[prost(message, tag = "2")]
@@ -226,10 +247,20 @@ pub mod boolean_predicate {
                 Occur::MustNot => "MUST_NOT",
             }
         }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "SHOULD" => Some(Self::Should),
+                "MUST" => Some(Self::Must),
+                "MUST_NOT" => Some(Self::MustNot),
+                _ => None,
+            }
+        }
     }
 }
 /// Query entities that have a specified trait and optionally matching a trait
 /// query.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
     #[prost(string, tag = "1")]
@@ -237,6 +268,7 @@ pub struct TraitPredicate {
     #[prost(message, optional, tag = "2")]
     pub query: ::core::option::Option<TraitQuery>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitQuery {
     #[prost(oneof = "trait_query::Predicate", tags = "1, 2, 3, 4")]
@@ -244,6 +276,7 @@ pub struct TraitQuery {
 }
 /// Nested message and enum types in `TraitQuery`.
 pub mod trait_query {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Predicate {
         #[prost(message, tag = "1")]
@@ -256,6 +289,7 @@ pub mod trait_query {
         QueryString(super::QueryStringPredicate),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitFieldPredicate {
     #[prost(string, tag = "1")]
@@ -292,7 +326,19 @@ pub mod trait_field_predicate {
                 Operator::Lte => "LTE",
             }
         }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "EQUAL" => Some(Self::Equal),
+                "GT" => Some(Self::Gt),
+                "GTE" => Some(Self::Gte),
+                "LT" => Some(Self::Lt),
+                "LTE" => Some(Self::Lte),
+                _ => None,
+            }
+        }
     }
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(string, tag = "2")]
@@ -305,6 +351,7 @@ pub mod trait_field_predicate {
         Date(::prost_types::Timestamp),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitFieldReferencePredicate {
     #[prost(string, tag = "1")]
@@ -312,6 +359,7 @@ pub struct TraitFieldReferencePredicate {
     #[prost(message, optional, tag = "2")]
     pub reference: ::core::option::Option<ReferencePredicate>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ReferencePredicate {
     /// Entity id the reference points to
@@ -321,11 +369,13 @@ pub struct ReferencePredicate {
     #[prost(string, tag = "2")]
     pub trait_id: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct QueryStringPredicate {
     #[prost(string, tag = "1")]
     pub query: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Paging {
     /// Returns results after this given ordering value.
@@ -341,6 +391,7 @@ pub struct Paging {
     #[prost(uint32, tag = "4")]
     pub offset: u32,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Ordering {
     /// Direction of ordering.
@@ -359,6 +410,7 @@ pub struct Ordering {
 /// Nested message and enum types in `Ordering`.
 pub mod ordering {
     /// Value by which we want results to be ordered.
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         /// by match score + date boost
@@ -378,6 +430,7 @@ pub mod ordering {
         UpdatedAt(bool),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OrderingValue {
     /// Secondary comparison, in case values were equal. In this case,
@@ -391,6 +444,7 @@ pub struct OrderingValue {
 /// Nested message and enum types in `OrderingValue`.
 pub mod ordering_value {
     /// Primary comparison
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Value {
         #[prost(float, tag = "1")]
@@ -405,6 +459,7 @@ pub mod ordering_value {
         Max(bool),
     }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResults {
     /// Entities matching query.
@@ -430,6 +485,7 @@ pub struct EntityResults {
     #[prost(uint64, tag = "6")]
     pub hash: u64,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResult {
     /// The entity with its traits. Projection could have been done on the
@@ -478,7 +534,17 @@ impl EntityResultSource {
             EntityResultSource::Chain => "CHAIN",
         }
     }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "UNKNOWN" => Some(Self::Unknown),
+            "PENDING" => Some(Self::Pending),
+            "CHAIN" => Some(Self::Chain),
+            _ => None,
+        }
+    }
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationRequest {
     /// Mutations to apply.
@@ -495,6 +561,7 @@ pub struct MutationRequest {
     #[prost(bool, tag = "4")]
     pub common_entity_id: bool,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct MutationResult {
     /// Unique operation ids for each mutations.
@@ -504,6 +571,7 @@ pub struct MutationResult {
     #[prost(message, repeated, tag = "2")]
     pub entities: ::prost::alloc::vec::Vec<Entity>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityMutation {
     #[prost(string, tag = "1")]
@@ -513,6 +581,7 @@ pub struct EntityMutation {
 }
 /// Nested message and enum types in `EntityMutation`.
 pub mod entity_mutation {
+    #[allow(clippy::derive_partial_eq_without_eq)]
     #[derive(Clone, PartialEq, ::prost::Oneof)]
     pub enum Mutation {
         #[prost(message, tag = "2")]
@@ -528,18 +597,21 @@ pub mod entity_mutation {
     }
 }
 /// Creates or overrides a trait of the entity.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct PutTraitMutation {
     #[prost(message, optional, tag = "1")]
     pub r#trait: ::core::option::Option<Trait>,
 }
 /// Deletes a trait of an entity.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteTraitMutation {
     #[prost(string, tag = "1")]
     pub trait_id: ::prost::alloc::string::String,
 }
 /// Deletes all the traits of an entity, effectively deleting the entity itself.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteEntityMutation {}
 /// Deletes mutations of an entity that have an operation id specified in the
@@ -547,18 +619,21 @@ pub struct DeleteEntityMutation {}
 /// the mutations are not actually deleted from the chain. Since the chain
 /// indices are built in a semi-versioned way, this actually delete the
 /// mutations from the indices.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteOperationsMutation {
     #[prost(uint64, repeated, tag = "1")]
     pub operation_ids: ::prost::alloc::vec::Vec<u64>,
 }
 /// Mutation used in tests.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TestMutation {
     #[prost(bool, tag = "1")]
     pub success: bool,
 }
 /// Internal message used by entity iterator for external sorting.
+#[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CommittedEntityMutation {
     #[prost(uint64, tag = "1")]

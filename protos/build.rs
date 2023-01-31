@@ -12,7 +12,7 @@ fn main() {
                     .file(proto_file)
                     .output_path("./src/generated/")
                     .run()
-                    .unwrap_or_else(|_| panic!("compiling {} schema", proto_file));
+                    .unwrap_or_else(|err| panic!("compiling {} schema: {}", proto_file, err));
             }
         }
 

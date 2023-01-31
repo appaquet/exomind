@@ -1,5 +1,6 @@
 use std::{convert::TryInto, time::Duration};
 
+use base64::Engine;
 pub use reqwest::Url;
 use reqwest::{IntoUrl, StatusCode};
 use wasm_timer::Instant;
@@ -34,7 +35,7 @@ impl Client {
         payload: &[u8],
         expect_reply: bool,
     ) -> Result<CreatePayloadResponse, Error> {
-        let b64_payload = base64::encode(payload);
+        let b64_payload = base64::engine::general_purpose::STANDARD.encode(payload);
         let create_request = CreatePayloadRequest {
             data: b64_payload,
             expect_reply,
@@ -122,7 +123,7 @@ impl Client {
             .join(&format!("/{}", pin_u32))
             .expect("Couldn't create URL");
 
-        let b64_payload = base64::encode(payload);
+        let b64_payload = base64::engine::general_purpose::STANDARD.encode(payload);
         let reply_request = ReplyPayloadRequest {
             data: b64_payload,
             expect_reply,

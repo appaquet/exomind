@@ -29,11 +29,11 @@ tests-utils = []
 
 [dependencies]
 anyhow = "1.0.68"
-async-trait = "0.1.63"
+async-trait = "0.1.64"
 bytes = "1.3.0"
 chrono = { version = "0.4.23", features = ["serde"] }
 exocore-protos = {version = "0.1.24", path = "../protos"}
-futures = "0.3.25"
+futures = "0.3.26"
 itertools = "0.10.5"
 log = "0.4.17"
 smallvec = "1.10.0"
@@ -58,4 +58,4 @@ tantivy = { version = "0.19.1", optional = true }
 exocore-chain = {version = "0.1.24", path = "../chain", features = ["tests-utils"]}
 exocore-core = {version = "0.1.24", path = "../core", features = ["tests-utils"]}
 tempfile = "3.3.0"
-tokio = { version = "1.24.2", features = ["macros"], default-features = false }
+tokio = { version = "1.25.0", features = ["macros"], default-features = false }
