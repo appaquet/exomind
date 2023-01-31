@@ -7,6 +7,13 @@
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-7.19.0.tgz#497fcafb1d5b61376959c1c338745ef0577aa02c"
   integrity sha512-74bEXKX2h+8rrfQUfsBfuZZHzsEs6Eql4pqy/T4Nn6Y9wNPggQOqD6z6pn5Bl8ZfysKouFZT/UXEH94ummEeQw==
 
+"@jsdoc/salty@^0.2.1":
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/@jsdoc/salty/-/salty-0.2.3.tgz#aab70c8756c1b98598bbc30867d3aa7a31b5c7d4"
+  integrity sha512-bbtCxCkxcnWhi50I+4Lj6mdz9w3pOXOgEQrID8TCZ/DF51fW7M9GCQW2y45SpBDdHd1Eirm1X/Cf6CkAAe8HPg==
+  dependencies:
+    lodash "^4.17.21"
+
 "@protobufjs/aspromise@^1.1.1", "@protobufjs/aspromise@^1.1.2":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@protobufjs/aspromise/-/aspromise-1.1.2.tgz#9b8b0cc663d669a7d8f6f5d0893a14d348f30fbf"
@@ -286,12 +293,13 @@ js2xmlparser@^4.0.2:
   dependencies:
     xmlcreate "^2.0.4"
 
-jsdoc@^3.6.3:
-  version "3.6.11"
-  resolved "https://registry.yarnpkg.com/jsdoc/-/jsdoc-3.6.11.tgz#8bbb5747e6f579f141a5238cbad4e95e004458ce"
-  integrity sha512-8UCU0TYeIYD9KeLzEcAu2q8N/mx9O3phAGl32nmHlE0LpaJL71mMkP4d+QE5zWfNt50qheHtOZ0qoxVrsX5TUg==
+jsdoc@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/jsdoc/-/jsdoc-4.0.0.tgz#9569f79ea5b14ba4bc726da1a48fe6a241ad7893"
+  integrity sha512-tzTgkklbWKrlaQL2+e3NNgLcZu3NaK2vsHRx7tyHQ+H5jcB9Gx0txSd2eJWlMC/xU1+7LQu4s58Ry0RkuaEQVg==
   dependencies:
     "@babel/parser" "^7.9.4"
+    "@jsdoc/salty" "^0.2.1"
     "@types/markdown-it" "^12.2.3"
     bluebird "^3.7.2"
     catharsis "^0.9.0"
@@ -304,7 +312,6 @@ jsdoc@^3.6.3:
     mkdirp "^1.0.4"
     requizzle "^0.2.3"
     strip-json-comments "^3.1.0"
-    taffydb "2.6.2"
     underscore "~1.13.2"
 
 klaw@^3.0.0:
@@ -329,7 +336,7 @@ linkify-it@^3.0.1:
   dependencies:
     uc.micro "^1.0.1"
 
-lodash@^4.17.14, lodash@^4.17.15:
+lodash@^4.17.14, lodash@^4.17.15, lodash@^4.17.21:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
@@ -425,17 +432,17 @@ prelude-ls@~1.1.2:
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.1.2.tgz#21932a549f5e52ffd9a827f570e04be62a97da54"
   integrity sha512-ESF23V4SKG6lVSGZgYNpbsiaAkdab6ZgOxe52p7+Kid3W3u3bxR4Vfd/o21dmN7jSt0IwgZ4v5MUd26FEtXE9w==
 
-protobufjs-cli@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/protobufjs-cli/-/protobufjs-cli-1.0.2.tgz#905fc49007cf4aaf3c45d5f250eb294eedeea062"
-  integrity sha512-cz9Pq9p/Zs7okc6avH20W7QuyjTclwJPgqXG11jNaulfS3nbVisID8rC+prfgq0gbZE0w9LBFd1OKFF03kgFzg==
+protobufjs-cli@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/protobufjs-cli/-/protobufjs-cli-1.1.0.tgz#ba1f5a6fa78f8426d2015cf41ed16b7b69c6ac0a"
+  integrity sha512-VXMQn+z3yG2WbN2E+mx5vcyIHF7yJSg2jqyqfxcZLWNOSTqUzSSgAE5vu04/JEpwxTI04JGyrZRDHC36wr04uw==
   dependencies:
     chalk "^4.0.0"
     escodegen "^1.13.0"
     espree "^9.0.0"
     estraverse "^5.1.0"
     glob "^8.0.0"
-    jsdoc "^3.6.3"
+    jsdoc "^4.0.0"
     minimist "^1.2.0"
     semver "^7.1.2"
     tmp "^0.2.1"
@@ -496,11 +503,6 @@ supports-color@^7.1.0:
   integrity sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==
   dependencies:
     has-flag "^4.0.0"
-
-taffydb@2.6.2:
-  version "2.6.2"
-  resolved "https://registry.yarnpkg.com/taffydb/-/taffydb-2.6.2.tgz#7cbcb64b5a141b6a2efc2c5d2c67b4e150b2a268"
-  integrity sha512-y3JaeRSplks6NYQuCOj3ZFMO3j60rTwbuKCvZxsAraGYH2epusatvZ0baZYA01WsGqJBq/Dl6vOrMUJqyMj8kA==
 
 tmp@^0.2.1:
   version "0.2.1"
