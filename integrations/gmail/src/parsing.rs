@@ -1,3 +1,4 @@
+use base64::Engine;
 use charset::Charset;
 use exocore::protos::prost::Timestamp;
 use exomind_protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThread};
@@ -109,12 +110,8 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
                     )
                 })?;
 
-            let engine = base64::engine::fast_portable::FastPortable::from(
-                &base64::alphabet::URL_SAFE,
-                Default::default(),
-            );
-
-            let body_bytes = base64::decode_engine(body_bytes.as_bytes(), &engine)
+            let body_bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
+                .decode(body_bytes.as_bytes())
                 .map_err(|err| anyhow!("Couldn't base64 decode body: {}", err))?;
 
             let encoding = mailparse::parse_content_type(content_type);
