@@ -110,7 +110,7 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
                     )
                 })?;
 
-            let body_bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            let body_bytes = base64::engine::general_purpose::URL_SAFE
                 .decode(body_bytes.as_bytes())
                 .map_err(|err| anyhow!("Couldn't base64 decode body: {}", err))?;
 
