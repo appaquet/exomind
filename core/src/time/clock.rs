@@ -210,7 +210,7 @@ mod tests {
         let mocked_clock = Clock::new_fixed_mocked(Instant::now());
         assert_eq!(mocked_clock.instant(), mocked_clock.instant());
 
-        let new_instant = Instant::now() - Duration::from_secs(1);
+        let new_instant = Instant::now().checked_sub(Duration::from_secs(1)).unwrap();
         mocked_clock.set_fixed_instant(new_instant);
 
         assert_eq!(mocked_clock.instant(), new_instant);
@@ -247,7 +247,7 @@ mod tests {
         let mut last_time = ConsistentTimestamp::from(0);
         for i in 0..10000 {
             let current_time = mocked_clock.consistent_time(local_node.node());
-            assert_ne!(last_time, current_time, "at iteration {}", i);
+            assert_ne!(last_time, current_time, "at iteration {i}");
             last_time = current_time;
         }
     }
@@ -281,8 +281,20 @@ mod tests {
 
         assert_eq!(mocked_clock.instant(), inst);
 
-        mocked_clock.reset_fixed_instant();
-        assert_ne!(mocked_clock.instant(), mocked_clock.instant());
+        {
+            // unfixed clock should now give different instant
+            mocked_clock.reset_fixed_instant();
+
+            let t1 = mocked_clock.instant();
+
+            // ony *nix, two call will give diff instant because of sys calls, but on
+            // windows it may be the same
+            std::thread::sleep(Duration::from_millis(1));
+
+            let t2 = mocked_clock.instant();
+
+            assert_ne!(t1, t2);
+        }
     }
 
     #[test]
