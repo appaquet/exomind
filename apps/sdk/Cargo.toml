@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.24"
 
 [dependencies]
-anyhow = "1.0.68"
+anyhow = "1.0.69"
 exocore-apps-macros = {version = "0.1.24", path = "../macros"}
 exocore-protos = {version = "0.1.24", path = "../../protos"}
 exocore-store = {version = "0.1.24", path = "../../store", default-features = false}
