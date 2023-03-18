@@ -13,9 +13,9 @@ version = "0.1.24"
 proc-macro = true
 
 [dependencies]
-anyhow = "1.0.69"
-futures = "0.3.26"
+anyhow = "1.0.70"
+futures = "0.3.27"
 log = "0.4.17"
-quote = "1.0.23"
+quote = "1.0.26"
 syn = { version = "1.0.109", features = ["full", "fold"] }
-thiserror = "1.0.38"
+thiserror = "1.0.40"

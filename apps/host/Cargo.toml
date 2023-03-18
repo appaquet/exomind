@@ -13,18 +13,18 @@ version = "0.1.24"
 default = []
 
 [dependencies]
-anyhow = "1.0.69"
+anyhow = "1.0.70"
 exocore-core = {version = "0.1.24", path = "../../core"}
 exocore-protos = {version = "0.1.24", path = "../../protos"}
 exocore-store = {version = "0.1.24", path = "../../store"}
-futures = "0.3.26"
+futures = "0.3.27"
 log = "0.4.17"
 reqwest = { version = "0.11.14", default-features = false, features = ["rustls-tls"] }
-thiserror = "1.0.38"
+thiserror = "1.0.40"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
-wasmtime = "4.0.0"
-wasmtime-wasi = { version = "4.0.0", features = ["tokio"] }
+wasmtime = "4.0.1"
+wasmtime-wasi = { version = "4.0.1", features = ["tokio"] }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.24", path = "../../core", features = ["tests-utils"]}

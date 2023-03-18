@@ -146,7 +146,7 @@ mod tests {
             file.read_to_string(&mut buf).unwrap();
             assert_eq!("", buf);
 
-            file.seek(SeekFrom::Start(0)).unwrap();
+            file.rewind().unwrap();
             file.read_to_string(&mut buf).unwrap();
             assert_eq!("Hello monde", buf);
 

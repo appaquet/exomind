@@ -162,7 +162,7 @@ async fn should_queue_message_until_connected() -> anyhow::Result<()> {
     // send 1 to 2, but with expired message, which shouldn't be delivered
     let msg_frame = TestableTransportHandle::empty_message_frame();
     let msg = OutMessage::from_framed_message(n1_cell.cell(), ServiceType::Chain, msg_frame)?
-        .with_expiration(Some(Instant::now() - Duration::from_secs(5)))
+        .with_expiration(Instant::now().checked_sub(Duration::from_secs(5)))
         .with_rdv(ConsistentTimestamp(2))
         .with_destination(n2.node().clone());
     h1.send_message(msg).await;

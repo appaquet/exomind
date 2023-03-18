@@ -94,7 +94,7 @@ pub enum HashError {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{Seek, SeekFrom, Write};
+    use std::io::{Seek, Write};
 
     use tempfile::tempdir;
 
@@ -117,7 +117,7 @@ mod tests {
 
         let mut file = tempfile::tempfile().unwrap();
         file.write_all(b"Hello world").unwrap();
-        file.seek(SeekFrom::Start(0)).unwrap();
+        file.rewind().unwrap();
 
         let mut hasher = Sha3_256::default();
         hasher.update_from_reader(file).unwrap();

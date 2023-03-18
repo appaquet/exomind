@@ -432,7 +432,7 @@ mod tests {
     #[test]
     fn collect_old_deleted_entity() {
         let node = LocalNode::generate();
-        let now = Instant::now() - Duration::from_secs(60);
+        let now = Instant::now().checked_sub(Duration::from_secs(60)).unwrap();
         let clock = Clock::new_fixed_mocked(now);
 
         let config = GarbageCollectorConfig {
@@ -479,7 +479,7 @@ mod tests {
     #[test]
     fn collect_old_deleted_trait() {
         let node = LocalNode::generate();
-        let now = Instant::now() - Duration::from_secs(60);
+        let now = Instant::now().checked_sub(Duration::from_secs(60)).unwrap();
         let clock = Clock::new_fixed_mocked(now);
 
         let config = GarbageCollectorConfig {
@@ -528,7 +528,7 @@ mod tests {
     #[test]
     fn collect_old_trait_versions() {
         let node = LocalNode::generate();
-        let now = Instant::now() - Duration::from_secs(60);
+        let now = Instant::now().checked_sub(Duration::from_secs(60)).unwrap();
         let clock = Clock::new_fixed_mocked(now);
 
         let put1_op: u64 = clock.consistent_time(node.node()).into();
@@ -592,7 +592,7 @@ mod tests {
     #[test]
     fn cannot_collect_if_pending_deletion() {
         let node = LocalNode::generate();
-        let now = Instant::now() - Duration::from_secs(60);
+        let now = Instant::now().checked_sub(Duration::from_secs(60)).unwrap();
         let clock = Clock::new_fixed_mocked(now);
 
         let put1_op: u64 = clock.consistent_time(node.node()).into();
@@ -626,7 +626,7 @@ mod tests {
     #[test]
     fn cannot_collect_if_any_operations_in_pending() {
         let node = LocalNode::generate();
-        let now = Instant::now() - Duration::from_secs(60);
+        let now = Instant::now().checked_sub(Duration::from_secs(60)).unwrap();
         let clock = Clock::new_fixed_mocked(now);
 
         let put1_op: u64 = clock.consistent_time(node.node()).into();
