@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-transport"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.24"
+version = "0.1.25"
 
 [features]
 default = ["p2p-full", "http-server"]
@@ -21,8 +21,8 @@ tests-utils = ["exocore-core/tests-utils"]
 anyhow = "1.0.70"
 byteorder = "1.4.3"
 bytes = "1.4.0"
-exocore-core = {version = "0.1.24", path = "../core"}
-exocore-protos = {version = "0.1.24", path = "../protos"}
+exocore-core = {version = "0.1.25", path = "../core"}
+exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.27"
 gloo-timers = {version = "0.2", optional = true}
 hyper = {version = "0.14.25", features = ["full"], optional = true}
@@ -34,5 +34,5 @@ thiserror = "1.0.40"
 url = {version = "2.3.1", optional = true}
 
 [dev-dependencies]
-exocore-core = {version = "0.1.24", path = "../core", features = ["tests-utils"]}
+exocore-core = {version = "0.1.25", path = "../core", features = ["tests-utils"]}
 tokio = {version = "1.26.0", features = ["macros"], default-features = false}

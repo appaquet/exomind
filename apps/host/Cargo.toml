@@ -7,16 +7,16 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-apps-host"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.24"
+version = "0.1.25"
 
 [features]
 default = []
 
 [dependencies]
 anyhow = "1.0.70"
-exocore-core = {version = "0.1.24", path = "../../core"}
-exocore-protos = {version = "0.1.24", path = "../../protos"}
-exocore-store = {version = "0.1.24", path = "../../store"}
+exocore-core = {version = "0.1.25", path = "../../core"}
+exocore-protos = {version = "0.1.25", path = "../../protos"}
+exocore-store = {version = "0.1.25", path = "../../store"}
 futures = "0.3.27"
 log = "0.4.17"
 reqwest = { version = "0.11.14", default-features = false, features = ["rustls-tls"] }
@@ -27,4 +27,4 @@ wasmtime = "4.0.1"
 wasmtime-wasi = { version = "4.0.1", features = ["tokio"] }
 
 [dev-dependencies]
-exocore-core = {version = "0.1.24", path = "../../core", features = ["tests-utils"]}
+exocore-core = {version = "0.1.25", path = "../../core", features = ["tests-utils"]}
