@@ -61,7 +61,7 @@ pub enum ConnectionId {
     Any,
 
     #[cfg(feature = "p2p-base")]
-    Libp2p(libp2p::core::connection::ConnectionId),
+    Libp2p(libp2p::swarm::ConnectionId),
 
     #[cfg(feature = "http-server")]
     HttpServer(crate::http::RequestId),

@@ -12,10 +12,9 @@ use exocore_core::{
 use exocore_protos::generated::common_capnp::envelope;
 use futures::{channel::mpsc, prelude::*, FutureExt, SinkExt, StreamExt};
 use libp2p::{
-    core::PeerId,
     ping,
     swarm::{NetworkBehaviour, Swarm},
-    Transport,
+    PeerId, Transport,
 };
 
 use super::{

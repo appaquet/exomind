@@ -1,4 +1,4 @@
-use libp2p::core::identity::{
+use libp2p_identity::{
     ed25519 as libp2p_ed25519, Keypair as libp2p_Keypair, PublicKey as libp2p_PublicKey,
 };
 use rand::SeedableRng;

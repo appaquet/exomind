@@ -11,7 +11,7 @@ use exocore_protos::{
     core::{node_cell_config, NodeAddresses},
     generated::exocore_core::{LocalNodeConfig, NodeConfig},
 };
-use libp2p::core::{Multiaddr, PeerId};
+use libp2p::{core::Multiaddr, PeerId};
 use url::Url;
 
 use super::{error::Error, Cell, CellId};
