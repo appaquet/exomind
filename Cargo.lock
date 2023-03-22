@@ -635,9 +635,9 @@ checksum = "65d09067bfacaa79114679b279d7f5885b53295b1e2cfb4e79c8e4bd3d633169"
 
 [[package]]
 name = "duration-string"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5d74010fd35f37054de1eb72485be4f562b0815e0e7b477e578581d3998fa47"
+checksum = "6fcc1d9ae294a15ed05aeae8e11ee5f2b3fe971c077d45a42fb20825fba6ee13"
 dependencies = [
  "serde",
 ]
