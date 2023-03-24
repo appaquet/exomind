@@ -87,7 +87,7 @@
     "@bangle.dev/pm": "^0.31.1",
     "@bangle.dev/react": "^0.31.1",
     "@bangle.dev/utils": "^0.31.1",
-    "@popperjs/core": "^2.11.6",
+    "@popperjs/core": "^2.11.7",
     "bootstrap": "^3.3.5",
     "classnames": "^2.3.1",
     "clipboard-copy": "^4.0.1",
