@@ -26,7 +26,7 @@ exocore-transport = {version = "0.1.25", path = "../transport", default-features
 futures = "0.3.27"
 itertools = "0.10.5"
 log = "0.4.17"
-serde = { version = "1.0.157", features = ["derive"] }
+serde = { version = "1.0.160", features = ["derive"] }
 thiserror = "1.0.40"
 bytes = "1.4.0"
 
