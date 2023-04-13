@@ -1848,7 +1848,7 @@ dependencies = [
  "futures",
  "log",
  "quote",
- "syn 1.0.109",
+ "syn 2.0.12",
  "thiserror",
 ]
 
@@ -5702,7 +5702,7 @@ checksum = "61a573bdc87985e9d6ddeed1b3d864e8a302c847e40d647746df2f1de209d1ce"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.0",
+ "syn 2.0.12",
 ]
 
 [[package]]
