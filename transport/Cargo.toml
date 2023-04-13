@@ -27,7 +27,7 @@ futures = "0.3.27"
 gloo-timers = {version = "0.2", optional = true}
 hyper = {version = "0.14.25", features = ["full"], optional = true}
 libp2p = {version = "0.51.1", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
-libp2p-identity = { version = "0.1.0", features = ["secp256k1"], default-features = false }
+libp2p-identity = { version = "0.1.1", features = ["secp256k1"], default-features = false }
 log = "0.4.17"
 pin-project = "1.0.12"
 thiserror = "1.0.40"
