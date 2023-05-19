@@ -31,10 +31,11 @@ jobs:
             os: macOS-11
             bin: exo
             cross: false
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            bin: exo.exe
-            cross: false
+          # TODO: Enable back when Rust v1.70 is released
+          # - target: x86_64-pc-windows-msvc
+          #   os: windows-latest
+          #   bin: exo.exe
+          #   cross: false
 
     runs-on: ${{ matrix.pair.os }}
 
