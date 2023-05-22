@@ -5298,12 +5298,12 @@ exit@^0.1.2:
   resolved "https://registry.yarnpkg.com/exit/-/exit-0.1.2.tgz#0632638f8d877cc82107d30a0fff1a17cba1cd0c"
   integrity sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ==
 
-exocore@^0.1.24:
-  version "0.1.24"
-  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.24.tgz#8ffc8ecaba4d28cbedb3cceb2b0d662911ed6923"
-  integrity sha512-uAAbjojGyv7zWdMGeZE0DH8dpveScSkoei45UXylmi3g/dgywZQ3xA695E/o7u9PkB9u+69p2XdJkmaPyek8UA==
+exocore@^0.1.25:
+  version "0.1.25"
+  resolved "https://registry.yarnpkg.com/exocore/-/exocore-0.1.25.tgz#4ed858195921ba9a3612fb6f549290c69cc19a07"
+  integrity sha512-jQIORstEU981W+rQ/IZwSfAQr95wS8i4BcXDR2lvtMYmvKBxIygLjo9RViCHjOzW14K0YHmARc0bQsTlGjJqjw==
   dependencies:
-    protobufjs "^7.1.2"
+    protobufjs "^7.2.3"
 
 expand-brackets@^2.1.4:
   version "2.1.4"
@@ -9143,25 +9143,7 @@ protobufjs-cli@^1.0.0:
     tmp "^0.2.1"
     uglify-js "^3.7.7"
 
-protobufjs@^7.1.2:
-  version "7.2.2"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.2.2.tgz#2af401d8c547b9476fb37ffc65782cf302342ca3"
-  integrity sha512-++PrQIjrom+bFDPpfmqXfAGSQs40116JRrqqyf53dymUMvvb5d/LMRyicRoF1AUKoXVS1/IgJXlEgcpr4gTF3Q==
-  dependencies:
-    "@protobufjs/aspromise" "^1.1.2"
-    "@protobufjs/base64" "^1.1.2"
-    "@protobufjs/codegen" "^2.0.4"
-    "@protobufjs/eventemitter" "^1.1.0"
-    "@protobufjs/fetch" "^1.1.0"
-    "@protobufjs/float" "^1.0.2"
-    "@protobufjs/inquire" "^1.1.0"
-    "@protobufjs/path" "^1.1.2"
-    "@protobufjs/pool" "^1.1.0"
-    "@protobufjs/utf8" "^1.1.0"
-    "@types/node" ">=13.7.0"
-    long "^5.0.0"
-
-protobufjs@^7.2.2:
+protobufjs@^7.2.2, protobufjs@^7.2.3:
   version "7.2.3"
   resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.2.3.tgz#01af019e40d9c6133c49acbb3ff9e30f4f0f70b2"
   integrity sha512-TtpvOqwB5Gdz/PQmOjgsrGH1nHjAQVCN7JG4A6r1sXRWESL5rNMAiRcBQlCAdKxZcAbstExQePYG8xof/JVRgg==
