@@ -13,27 +13,27 @@ target 'Exomind' do
   pod 'AppCenter'
   pod 'Introspect'
 
-  pod 'Exocore', '0.1.24'
+  pod 'Exocore', '0.1.25'
   # pod 'Exocore', :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.24/exocore-ios.tar.gz'
+  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.25/exocore-ios.tar.gz'
 end
 
 target 'ExomindActionExt' do
   pod 'KeychainSwift', '~> 19.0'
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', '0.1.24'
+  pod 'Exocore', '0.1.25'
   # pod 'Exocore' , :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.24/exocore-ios.tar.gz'
+  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.25/exocore-ios.tar.gz'
 end
 
 target 'ExomindTests' do
   pod 'SwiftyJSON', '~> 5.0.1'
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', '0.1.24'
+  pod 'Exocore', '0.1.25'
   # pod 'Exocore', :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.24/exocore-ios.tar.gz'
+  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.25/exocore-ios.tar.gz'
 end
 
 
