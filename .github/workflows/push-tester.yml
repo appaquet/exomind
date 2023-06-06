@@ -213,7 +213,7 @@ jobs:
 
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.24/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.25/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
           echo `pwd` >> $GITHUB_PATH
 
       - name: Build & package app
