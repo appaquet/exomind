@@ -31,11 +31,11 @@ tests-utils = []
 anyhow = "1.0.71"
 async-trait = "0.1.68"
 bytes = "1.4.0"
-chrono = {version = "0.4.24", features = ["serde"]}
+chrono = {version = "0.4.26", features = ["serde"]}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.28"
 itertools = "0.10.5"
-log = "0.4.17"
+log = "0.4.18"
 smallvec = "1.10.0"
 thiserror = "1.0.40"
 
@@ -49,8 +49,8 @@ byteorder = {version = "1.4.3", optional = true}
 crc = {version = "3.0.1", optional = true}
 extsort = {version = "0.4.2", optional = true}
 lru = {version = "0.10.0", optional = true}
-serde = {version = "1.0.162", optional = true}
-serde_derive = {version = "1.0.162", optional = true}
+serde = {version = "1.0.163", optional = true}
+serde_derive = {version = "1.0.163", optional = true}
 serde_json = {version = "1.0.96", optional = true}
 tantivy = {version = "0.19.2", optional = true}
 
@@ -58,4 +58,4 @@ tantivy = {version = "0.19.2", optional = true}
 exocore-chain = {version = "0.1.25", path = "../chain", features = ["tests-utils"]}
 exocore-core = {version = "0.1.25", path = "../core", features = ["tests-utils"]}
 tempfile = "3.5.0"
-tokio = {version = "1.28.0", features = ["macros"], default-features = false}
+tokio = {version = "1.28.2", features = ["macros"], default-features = false}

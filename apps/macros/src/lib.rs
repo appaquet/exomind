@@ -5,6 +5,8 @@ use syn::{parse_macro_input, ItemStruct};
 #[proc_macro_attribute]
 pub fn exocore_app(_metadata: TokenStream, input: TokenStream) -> TokenStream {
     let input_struct = parse_macro_input!(input as ItemStruct);
+
+    #[allow(clippy::redundant_clone)]
     let struct_ident = input_struct.ident.clone();
 
     TokenStream::from(quote! {

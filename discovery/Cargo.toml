@@ -15,21 +15,21 @@ server = ["hyper", "tokio"]
 
 [dependencies]
 anyhow = "1.0.71"
-base64 = "0.21.0"
-chrono = { version = "0.4.24", features = ["serde"] }
+base64 = "0.21.2"
+chrono = { version = "0.4.26", features = ["serde"] }
 futures = "0.3.28"
-log = "0.4.17"
+log = "0.4.18"
 rand = "0.8"
-reqwest = { version = "0.11.17", default-features = false, features = ["json", "rustls-tls"] }
-serde = "1.0.162"
-serde_derive = "1.0.162"
+reqwest = { version = "0.11.18", default-features = false, features = ["json", "rustls-tls"] }
+serde = "1.0.163"
+serde_derive = "1.0.163"
 serde_json = "1.0.96"
 thiserror = "1.0.40"
 wasm-timer = "0.2.5"
 
 # For server
 hyper = { version = "0.14.26", features = ["full"], optional = true }
-tokio = { version = "1.28.0", default-features = false, features = ["macros", "time"], optional = true }
+tokio = { version = "1.28.2", default-features = false, features = ["macros", "time"], optional = true }
 
 [[test]]
 name = "discovery"

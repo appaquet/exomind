@@ -155,7 +155,9 @@ mod tests {
         let handle2 = set.get_handle();
         assert_ne!(handle1.id(), handle2.id());
 
+        #[allow(clippy::redundant_clone)]
         let handle3 = handle2.clone();
+
         assert_ne!(handle2.id(), handle3.id());
         assert_ne!(handle1.id(), handle3.id());
     }

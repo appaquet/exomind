@@ -201,7 +201,7 @@ fn decode_base58(input: &str) -> Result<Vec<u8>, Error> {
     let mut output = vec![0; (input_bytes.len() / 8 + 1) * 6];
     output[0..2].copy_from_slice(&input_bytes[0..2]);
 
-    let len = bs58::decode(&input[2..]).into(&mut output[2..])?;
+    let len = bs58::decode(&input[2..]).onto(&mut output[2..])?;
 
     output.truncate(len + 2);
 
