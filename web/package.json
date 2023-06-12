@@ -123,7 +123,7 @@
     "@types/jest": "^29.2.5",
     "@types/linkifyjs": "^2.1.4",
     "@types/lodash": "^4.14.190",
-    "@types/node": "^20.1.1",
+    "@types/node": "^20.3.0",
     "@types/react": "^18.2.9",
     "@types/react-dom": "^18.0.6",
     "@types/react-flatpickr": "^3.8.7",
