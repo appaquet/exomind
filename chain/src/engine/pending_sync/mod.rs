@@ -243,7 +243,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
             let (local_hash, local_count) =
                 self.local_store_range_info(store, bounds_range, operations_from_height)?;
             let remote_hash_bytes = sync_range_reader.get_operations_hash()?;
-            let remote_hash = Multihash::from_bytes(remote_hash_bytes).map_err(|err| {
+            let remote_hash = Multihash::<32>::from_bytes(remote_hash_bytes).map_err(|err| {
                 PendingSyncError::InvalidSyncRequest(anyhow!("Invalid hash in header: {}", err))
             })?;
             let remote_count = sync_range_reader.get_operations_count();
@@ -354,7 +354,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
         store: &PS,
         range: R,
         operations_from_height: Option<BlockHeight>,
-    ) -> Result<(Multihash, usize), EngineError>
+    ) -> Result<(Multihash<32>, usize), EngineError>
     where
         R: RangeBounds<OperationId>,
     {

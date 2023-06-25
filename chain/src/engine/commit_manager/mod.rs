@@ -220,7 +220,7 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         let block_operations = Self::get_block_operations(block, pending_store)?.map(|op| op.frame);
         let operations_hash = BlockOperations::hash_operations(block_operations)?;
         let block_header_multihash =
-            match Multihash::from_bytes(block_header.get_operations_hash()?) {
+            match Multihash::<32>::from_bytes(block_header.get_operations_hash()?) {
                 Ok(hash) => hash,
                 Err(err) => {
                     info!(
@@ -480,9 +480,10 @@ impl<PS: pending::PendingStore, CS: chain::ChainStore> CommitManager<PS, CS> {
         // this should never happen since we wouldn't have signed the block if hash
         // didn't match
         let header_multihash_bytes = block_header.get_operations_hash()?;
-        let header_multihash = Multihash::from_bytes(header_multihash_bytes).map_err(|err| {
-            EngineError::Fatal(anyhow!("Couldn't decode hash from block header: {}", err))
-        })?;
+        let header_multihash =
+            Multihash::<32>::from_bytes(header_multihash_bytes).map_err(|err| {
+                EngineError::Fatal(anyhow!("Couldn't decode hash from block header: {}", err))
+            })?;
         let block_operations = BlockOperations::from_operations(block_operations)?;
         if block_operations.multihash() != header_multihash {
             return Err(EngineError::Fatal(anyhow!(

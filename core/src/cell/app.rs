@@ -143,16 +143,17 @@ impl Application {
                 )
             })?;
 
-            let expected_multihash = multihash_decode_bs58(&module.multihash).map_err(|err| {
-                Error::Application(
-                    self.name().to_string(),
-                    anyhow!(
-                        "{}: Couldn't decode expected module multihash in manifest: {}",
-                        self.name(),
-                        err
-                    ),
-                )
-            })?;
+            let expected_multihash =
+                multihash_decode_bs58::<32>(&module.multihash).map_err(|err| {
+                    Error::Application(
+                        self.name().to_string(),
+                        anyhow!(
+                            "{}: Couldn't decode expected module multihash in manifest: {}",
+                            self.name(),
+                            err
+                        ),
+                    )
+                })?;
 
             if expected_multihash != module_multihash {
                 return Err(Error::Application(

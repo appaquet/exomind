@@ -18,10 +18,11 @@ pub type GroupId = u64;
 pub type OperationId = u64;
 
 pub type OperationFrame<I> =
-    TypedCapnpFrame<MultihashFrame<Sha3_256, SizedFrame<I>>, chain_operation::Owned>;
+    TypedCapnpFrame<MultihashFrame<32, Sha3_256, SizedFrame<I>>, chain_operation::Owned>;
 
-pub type OperationFrameBuilder =
-    SizedFrameBuilder<MultihashFrameBuilder<Sha3_256, CapnpFrameBuilder<chain_operation::Owned>>>;
+pub type OperationFrameBuilder = SizedFrameBuilder<
+    MultihashFrameBuilder<32, Sha3_256, CapnpFrameBuilder<chain_operation::Owned>>,
+>;
 
 /// Wraps an operation that is stored either in the pending store, or in the
 /// the chain.
@@ -177,7 +178,7 @@ impl OperationBuilder {
         // TODO: Signature ticket: https://github.com/appaquet/exocore/issues/46
         //       Include signature, not just hash.
         let msg_frame = self.frame_builder.as_bytes();
-        let signed_frame_builder = MultihashFrameBuilder::<Sha3_256, _>::new(msg_frame);
+        let signed_frame_builder = MultihashFrameBuilder::<32, Sha3_256, _>::new(msg_frame);
         let sized_frame_builder = SizedFrameBuilder::new(signed_frame_builder);
         let final_frame = read_operation_frame(sized_frame_builder.as_bytes())?;
 
@@ -187,7 +188,7 @@ impl OperationBuilder {
 
 pub fn read_operation_frame<I: FrameReader>(inner: I) -> Result<OperationFrame<I>, Error> {
     let sized_frame = SizedFrame::new(inner)?;
-    let multihash_frame = MultihashFrame::<Sha3_256, _>::new(sized_frame)?;
+    let multihash_frame = MultihashFrame::<32, Sha3_256, _>::new(sized_frame)?;
     let frame = TypedCapnpFrame::new(multihash_frame)?;
     Ok(frame)
 }

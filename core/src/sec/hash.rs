@@ -1,21 +1,21 @@
 use std::{fs::File, io::Read, path::Path};
 
-use multihash::Code;
-pub use multihash::{Hasher, Multihash, MultihashDigest, Sha3_256, Sha3_512};
+pub use multihash_codetable::{Code, Sha3_256, Sha3_512};
+pub use multihash_derive::{Hasher, Multihash, MultihashDigest};
 
 use crate::framing;
 
 const MULTIHASH_CODE_SIZE: usize = 2;
 
 /// Multihash digest extension.
-pub trait MultihashDigestExt: Hasher + Default {
+pub trait MultihashDigestExt<const S: usize>: Hasher + Default {
     fn size() -> usize;
 
-    fn to_multihash(&mut self) -> Multihash;
+    fn to_multihash(&mut self) -> Multihash<S>;
 
     fn input_signed_frame<I: framing::FrameReader>(
         &mut self,
-        frame: &framing::MultihashFrame<Self, I>,
+        frame: &framing::MultihashFrame<S, Self, I>,
     ) {
         self.update(frame.multihash_bytes());
     }
@@ -24,7 +24,7 @@ pub trait MultihashDigestExt: Hasher + Default {
         MULTIHASH_CODE_SIZE + Self::size()
     }
 
-    fn update_from_reader<R: Read>(&mut self, mut read: R) -> Result<Multihash, std::io::Error> {
+    fn update_from_reader<R: Read>(&mut self, mut read: R) -> Result<Multihash<S>, std::io::Error> {
         let mut bytes = Vec::new();
         read.read_to_end(&mut bytes)?;
 
@@ -33,10 +33,10 @@ pub trait MultihashDigestExt: Hasher + Default {
     }
 }
 
-impl MultihashDigestExt for Sha3_256 {
-    fn to_multihash(&mut self) -> Multihash {
+impl MultihashDigestExt<32> for Sha3_256 {
+    fn to_multihash(&mut self) -> Multihash<32> {
         let digest = self.finalize();
-        Code::Sha3_256.wrap(digest).unwrap()
+        Multihash::wrap(0x16, digest).unwrap() // TODO: FIXME
     }
 
     fn size() -> usize {
@@ -44,10 +44,10 @@ impl MultihashDigestExt for Sha3_256 {
     }
 }
 
-impl MultihashDigestExt for Sha3_512 {
-    fn to_multihash(&mut self) -> Multihash {
+impl MultihashDigestExt<64> for Sha3_512 {
+    fn to_multihash(&mut self) -> Multihash<64> {
         let digest = self.finalize();
-        Code::Sha3_512.wrap(digest).unwrap()
+        Multihash::wrap(0x14, digest).unwrap() // TODO: FIXME
     }
 
     fn size() -> usize {
@@ -59,24 +59,24 @@ pub trait MultihashExt {
     fn encode_bs58(&self) -> String;
 }
 
-impl MultihashExt for Multihash {
+impl<const S: usize> MultihashExt for Multihash<S> {
     fn encode_bs58(&self) -> String {
         bs58::encode(self.to_bytes()).into_string()
     }
 }
 
-pub fn multihash_decode_bs58(str: &str) -> Result<Multihash, HashError> {
+pub fn multihash_decode_bs58<const S: usize>(str: &str) -> Result<Multihash<S>, HashError> {
     let bytes = bs58::decode(str).into_vec()?;
     let mh = Multihash::from_bytes(&bytes)?;
     Ok(mh)
 }
 
-pub fn multihash_sha3_256_file<P: AsRef<Path>>(path: P) -> Result<Multihash, HashError> {
+pub fn multihash_sha3_256_file<P: AsRef<Path>>(path: P) -> Result<Multihash<32>, HashError> {
     let file = File::open(path.as_ref())?;
     multihash_sha3_256(file)
 }
 
-pub fn multihash_sha3_256<R: Read>(reader: R) -> Result<Multihash, HashError> {
+pub fn multihash_sha3_256<R: Read>(reader: R) -> Result<Multihash<32>, HashError> {
     let mut digest = Sha3_256::default();
     let mh = digest.update_from_reader(reader)?;
     Ok(mh)
@@ -131,7 +131,7 @@ mod tests {
         let mh_init = Code::Sha3_256.digest(b"Hello world");
 
         let bs58 = mh_init.encode_bs58();
-        let mh_decoded = multihash_decode_bs58(&bs58).unwrap();
+        let mh_decoded = multihash_decode_bs58::<32>(&bs58).unwrap();
         assert_eq!(mh_init, mh_decoded);
     }
 

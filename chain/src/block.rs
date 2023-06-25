@@ -27,9 +27,9 @@ pub type BlockOperationsSize = u32;
 pub type BlockSignaturesSize = u16;
 
 pub type BlockHeaderFrame<I> =
-    TypedCapnpFrame<MultihashFrame<Sha3_256, SizedFrame<I>>, block_header::Owned>;
+    TypedCapnpFrame<MultihashFrame<32, Sha3_256, SizedFrame<I>>, block_header::Owned>;
 pub type BlockHeaderFrameBuilder =
-    SizedFrameBuilder<MultihashFrameBuilder<Sha3_256, CapnpFrameBuilder<block_header::Owned>>>;
+    SizedFrameBuilder<MultihashFrameBuilder<32, Sha3_256, CapnpFrameBuilder<block_header::Owned>>>;
 pub type SignaturesFrame<I> = TypedCapnpFrame<PaddedFrame<SizedFrame<I>>, block_signatures::Owned>;
 
 /// A trait representing a block stored or to be stored in the chain.
@@ -201,7 +201,7 @@ pub trait Block {
         if ops_size_header > 0 {
             let operations = self.operations_iter()?;
             let ops_hash_stored = BlockOperations::hash_operations(operations)?;
-            let ops_hash_header = Multihash::from_bytes(header_reader.get_operations_hash()?)
+            let ops_hash_header = Multihash::<32>::from_bytes(header_reader.get_operations_hash()?)
                 .map_err(|err| {
                     Error::Integrity(format!("Hash in block header couldn't be decoded: {}", err))
                 })?;
@@ -239,7 +239,7 @@ pub fn read_header_frame_from_next_offset<I: FrameReader>(
 pub fn build_header_frame(
     header: CapnpFrameBuilder<block_header::Owned>,
 ) -> BlockHeaderFrameBuilder {
-    SizedFrameBuilder::new(MultihashFrameBuilder::<Sha3_256, _>::new(header))
+    SizedFrameBuilder::new(MultihashFrameBuilder::<32, Sha3_256, _>::new(header))
 }
 
 /// Block from an arbitrary type of data.
@@ -473,7 +473,7 @@ impl<'a> Iterator for BlockOperationsIterator<'a> {
 
 /// Wraps operations header stored in a block.
 pub struct BlockOperations {
-    hash: Multihash,
+    hash: Multihash<32>,
     headers: Vec<BlockOperationHeader>,
     data: Bytes,
 }
@@ -529,7 +529,7 @@ impl BlockOperations {
         })
     }
 
-    pub fn hash_operations<I, M, F>(sorted_operations: I) -> Result<Multihash, Error>
+    pub fn hash_operations<I, M, F>(sorted_operations: I) -> Result<Multihash<32>, Error>
     where
         I: Iterator<Item = M>,
         M: Borrow<crate::operation::OperationFrame<F>>,
@@ -550,7 +550,7 @@ impl BlockOperations {
         self.headers.iter().map(|header| header.operation_id)
     }
 
-    pub fn multihash(&self) -> Multihash {
+    pub fn multihash(&self) -> Multihash<32> {
         self.hash
     }
 

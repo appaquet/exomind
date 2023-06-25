@@ -600,7 +600,7 @@ pub fn create_dummy_block<I: FrameReader>(
         }
     }
 
-    let hash_frame = MultihashFrameBuilder::<Sha3_256, _>::new(msg_builder);
+    let hash_frame = MultihashFrameBuilder::<32, Sha3_256, _>::new(msg_builder);
     let block_frame_data = SizedFrameBuilder::new(hash_frame);
     crate::block::read_header_frame(block_frame_data.as_bytes()).unwrap()
 }

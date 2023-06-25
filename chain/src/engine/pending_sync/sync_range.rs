@@ -92,7 +92,7 @@ pub struct SyncRangeBuilder {
     pub operations_count: u32,
 
     pub hasher: Option<Sha3_256>,
-    pub hash: Option<Multihash>,
+    pub hash: Option<Multihash<32>>,
 }
 
 impl SyncRangeBuilder {
@@ -113,7 +113,7 @@ impl SyncRangeBuilder {
 
     pub(crate) fn new_hashed(
         operations_range: (Bound<OperationId>, Bound<OperationId>),
-        operations_hash: Multihash,
+        operations_hash: Multihash<32>,
         operations_count: u32,
     ) -> SyncRangeBuilder {
         SyncRangeBuilder {
