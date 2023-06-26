@@ -34,8 +34,8 @@ bytes = "1.4.0"
 chrono = {version = "0.4.26", features = ["serde"]}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.28"
-itertools = "0.10.5"
-log = "0.4.18"
+itertools = "0.11.0"
+log = "0.4.19"
 smallvec = "1.10.0"
 thiserror = "1.0.40"
 
@@ -51,7 +51,7 @@ extsort = {version = "0.4.2", optional = true}
 lru = {version = "0.10.0", optional = true}
 serde = {version = "1.0.164", optional = true}
 serde_derive = {version = "1.0.164", optional = true}
-serde_json = {version = "1.0.96", optional = true}
+serde_json = {version = "1.0.99", optional = true}
 tantivy = {version = "0.19.2", optional = true}
 
 [dev-dependencies]

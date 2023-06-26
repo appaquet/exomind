@@ -135,7 +135,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     /// ranges of operation ids that need to be merged and/or compared to
     /// our local store. See `handle_incoming_sync_ranges` for more details on
     /// the merge / comparison.
-
+    ///
     /// If we have any differences with remote node data, we send a request back
     /// with more data that will allow converging in the same stored data.
     pub fn handle_incoming_sync_request<F: FrameReader>(
@@ -180,7 +180,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     /// Handles the ranges coming from a sync request. For each range, we check
     /// if we have the same information locally, and take actions based on
     /// it.
-
+    ///
     /// For each range, actions include:
     ///   * Doing nothing if both remote and local are equals
     ///   * Sending full operations if remote is empty while we have operations
@@ -188,7 +188,7 @@ impl<PS: PendingStore> PendingSynchronizer<PS> {
     ///   * Sending headers operations if we differences without any headers to
     ///     compared with
     ///   * Diffing our headers vs remote headers if headers are included.
-
+    ///
     /// In any case, if the range includes operations, we always apply them
     /// first.
     fn handle_incoming_sync_ranges<'a, I>(
