@@ -29,7 +29,7 @@ wasm-timer = "0.2.5"
 
 # For server
 hyper = { version = "0.14.26", features = ["full"], optional = true }
-tokio = { version = "1.28.2", default-features = false, features = ["macros", "time"], optional = true }
+tokio = { version = "1.29.1", default-features = false, features = ["macros", "time"], optional = true }
 
 [[test]]
 name = "discovery"
