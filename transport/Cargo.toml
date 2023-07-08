@@ -29,7 +29,7 @@ hyper = {version = "0.14.26", features = ["full"], optional = true}
 libp2p = {version = "0.51.3", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
 libp2p-identity = { version = "0.1.2", features = ["secp256k1"], default-features = false }
 log = "0.4.19"
-pin-project = "1.1.0"
+pin-project = "1.1.2"
 thiserror = "1.0.40"
 url = {version = "2.4.0", optional = true}
 
