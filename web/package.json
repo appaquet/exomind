@@ -106,7 +106,7 @@
     "mobx": "^6.8.0",
     "mobx-react": "^7.5.2",
     "prop-types": "15.8.1",
-    "protobufjs": "^7.2.2",
+    "protobufjs": "^7.2.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-flatpickr": "^3.10.12",
