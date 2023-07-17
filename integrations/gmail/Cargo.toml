@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exomind"
 version = "0.1.15"
 
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.72"
 base64 = "0.21.2"
 chardetng = "0.1.17"
 charset = "0.1.3"
