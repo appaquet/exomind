@@ -1169,7 +1169,7 @@
     "@bangle.dev/utils" "0.31.6"
     prosemirror-markdown "^1.9.3"
 
-"@bangle.dev/utils@0.31.6", "@bangle.dev/utils@^0.31.1":
+"@bangle.dev/utils@0.31.6":
   version "0.31.6"
   resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.31.6.tgz#4dd7a64dd25f1cd52926c3337324d7b9f1e3ab5a"
   integrity sha512-7Nl0FoMHfr70gytEkNs/NgAX8dq7jb34DfgzbVR7Ob6BaB0KJ0bhy4cZ0vUxG5vbhTlwvuYVjxskFzKIbC5wQg==
@@ -1177,6 +1177,17 @@
     "@types/jest" "^27.5.2"
     prosemirror-model "^1.18.1"
     prosemirror-state "^1.4.1"
+    prosemirror-utils-bangle "0.0.4"
+    tsd "^0.22.0"
+
+"@bangle.dev/utils@^0.32.0":
+  version "0.32.0"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.32.0.tgz#ffcff254e3043cee6d371896c785e4464b77e7a8"
+  integrity sha512-6pFEQ4KsK8PxPv/ZrDnXZkKw8U2/B9/regc3l+Snv5xClhyJ+zRyysDgPEf0XMw4pAW1KwiJIih8KGDTdXiAvg==
+  dependencies:
+    "@types/jest" "^29.5.3"
+    prosemirror-model "^1.19.3"
+    prosemirror-state "^1.4.3"
     prosemirror-utils-bangle "0.0.4"
     tsd "^0.22.0"
 
@@ -9102,10 +9113,10 @@ prosemirror-markdown@^1.9.3:
     markdown-it "^13.0.1"
     prosemirror-model "^1.0.0"
 
-prosemirror-model@^1.0.0, prosemirror-model@^1.16.0, prosemirror-model@^1.18.1, prosemirror-model@^1.8.1:
-  version "1.18.1"
-  resolved "https://registry.yarnpkg.com/prosemirror-model/-/prosemirror-model-1.18.1.tgz#1d5d6b6de7b983ee67a479dc607165fdef3935bd"
-  integrity sha512-IxSVBKAEMjD7s3n8cgtwMlxAXZrC7Mlag7zYsAKDndAqnDScvSmp/UdnRTV/B33lTCVU3CCm7dyAn/rVVD0mcw==
+prosemirror-model@^1.0.0, prosemirror-model@^1.16.0, prosemirror-model@^1.18.1, prosemirror-model@^1.19.3, prosemirror-model@^1.8.1:
+  version "1.19.3"
+  resolved "https://registry.yarnpkg.com/prosemirror-model/-/prosemirror-model-1.19.3.tgz#f0d55285487fefd962d0ac695f716f4ec6705006"
+  integrity sha512-tgSnwN7BS7/UM0sSARcW+IQryx2vODKX4MI7xpqY2X+iaepJdKBPc7I4aACIsDV/LTaTjt12Z56MhDr9LsyuZQ==
   dependencies:
     orderedmap "^2.0.0"
 
@@ -9118,10 +9129,10 @@ prosemirror-schema-list@^1.2.0:
     prosemirror-state "^1.0.0"
     prosemirror-transform "^1.0.0"
 
-prosemirror-state@^1.0.0, prosemirror-state@^1.2.2, prosemirror-state@^1.3.1, prosemirror-state@^1.4.1:
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/prosemirror-state/-/prosemirror-state-1.4.2.tgz#f93bd8a33a4454efab917ba9b738259d828db7e5"
-  integrity sha512-puuzLD2mz/oTdfgd8msFbe0A42j5eNudKAAPDB0+QJRw8cO1ygjLmhLrg9RvDpf87Dkd6D4t93qdef00KKNacQ==
+prosemirror-state@^1.0.0, prosemirror-state@^1.2.2, prosemirror-state@^1.3.1, prosemirror-state@^1.4.1, prosemirror-state@^1.4.3:
+  version "1.4.3"
+  resolved "https://registry.yarnpkg.com/prosemirror-state/-/prosemirror-state-1.4.3.tgz#94aecf3ffd54ec37e87aa7179d13508da181a080"
+  integrity sha512-goFKORVbvPuAQaXhpbemJFRKJ2aixr+AZMGiquiqKxaucC6hlpHNZHWgz5R7dS4roHiwq9vDctE//CZ++o0W1Q==
   dependencies:
     prosemirror-model "^1.0.0"
     prosemirror-transform "^1.0.0"
