@@ -85,7 +85,7 @@
     "@bangle.dev/base-components": "^0.31.1",
     "@bangle.dev/core": "^0.31.1",
     "@bangle.dev/pm": "^0.31.1",
-    "@bangle.dev/react": "^0.31.1",
+    "@bangle.dev/react": "^0.32.0",
     "@bangle.dev/utils": "^0.31.1",
     "@popperjs/core": "^2.11.6",
     "bootstrap": "^3.3.5",
