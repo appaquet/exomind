@@ -18,7 +18,7 @@ p2p-web = ["p2p-base", "libp2p/wasm-ext-websocket", "libp2p/wasm-bindgen", "gloo
 tests-utils = ["exocore-core/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.72"
 byteorder = "1.4.3"
 bytes = "1.4.0"
 exocore-core = {version = "0.1.25", path = "../core"}
