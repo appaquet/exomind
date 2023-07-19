@@ -12,7 +12,7 @@ version = "0.1.25"
 [dependencies]
 anyhow = { version="1.0.72", features = ["backtrace"] }
 bytes = "1.4.0"
-clap = { version = "4.3.16", features = ["derive", "env"] }
+clap = { version = "4.3.17", features = ["derive", "env"] }
 console = "0.15.7"
 dialoguer = "0.10.4"
 dirs-next = "2.0.0"
