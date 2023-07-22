@@ -78,14 +78,14 @@ jobs:
 
 
   web_client:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
       - name: Setup Node
         uses: actions/setup-node@v3.7.0
         with:
-          node-version: 14.x
+          node-version: 18.x
 
       - name: Build client
         run: |
@@ -95,6 +95,8 @@ jobs:
 
           cd $GITHUB_WORKSPACE/web/dist
           tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -159,7 +161,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3.7.0
         with:
-          node-version: 14.x
+          node-version: 18.x
 
       - name: Build
         shell: bash
@@ -182,6 +184,7 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3

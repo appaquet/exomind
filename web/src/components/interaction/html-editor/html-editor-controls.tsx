@@ -27,7 +27,7 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         </div>;
     }
 
-    private renderInlineStyleControls(): React.ReactFragment {
+    private renderInlineStyleControls(): React.ReactNode {
         const styles: { cssStyle: string, editorStyle: InlineStyle }[] = [
             {
                 cssStyle: 'bold',
@@ -91,7 +91,7 @@ export default class HtmlEditorControls extends React.Component<IProps> {
         );
     }
 
-    private renderBlockControls(): React.ReactFragment {
+    private renderBlockControls(): React.ReactNode {
         const types = [
             {
                 cssStyle: 'header-one',
