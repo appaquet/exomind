@@ -10,7 +10,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  NODE_OPTIONS: "--openssl-legacy-provider"
 
 jobs:
   rust_checks:
