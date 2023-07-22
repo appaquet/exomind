@@ -135,7 +135,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3.7.0
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Build & test
         run: |
@@ -154,7 +154,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3.7.0
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Build
         run: |
@@ -170,7 +170,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3.7.0
         with:
-          node-version: 16.x
+          node-version: 18.x
 
       - name: Select latest Xcode
         run: |
