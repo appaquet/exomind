@@ -102,7 +102,7 @@ export default class Snoozed extends React.Component<IProps, IState> {
         }
     }
 
-    private renderEntityDate = (entity: EntityTrait<unknown>): React.ReactFragment => {
+    private renderEntityDate = (entity: EntityTrait<unknown>): React.ReactNode => {
         const snoozedTrait = entity.et.traitOfType<exomind.base.v1.ISnoozed>(exomind.base.v1.Snoozed);
         if (!snoozedTrait) {
             return 'Invalid';
