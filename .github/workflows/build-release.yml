@@ -8,7 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  NODE_OPTIONS: "--openssl-legacy-provider"
 
 jobs:
   exm:
@@ -96,6 +95,8 @@ jobs:
 
           cd $GITHUB_WORKSPACE/web/dist
           tar -czf $GITHUB_WORKSPACE/exomind-web.tar.gz *
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3
@@ -183,6 +184,7 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3

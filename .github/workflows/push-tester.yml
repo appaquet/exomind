@@ -145,6 +145,8 @@ jobs:
           yarn build
           yarn test
           yarn lint
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
   electron_build:
     runs-on: ubuntu-latest
@@ -162,6 +164,8 @@ jobs:
           cd web
           yarn install --frozen-lockfile
           yarn electron
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
   ios_build:
     runs-on: macos-11
@@ -197,6 +201,8 @@ jobs:
           cd $GITHUB_WORKSPACE/ios
           pod install
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
   app_package:
     runs-on: ubuntu-latest
