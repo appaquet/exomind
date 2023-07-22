@@ -25,7 +25,7 @@ exocore-core = {version = "0.1.25", path = "../core"}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.28"
 gloo-timers = {version = "0.2", optional = true}
-hyper = {version = "0.14.26", features = ["full"], optional = true}
+hyper = {version = "0.14.27", features = ["full"], optional = true}
 libp2p = {version = "0.51.3", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
 libp2p-identity = { version = "0.1.2", features = ["secp256k1"], default-features = false }
 log = "0.4.19"
