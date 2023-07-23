@@ -107,14 +107,14 @@ impl AccountSynchronizer {
     }
 
     pub async fn synchronize_history(&mut self) -> anyhow::Result<()> {
+        self.synchronize_exomind_history().await?;
+
         if let Some(last_gmail_history) = self.last_gmail_history {
             self.synchronize_gmail_history(Some(last_gmail_history))
                 .await?;
         } else {
             self.synchronize_inbox().await?;
         }
-
-        self.synchronize_exomind_history().await?;
 
         Ok(())
     }

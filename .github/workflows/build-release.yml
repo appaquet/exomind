@@ -163,6 +163,13 @@ jobs:
         with:
           node-version: 18.x
 
+      - name: Install dependencies
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            sudo snap install snapcraft --classic
+          fi
+
       - name: Build
         shell: bash
         run: |
