@@ -6,6 +6,7 @@ app.wasm
 exomind.zip
 test_node
 .env
+.envrc
 
 # Rust
 **/target/**
