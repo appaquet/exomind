@@ -23,7 +23,7 @@ rand = "0.8"
 reqwest = { version = "0.11.18", default-features = false, features = ["json", "rustls-tls"] }
 serde = "1.0.176"
 serde_derive = "1.0.174"
-serde_json = "1.0.103"
+serde_json = "1.0.104"
 thiserror = "1.0.44"
 wasm-timer = "0.2.5"
 
