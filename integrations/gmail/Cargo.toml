@@ -19,7 +19,7 @@ exocore = { version = "0.1.25", default-features = false, features = ["client", 
 exomind-protos = {version = "0.1.15", path = "../../protos"}
 google-gmail1 = "4.0.1"
 hyper = "0.14.27"
-hyper-rustls = "0.23.2"
+hyper-rustls = "0.24.1"
 log = "0.4.19"
 mailparse = "0.14.0"
 serde = "1.0.177"
