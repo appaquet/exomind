@@ -12,7 +12,7 @@ version = "0.1.25"
 [features]
 default = ["p2p-full", "http-server"]
 http-server = ["hyper", "url", "exocore-core/runtime"]
-p2p-base = ["libp2p"]
+p2p-base = ["libp2p", "libp2p-mplex"]
 p2p-full = ["p2p-base", "libp2p/tcp"]
 p2p-web = ["p2p-base", "libp2p/wasm-ext-websocket", "libp2p/wasm-bindgen", "gloo-timers"]
 tests-utils = ["exocore-core/tests-utils"]
@@ -26,8 +26,9 @@ exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.28"
 gloo-timers = {version = "0.2", optional = true}
 hyper = {version = "0.14.27", features = ["full"], optional = true}
-libp2p = {version = "0.51.3", optional = true, default-features = false, features = ["mplex", "noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
-libp2p-identity = { version = "0.1.2", features = ["secp256k1"], default-features = false }
+libp2p = {version = "0.52.1", optional = true, default-features = false, features = ["noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
+libp2p-identity = { version = "0.2.2", features = ["secp256k1", "ed25519"], default-features = false }
+libp2p-mplex = {version = "0.40.0", optional = true}
 log = "0.4.19"
 pin-project = "1.1.2"
 thiserror = "1.0.44"

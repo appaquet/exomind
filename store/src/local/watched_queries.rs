@@ -48,7 +48,7 @@ impl WatchedQueries {
     pub fn update_query_results(&self, token: WatchToken, results: &EntityResults) -> bool {
         let mut inner = self.inner.lock().expect("Inner got poisoned");
 
-        if let Some(mut current_watched) = inner.queries.get_mut(&token) {
+        if let Some(current_watched) = inner.queries.get_mut(&token) {
             let should_reply = current_watched.last_hash != Some(results.hash);
             current_watched.last_hash = Some(results.hash);
             current_watched.query.result_hash = results.hash;

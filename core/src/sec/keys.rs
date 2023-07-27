@@ -1,5 +1,6 @@
 use libp2p_identity::{
-    ed25519 as libp2p_ed25519, Keypair as libp2p_Keypair, PublicKey as libp2p_PublicKey,
+    ed25519 as libp2p_ed25519, secp256k1 as libp2p_secp256k1, Keypair as libp2p_Keypair,
+    PublicKey as libp2p_PublicKey,
 };
 use rand::SeedableRng;
 
@@ -10,9 +11,33 @@ const ENCODE_PUBLIC_KEY_CODE: u8 = b'p';
 #[derive(Clone)]
 pub struct Keypair {
     keypair: libp2p_Keypair,
+    keypair_type: KeypairType,
+}
+
+#[derive(Clone)]
+enum KeypairType {
+    Ed25519(libp2p_ed25519::Keypair),
+    Secp256k1(libp2p_secp256k1::Keypair),
 }
 
 impl Keypair {
+    pub fn from_libp2p(keypair: libp2p_Keypair) -> Keypair {
+        let keypair_type = match keypair.key_type() {
+            libp2p_identity::KeyType::Ed25519 => {
+                KeypairType::Ed25519(keypair.clone().try_into_ed25519().unwrap())
+            }
+            libp2p_identity::KeyType::Secp256k1 => {
+                KeypairType::Secp256k1(keypair.clone().try_into_secp256k1().unwrap())
+            }
+            _ => unimplemented!(),
+        };
+
+        Keypair {
+            keypair,
+            keypair_type,
+        }
+    }
+
     pub fn generate_ed25519() -> Keypair {
         Self::from_libp2p(libp2p_Keypair::generate_ed25519())
     }
@@ -22,14 +47,10 @@ impl Keypair {
     }
 
     pub fn algorithm(&self) -> Algorithm {
-        match self.keypair {
-            libp2p_Keypair::Ed25519(_) => Algorithm::Ed25519,
-            libp2p_Keypair::Secp256k1(_) => Algorithm::Secp256K1,
+        match self.keypair_type {
+            KeypairType::Ed25519(_) => Algorithm::Ed25519,
+            KeypairType::Secp256k1(_) => Algorithm::Secp256k1,
         }
-    }
-
-    pub fn from_libp2p(key: libp2p_Keypair) -> Keypair {
-        Keypair { keypair: key }
     }
 
     pub fn to_libp2p(&self) -> &libp2p_Keypair {
@@ -46,12 +67,12 @@ impl Keypair {
 
     /// Encode the keypair into a bytes representation.
     pub fn encode(&self) -> Vec<u8> {
-        match &self.keypair {
-            libp2p_Keypair::Ed25519(kp) => {
+        match &self.keypair_type {
+            KeypairType::Ed25519(kp) => {
                 let mut vec = vec![0; 66];
                 vec[0] = ENCODE_KEYPAIR_CODE;
                 vec[1] = Algorithm::Ed25519.to_code();
-                vec[2..].copy_from_slice(&kp.encode());
+                vec[2..].copy_from_slice(&kp.to_bytes());
                 vec
             }
             _ => unimplemented!(),
@@ -76,12 +97,10 @@ impl Keypair {
 
         match Algorithm::from_code(bytes[1])? {
             Algorithm::Ed25519 => {
-                let keypair = libp2p_ed25519::Keypair::decode(&mut bytes[2..])
+                let keypair = libp2p_ed25519::Keypair::try_from_bytes(&mut bytes[2..])
                     .map_err(|err| Error::Libp2pDecode(err.to_string()))?;
 
-                Ok(Keypair {
-                    keypair: libp2p_Keypair::Ed25519(keypair),
-                })
+                Ok(Self::from_libp2p(keypair.into()))
             }
             _ => unimplemented!(),
         }
@@ -98,11 +117,28 @@ impl Keypair {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PublicKey {
     key: libp2p_PublicKey,
+    key_type: PublicKeyType,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum PublicKeyType {
+    Ed25519(libp2p_ed25519::PublicKey),
+    Secp256k1(libp2p_secp256k1::PublicKey),
 }
 
 impl PublicKey {
     pub fn from_libp2p(key: libp2p_PublicKey) -> PublicKey {
-        PublicKey { key }
+        let key_type = match key.key_type() {
+            libp2p_identity::KeyType::Ed25519 => {
+                PublicKeyType::Ed25519(key.clone().try_into_ed25519().unwrap())
+            }
+            libp2p_identity::KeyType::Secp256k1 => {
+                PublicKeyType::Secp256k1(key.clone().try_into_secp256k1().unwrap())
+            }
+            _ => unimplemented!(),
+        };
+
+        PublicKey { key, key_type }
     }
 
     pub fn to_libp2p(&self) -> &libp2p_PublicKey {
@@ -117,12 +153,12 @@ impl PublicKey {
 
     /// Encode the public key into a bytes representation.
     pub fn encode(&self) -> Vec<u8> {
-        match &self.key {
-            libp2p_PublicKey::Ed25519(pk) => {
+        match &self.key_type {
+            PublicKeyType::Ed25519(pk) => {
                 let mut vec = vec![0; 34];
                 vec[0] = ENCODE_PUBLIC_KEY_CODE;
                 vec[1] = Algorithm::Ed25519.to_code();
-                vec[2..].copy_from_slice(&pk.encode());
+                vec[2..].copy_from_slice(&pk.to_bytes());
                 vec
             }
             _ => unimplemented!(),
@@ -146,10 +182,10 @@ impl PublicKey {
 
         match Algorithm::from_code(bytes[1])? {
             Algorithm::Ed25519 => {
-                let pk = libp2p_ed25519::PublicKey::decode(&bytes[2..])
+                let pk = libp2p_ed25519::PublicKey::try_from_bytes(&bytes[2..])
                     .map_err(|err| Error::Libp2pDecode(err.to_string()))?;
 
-                Ok(PublicKey::from_libp2p(libp2p_PublicKey::Ed25519(pk)))
+                Ok(PublicKey::from_libp2p(pk.into()))
             }
             _ => unimplemented!(),
         }
@@ -212,21 +248,21 @@ fn decode_base58(input: &str) -> Result<Vec<u8>, Error> {
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Algorithm {
     Ed25519,
-    Secp256K1,
+    Secp256k1,
 }
 
 impl Algorithm {
     fn to_code(self) -> u8 {
         match self {
             Algorithm::Ed25519 => b'e',
-            Algorithm::Secp256K1 => b'c',
+            Algorithm::Secp256k1 => b'c',
         }
     }
 
     fn from_code(code: u8) -> Result<Algorithm, Error> {
         match code {
             b'e' => Ok(Algorithm::Ed25519),
-            b'c' => Ok(Algorithm::Secp256K1),
+            b'c' => Ok(Algorithm::Secp256k1),
             _ => Err(Error::InvalidAlgorithmCode(code)),
         }
     }

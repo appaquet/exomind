@@ -35,8 +35,8 @@ bytes = "1.4.0"
 chrono = "0.4.26"
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = { version = "0.3.28", features = ["async-await"] }
-libp2p = { version = "0.51.3", features = ["noise", "secp256k1"], default-features = false }
-libp2p-identity = { version = "0.1.2", features = ["secp256k1"], default-features = false }
+libp2p = { version = "0.52.1", features = ["noise", "secp256k1"], default-features = false }
+libp2p-identity = { version = "0.2.2", features = ["secp256k1", "ed25519"], default-features = false }
 log = "0.4.19"
 log4rs = { version = "1.2.0", optional = true }
 multihash = "0.19.0"
@@ -45,7 +45,7 @@ multihash-derive = {version="0.9"}
 petname = "1.1.3"
 rand = "0.8"
 serde = "1.0.177"
-serde_derive = "1.0.174"
+serde_derive = "1.0.177"
 serde_json = "1.0.104"
 serde_yaml = "0.9.25"
 shadow-rs = { version = "0.23.0", default-features = false }

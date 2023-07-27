@@ -102,21 +102,17 @@ impl Libp2pTransport {
         let mut swarm = {
             use libp2p::wasm_ext::{ffi::websocket_transport, ExtTransport};
 
-            let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()
-                .into_authentic(self.local_node.keypair().to_libp2p())
-                .map_err(|err| {
-                    Error::Other(format!(
-                        "Signing libp2p-noise static DH keypair failed: {}",
-                        err
-                    ))
-                })?;
+            let keypair = self.local_node.keypair().to_libp2p();
 
             let transport = ExtTransport::new(websocket_transport())
                 .upgrade(libp2p::core::upgrade::Version::V1)
-                .authenticate(libp2p::noise::NoiseConfig::xx(noise_keys).into_authenticated())
+                .authenticate(
+                    libp2p::noise::Config::new(keypair)
+                        .expect("Couldn't build noise authentication"),
+                )
                 .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
-                    libp2p::yamux::YamuxConfig::default(),
-                    libp2p::mplex::MplexConfig::new(),
+                    libp2p::yamux::Config::default(),
+                    libp2p_mplex::MplexConfig::new(),
                 ))
                 .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)))
                 .boxed();
@@ -249,7 +245,7 @@ impl Libp2pTransport {
                     }
                     libp2p::swarm::SwarmEvent::Behaviour(CombinedEvent::Ping(event)) => {
                         match event.result {
-                            Ok(ping::Success::Ping { rtt }) => {
+                            Ok(rtt) => {
                                 // TODO: We could save round-trip time to node. Could be use for
                                 // node selection.
                                 swarm
@@ -257,7 +253,6 @@ impl Libp2pTransport {
                                     .exocore
                                     .report_ping_success(&event.peer, rtt)
                             }
-                            Ok(ping::Success::Pong) => {}
                             Err(failure) => {
                                 debug!("Failed to ping peer {}: {}", event.peer, failure);
                             }
@@ -306,7 +301,7 @@ impl Libp2pTransport {
 
 /// Behaviour that combines exocore and ping behaviours.
 #[derive(NetworkBehaviour)]
-#[behaviour(out_event = "CombinedEvent")]
+#[behaviour(to_swarm = "CombinedEvent")]
 struct CombinedBehaviour {
     exocore: ExocoreBehaviour,
     ping: ping::Behaviour,
@@ -428,16 +423,14 @@ pub fn build_transport(
         ws_dns_tcp.or_transport(dns_tcp()?)
     };
 
-    let noise_keys = libp2p::noise::Keypair::<libp2p::noise::X25519Spec>::new()
-        .into_authentic(&keypair)
-        .expect("Signing libp2p-noise static DH keypair failed.");
-
     Ok(transport
         .upgrade(libp2p::core::upgrade::Version::V1)
-        .authenticate(libp2p::noise::NoiseConfig::xx(noise_keys).into_authenticated())
+        .authenticate(
+            libp2p::noise::Config::new(&keypair).expect("Couldn't build noise authentication"),
+        )
         .multiplex(libp2p::core::upgrade::SelectUpgrade::new(
-            libp2p::yamux::YamuxConfig::default(),
-            libp2p::mplex::MplexConfig::default(),
+            libp2p::yamux::Config::default(),
+            libp2p_mplex::MplexConfig::default(),
         ))
         .timeout(std::time::Duration::from_secs(20))
         .boxed())
