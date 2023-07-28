@@ -265,7 +265,7 @@ impl GmailClient {
             .users()
             .history_list("me")
             .label_id("INBOX")
-            .start_history_id(&format!("{}", history))
+            .start_history_id(history)
             .add_scope(FULL_ACCESS_SCOPE)
             .doit()
             .await?;
@@ -281,7 +281,7 @@ impl GmailClient {
 
         let history_list = history_resp.history.unwrap_or_default();
         for history in history_list {
-            let history_id: HistoryId = history.id.as_ref().unwrap().parse().unwrap();
+            let history_id: HistoryId = history.id.unwrap();
             let messages_added = history.messages_added.unwrap_or_default();
             for added in messages_added {
                 let msg = added.message.as_ref().unwrap();

@@ -1,4 +1,3 @@
-use base64::Engine;
 use charset::Charset;
 use exocore::protos::prost::Timestamp;
 use exomind_protos::base::{Contact, Email, EmailAttachment, EmailPart, EmailThread};
@@ -27,12 +26,7 @@ pub fn parse_thread(thread: google_gmail1::api::Thread) -> Result<ParsedThread, 
     }
 
     let mut messages = thread.messages.unwrap_or_default();
-    messages.sort_by_key(|m| {
-        m.internal_date
-            .as_ref()
-            .and_then(|d| d.parse::<u64>().ok())
-            .unwrap_or_default()
-    });
+    messages.sort_by_key(|m| m.internal_date.unwrap_or_default());
 
     for message in messages {
         if let Some(part) = message.payload {
@@ -110,10 +104,6 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
                     )
                 })?;
 
-            let body_bytes = base64::engine::general_purpose::URL_SAFE
-                .decode(body_bytes.as_bytes())
-                .map_err(|err| anyhow!("Couldn't base64 decode body: {}", err))?;
-
             let encoding = mailparse::parse_content_type(content_type);
             let utf8_charset = Charset::for_label(b"UTF-8").unwrap();
             let charset = Charset::for_label(encoding.charset.as_bytes()).unwrap_or(utf8_charset);
@@ -123,20 +113,20 @@ fn parse_part(part: &google_gmail1::api::MessagePart, email: &mut Email) -> anyh
             // this case, we try to detect the right encoding. See https://stackoverflow.com/questions/27037816/can-an-email-header-have-different-character-encoding-than-the-body-of-the-email
             let charset = if charset != utf8_charset {
                 let mut detector = chardetng::EncodingDetector::new();
-                detector.feed(&body_bytes, true);
+                detector.feed(body_bytes, true);
                 let encoding = detector.guess(None, true);
                 Charset::for_encoding(encoding)
             } else {
                 charset
             };
 
-            let (decoded, _detected_charset, had_errors) = charset.decode(&body_bytes);
+            let (decoded, _detected_charset, had_errors) = charset.decode(body_bytes);
 
             if had_errors {
                 warn!(
                     "Error decoding body: charset={:?} body={}",
                     charset,
-                    String::from_utf8_lossy(&body_bytes)
+                    String::from_utf8_lossy(body_bytes)
                 );
             }
 
@@ -279,6 +269,8 @@ fn parse_contacts(value: &str) -> anyhow::Result<Vec<Contact>> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Read;
+
     use super::*;
     use exocore::core::tests_utils::find_test_fixture;
 
@@ -371,7 +363,12 @@ mod tests {
             "integrations/gmail/fixtures/threads/{}.json",
             file
         ));
+
         let mut file = std::fs::File::open(path)?;
-        Ok(serde_json::from_reader(&mut file)?)
+
+        let mut body = String::new();
+        file.read_to_string(&mut body)?;
+
+        Ok(serde_json::from_str(&body)?)
     }
 }

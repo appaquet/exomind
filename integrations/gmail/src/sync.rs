@@ -283,10 +283,7 @@ impl AccountSynchronizer {
             .add_thread_label(thread_id, "INBOX".to_string())
             .await?;
 
-        let history_id = thread
-            .history_id
-            .and_then(|history| history.parse::<HistoryId>().ok());
-        if let Some(history_id) = history_id {
+        if let Some(history_id) = thread.history_id {
             self.generated_gmail_history.insert(history_id);
         }
 
@@ -299,10 +296,7 @@ impl AccountSynchronizer {
             .remove_thread_label(thread_id, "INBOX".to_string())
             .await?;
 
-        let history_id = thread
-            .history_id
-            .and_then(|history| history.parse::<HistoryId>().ok());
-        if let Some(history_id) = history_id {
+        if let Some(history_id) = thread.history_id {
             self.generated_gmail_history.insert(history_id);
         }
 
@@ -315,10 +309,7 @@ impl AccountSynchronizer {
             .add_message_label(message_id, "UNREAD".to_string())
             .await?;
 
-        let history_id = message
-            .history_id
-            .and_then(|history| history.parse::<HistoryId>().ok());
-        if let Some(history_id) = history_id {
+        if let Some(history_id) = message.history_id {
             self.generated_gmail_history.insert(history_id);
         }
 
@@ -331,10 +322,7 @@ impl AccountSynchronizer {
             .remove_message_label(message_id, "UNREAD".to_string())
             .await?;
 
-        let history_id = message
-            .history_id
-            .and_then(|history| history.parse::<HistoryId>().ok());
-        if let Some(history_id) = history_id {
+        if let Some(history_id) = message.history_id {
             self.generated_gmail_history.insert(history_id);
         }
 
@@ -394,10 +382,7 @@ impl SynchronizedThread {
         account: GmailAccount,
         thread: google_gmail1::api::Thread,
     ) -> Option<SynchronizedThread> {
-        let history_id = thread
-            .history_id
-            .as_ref()
-            .and_then(|history| history.parse::<HistoryId>().ok());
+        let history_id = thread.history_id;
         let thread_id = thread.id.clone()?;
         let parsed = parsing::parse_thread(thread);
         if let Err(err) = &parsed {
