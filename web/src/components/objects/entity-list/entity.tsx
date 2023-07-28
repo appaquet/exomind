@@ -35,7 +35,7 @@ export interface IProps {
     onDropOut?: (data: DragData) => void;
     onDropIn?: (data: DragData) => void;
 
-    renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
+    renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactNode;
 }
 
 interface IState {
@@ -435,7 +435,7 @@ export class Entity extends React.Component<IProps, IState> {
         );
     }
 
-    private entityDate(entityTrait: EntityTrait<unknown>): React.ReactFragment {
+    private entityDate(entityTrait: EntityTrait<unknown>): React.ReactNode {
         if (this.props.renderEntityDate) {
             return this.props.renderEntityDate(entityTrait);
         } else {

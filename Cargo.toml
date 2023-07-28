@@ -31,5 +31,5 @@ lto = "thin"
 
 # [patch.crates-io]
 # exocore = {path = "../exocore"}
-# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.24" }
+# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.25" }
 # exocore = {git = "https://github.com/appaquet/exocore.git"}

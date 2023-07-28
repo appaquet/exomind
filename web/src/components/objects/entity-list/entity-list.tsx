@@ -26,7 +26,7 @@ export interface IProps {
     draggable?: boolean;
     onDropIn?: (e: IDroppedItem) => void;
 
-    renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactFragment;
+    renderEntityDate?: (entity: EntityTrait<unknown>) => React.ReactNode;
 
     containerState?: ContainerState,
 }
