@@ -22,7 +22,7 @@ hyper = "0.14.27"
 hyper-rustls = {version="0.24.1", features=["http2"]}
 log = "0.4.19"
 mailparse = "0.14.0"
-serde = "1.0.177"
+serde = "1.0.180"
 serde_derive = "1.0.174"
 serde_json = "1.0.104"
 serde_yaml = "0.9.25"
