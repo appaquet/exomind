@@ -72,7 +72,7 @@ shadow-rs = { version = "0.23.0", default-features = false }
 [dev-dependencies]
 criterion_bencher_compat = "0.4.0"
 log4rs = "1.2.0"
-tempfile = "3.7.0"
+tempfile = "3.7.1"
 tokio = { version = "1.29.1", features = ["macros", "rt", "rt-multi-thread", "time"], default-features = false }
 
 [[bench]]
