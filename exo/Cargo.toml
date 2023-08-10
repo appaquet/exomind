@@ -34,6 +34,6 @@ serde_derive = "1.0.177"
 serde_json = "1.0.104"
 tempfile = "3.7.1"
 thiserror = "1.0.44"
-tokio = { version = "1.29.1", features = ["macros"], default-features = false }
+tokio = { version = "1.30.0", features = ["macros"], default-features = false }
 url = "2.4.0"
 zip = { version = "0.6.6", features = ["deflate"], default-features = false }
