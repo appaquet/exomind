@@ -28,7 +28,7 @@ web = [
 ]
 
 [dependencies]
-anyhow = "1.0.72"
+anyhow = "1.0.74"
 bs58 = "0.5.0"
 byteorder = "1.4.3"
 bytes = "1.4.0"
