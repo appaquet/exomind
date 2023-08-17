@@ -8,7 +8,7 @@ version = "0.1.25"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.74"
+anyhow = "1.0.75"
 console_error_panic_hook = "0.1.7"
 exocore-core = {version = "0.1.25", path = "../../core", default-features = false, features=["web"]}
 exocore-discovery = {version = "0.1.25", path = "../../discovery", default-features = false}
