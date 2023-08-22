@@ -18,7 +18,7 @@
     "README.md"
   ],
   "devDependencies": {
-    "protobufjs-cli": "^1.1.1",
+    "protobufjs-cli": "^1.1.2",
     "typescript": "^5.1.6"
   },
   "dependencies": {
