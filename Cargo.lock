@@ -1435,7 +1435,7 @@ dependencies = [
  "exomind-protos",
  "google-gmail1",
  "hyper",
- "hyper-rustls 0.24.1",
+ "hyper-rustls",
  "log",
  "mailparse",
  "serde",
@@ -1700,9 +1700,9 @@ checksum = "b6c80984affa11d98d1b88b66ac8853f143217b399d3c74116778ff8fdb4ed2e"
 
 [[package]]
 name = "google-apis-common"
-version = "5.0.4"
+version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "376bc8360e10783fd357de4aad0f6c9e4c0ae4bc3362c5955e40017db0cd4a71"
+checksum = "87ee789438087de4e6aa14e8505f661d4f45b161f2d21807c1fee0d68b54732d"
 dependencies = [
  "base64 0.13.1",
  "chrono",
@@ -1721,15 +1721,15 @@ dependencies = [
 
 [[package]]
 name = "google-gmail1"
-version = "5.0.2+20230116"
+version = "5.0.3+20230116"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c449be043aa6b02141a89eb279203382c5676d321a93ee8ea3cb481cd6eba72d"
+checksum = "36f614d84a62ccfa21dcb2c97036668b30fc7caa4404aaf6337b8c51dee45bd3"
 dependencies = [
  "anyhow",
  "google-apis-common",
  "http",
  "hyper",
- "hyper-rustls 0.23.2",
+ "hyper-rustls",
  "itertools",
  "mime",
  "serde",
@@ -1952,21 +1952,6 @@ dependencies = [
 
 [[package]]
 name = "hyper-rustls"
-version = "0.23.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1788965e61b367cd03a62950836d5cd41560c3577d90e40e0819373194d1661c"
-dependencies = [
- "http",
- "hyper",
- "log",
- "rustls 0.20.8",
- "rustls-native-certs",
- "tokio",
- "tokio-rustls 0.23.4",
-]
-
-[[package]]
-name = "hyper-rustls"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d78e1e73ec14cf7375674f74d7dde185c8206fd9dea6fb6295e8a98098aaa97"
@@ -1978,7 +1963,7 @@ dependencies = [
  "rustls 0.21.5",
  "rustls-native-certs",
  "tokio",
- "tokio-rustls 0.24.1",
+ "tokio-rustls",
 ]
 
 [[package]]
@@ -4622,17 +4607,6 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.23.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c43ee83903113e03984cb9e5cebe6c04a5116269e900e3ddba8f068a62adda59"
-dependencies = [
- "rustls 0.20.8",
- "tokio",
- "webpki 0.22.0",
-]
-
-[[package]]
-name = "tokio-rustls"
 version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
@@ -5575,9 +5549,9 @@ dependencies = [
 
 [[package]]
 name = "yup-oauth2"
-version = "8.1.1"
+version = "8.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1da09943413fec574fbc624011874b716e4b446f83d43f8248a5903e7ffc5e52"
+checksum = "364ca376b5c04d9b2be9693054e3e0d2d146b363819d0f9a10c6ee66e4c8406b"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5585,11 +5559,11 @@ dependencies = [
  "futures",
  "http",
  "hyper",
- "hyper-rustls 0.23.2",
+ "hyper-rustls",
  "itertools",
  "log",
  "percent-encoding 2.3.0",
- "rustls 0.20.8",
+ "rustls 0.21.5",
  "rustls-pemfile",
  "seahash",
  "serde",
