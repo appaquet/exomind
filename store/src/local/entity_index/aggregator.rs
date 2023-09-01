@@ -364,7 +364,7 @@ pub fn project_trait_fields(
     trt: &mut Trait,
     projection: &Projection,
 ) -> Result<(), Error> {
-    let Some(any_msg) = &trt.message  else {
+    let Some(any_msg) = &trt.message else {
         return Ok(());
     };
 

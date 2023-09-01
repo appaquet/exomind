@@ -439,9 +439,7 @@ impl MutationIndex {
             }
         };
 
-        let Some(message_mappings) =
-            self.schema.dynamic_fields.get(dyn_message.full_name())
-        else {
+        let Some(message_mappings) = self.schema.dynamic_fields.get(dyn_message.full_name()) else {
             // field is not indexed if we don't have a mapping for it
             return;
         };

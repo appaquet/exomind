@@ -49,7 +49,7 @@ impl<S: Store> Applications<S> {
     ) -> Result<Applications<S>, Error> {
         let mut apps = Vec::new();
         for cell_app in cell.applications().get() {
-            let Some(app) = cell_app.get()  else {
+            let Some(app) = cell_app.get() else {
                 warn!(
                     "Application '{}' (id={}) not loaded. Run unpack to load them.",
                     cell_app.name(),
