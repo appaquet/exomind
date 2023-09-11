@@ -8,13 +8,13 @@ if [[ "$OSTYPE" != "darwin"* ]]; then
   exit 1
 fi
 
-GIT_CHANGES=`git status | grep "nothing to commit" | wc -l | sed -e 's/^[ \t]*//'`
+GIT_CHANGES=$(git status | grep "nothing to commit" | wc -l | sed -e 's/^[ \t]*//')
 if [[ $GIT_CHANGES != "1" ]]; then
   echo "Changes need to be commited first..."
   exit 1
 fi
 
-VERSION=`cat package.json | grep version | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p'`
+VERSION=$(cat package.json | grep version | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p')
 echo "Preparing publishing for version $VERSION"
 
 CRATES=("protos" "core" "transport" "chain" "store" "apps/host" "apps/macros" "apps/sdk" "." "discovery" "exo")

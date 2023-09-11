@@ -81,3 +81,7 @@ lto = "thin"
 
 [profile.release]
 debug = true
+
+[patch.crates-io]
+# See https://github.com/mullvad/system-configuration-rs/issues/41
+system-configuration = { git = "https://github.com/tmpfs/system-configuration-rs", rev = "572913bf0c74ed996b2beeac3d61ed681075cbd4"}
