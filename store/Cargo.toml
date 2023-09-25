@@ -30,14 +30,14 @@ tests-utils = []
 [dependencies]
 anyhow = "1.0.75"
 async-trait = "0.1.73"
-bytes = "1.4.0"
+bytes = "1.5.0"
 chrono = {version = "0.4.31", features = ["serde"]}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.28"
 itertools = "0.11.0"
 log = "0.4.20"
-smallvec = "1.11.0"
-thiserror = "1.0.47"
+smallvec = "1.11.1"
+thiserror = "1.0.48"
 
 # local or remote
 exocore-chain = {version = "0.1.25", path = "../chain", default-features = false, optional = true}
@@ -48,9 +48,9 @@ exocore-transport = {version = "0.1.25", path = "../transport", default-features
 byteorder = {version = "1.4.3", optional = true}
 crc = {version = "3.0.1", optional = true}
 extsort = {version = "0.4.2", optional = true}
-lru = {version = "0.11.0", optional = true}
-serde = {version = "1.0.185", optional = true}
-serde_derive = {version = "1.0.177", optional = true}
+lru = {version = "0.11.1", optional = true}
+serde = {version = "1.0.188", optional = true}
+serde_derive = {version = "1.0.188", optional = true}
 serde_json = {version = "1.0.107", optional = true}
 tantivy = {version = "0.19.2", optional = true}
 

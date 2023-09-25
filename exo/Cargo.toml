@@ -11,7 +11,7 @@ version = "0.1.25"
 
 [dependencies]
 anyhow = { version="1.0.75", features = ["backtrace"] }
-bytes = "1.4.0"
+bytes = "1.5.0"
 clap = { version = "4.4.4", features = ["derive", "env"] }
 console = "0.15.7"
 dialoguer = "0.10.4"
@@ -24,16 +24,16 @@ exocore-protos = {version = "0.1.25", path = "../protos"}
 exocore-store = {version = "0.1.25", path = "../store"}
 exocore-transport = {version = "0.1.25", path = "../transport", features = ["http-server"]}
 futures = "0.3.28"
-indicatif = "0.17.6"
+indicatif = "0.17.7"
 log = "0.4.20"
 log4rs = "1.2.0"
 rand = "0.8"
-reqwest = { version = "0.11.19", default-features = false, features = ["rustls-tls"] }
-serde = "1.0.185"
-serde_derive = "1.0.177"
+reqwest = { version = "0.11.20", default-features = false, features = ["rustls-tls"] }
+serde = "1.0.188"
+serde_derive = "1.0.188"
 serde_json = "1.0.107"
 tempfile = "3.8.0"
-thiserror = "1.0.47"
+thiserror = "1.0.48"
 tokio = { version = "1.32.0", features = ["macros"], default-features = false }
-url = "2.4.0"
+url = "2.4.1"
 zip = { version = "0.6.6", features = ["deflate"], default-features = false }
