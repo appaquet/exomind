@@ -85,7 +85,7 @@ pub trait Block {
 
     fn as_data_vec(&self) -> Bytes {
         Bytes::from(
-            vec![
+            [
                 self.header().whole_data(),
                 self.operations_data(),
                 self.signatures().whole_data(),

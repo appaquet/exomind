@@ -226,11 +226,11 @@ pub enum StoreError {
 
 impl StoreError {
     fn from_message_status(code: i32) -> Result<(), StoreError> {
-        match MessageStatus::from_i32(code) {
-            Some(MessageStatus::Ok) => Ok(()),
-            Some(status) => Err(StoreError::HostMessage(status)),
-            None => Err(StoreError::Unknown(anyhow::anyhow!(
-                "Unknown message status code: {}",
+        match MessageStatus::try_from(code) {
+            Ok(MessageStatus::Ok) => Ok(()),
+            Ok(status) => Err(StoreError::HostMessage(status)),
+            Err(err) => Err(StoreError::Unknown(anyhow::anyhow!(
+                "Unknown message status code: {}. err: {err}",
                 code
             ))),
         }

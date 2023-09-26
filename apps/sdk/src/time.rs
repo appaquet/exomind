@@ -51,7 +51,7 @@ impl From<Timestamp> for DateTime<Utc> {
 
 impl From<DateTime<Utc>> for Timestamp {
     fn from(dt: DateTime<Utc>) -> Self {
-        Timestamp(dt.timestamp_nanos() as u64)
+        Timestamp(dt.timestamp_nanos_opt().unwrap_or_default() as u64)
     }
 }
 

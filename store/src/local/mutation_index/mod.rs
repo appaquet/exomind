@@ -533,7 +533,10 @@ impl MutationIndex {
                 *has_reference = true;
             }
             FieldValue::DateTime(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
-                doc.add_u64(mapped_field.field, value.timestamp_nanos() as u64);
+                doc.add_u64(
+                    mapped_field.field,
+                    value.timestamp_nanos_opt().unwrap_or_default() as u64,
+                );
             }
             FieldValue::Int64(value) if field_desc.indexed_flag || field_desc.sorted_flag => {
                 doc.add_i64(mapped_field.field, value);
@@ -823,7 +826,7 @@ impl MutationIndex {
         ascending: bool,
         no_recency_boost: bool,
     ) -> impl Collector<Fruit = Vec<(OrderingValueWrapper, DocAddress)>> {
-        let now = Utc::now().timestamp_nanos() as u64;
+        let now = Utc::now().timestamp_nanos_opt().unwrap_or_default() as u64;
         let operation_id_field = self.schema.operation_id;
         let modification_date_field = self.schema.modification_date;
         let boost = self.full_text_boost;
@@ -955,6 +958,9 @@ mod unit_tests {
     }
 
     fn boost_recent_chrono(now: DateTime<Utc>, date: DateTime<Utc>) -> f32 {
-        boost_recent(now.timestamp_nanos() as u64, date.timestamp_nanos() as u64)
+        boost_recent(
+            now.timestamp_nanos_opt().unwrap_or_default() as u64,
+            date.timestamp_nanos_opt().unwrap_or_default() as u64,
+        )
     }
 }

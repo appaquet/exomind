@@ -572,7 +572,7 @@ where
         Ok(pending_results
             .mutations
             .into_iter()
-            .chain(chain_results.mutations.into_iter())
+            .chain(chain_results.mutations)
             .sorted_by_key(|result| {
                 // sorts mutations in order they got committed (block offset/pending, then
                 // operation id)

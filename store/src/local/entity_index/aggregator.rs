@@ -247,7 +247,7 @@ impl EntityAggregator {
         }
     }
 
-    /// Whether the entity should be analysed for garbage collection because it
+    /// Whether the entity should be analyzed for garbage collection because it
     /// has more inactive / overridden operations than configured threshold.
     pub fn should_collect(&self) -> bool {
         self.mutation_count - self.active_operations.len() > GC_INACTIVE_OPS_THRESHOLD
@@ -836,7 +836,7 @@ pub(crate) mod tests {
 
             let msg = TestMessage::decode(trt.message.as_ref().unwrap().value.as_slice()).unwrap();
 
-            (msg, TraitDetails::from_i32(trt.details).unwrap())
+            (msg, TraitDetails::try_from(trt.details).unwrap())
         };
 
         assert_eq!(project(vec![], vec![]), (msg.clone(), TraitDetails::Full));

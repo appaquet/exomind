@@ -93,7 +93,7 @@ impl From<ConsistentTimestamp> for u64 {
 
 impl From<DateTime<Utc>> for ConsistentTimestamp {
     fn from(date: DateTime<Utc>) -> Self {
-        ConsistentTimestamp(date.timestamp_nanos() as u64)
+        ConsistentTimestamp(date.timestamp_nanos_opt().unwrap_or_default() as u64)
     }
 }
 

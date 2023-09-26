@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{cell::RefCell, rc::Rc};
 
 use exocore_core::futures::spawn_future_non_send;
 use exocore_protos::{
@@ -23,7 +23,7 @@ pub struct WatchedQuery {
 
 #[wasm_bindgen]
 impl WatchedQuery {
-    pub(crate) fn new(store_handle: Arc<ClientHandle>, query: EntityQuery) -> WatchedQuery {
+    pub(crate) fn new(store_handle: Rc<ClientHandle>, query: EntityQuery) -> WatchedQuery {
         let result_cell = Rc::new(RefCell::new(None));
         let callback_cell = Rc::new(RefCell::<Option<js_sys::Function>>::new(None));
 

@@ -1,4 +1,4 @@
-pub(self) mod seri;
+mod seri;
 
 pub mod client;
 pub use client::{Client, ClientConfiguration, ClientHandle};

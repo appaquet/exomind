@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{rc::Rc, sync::Mutex, time::Duration};
 
 use exocore_core::{cell::Cell, futures::spawn_future_non_send, time::Clock};
 use exocore_protos::{
@@ -24,8 +21,8 @@ use crate::{js::into_js_error, node::LocalNode, watched_query::WatchedQuery};
 pub struct ExocoreClient {
     clock: Clock,
     cell: Cell,
-    store_handle: Arc<ClientHandle>,
-    _inner: Arc<Mutex<Inner>>,
+    store_handle: Rc<ClientHandle>,
+    _inner: Rc<Mutex<Inner>>,
 }
 
 struct Inner {
@@ -65,7 +62,7 @@ impl ExocoreClient {
         )
         .expect("Couldn't create store");
 
-        let store_handle = Arc::new(remote_store.get_handle());
+        let store_handle = Rc::new(remote_store.get_handle());
 
         spawn_future_non_send(async move {
             if let Err(err) = remote_store.run().await {
@@ -80,7 +77,7 @@ impl ExocoreClient {
             Ok(())
         });
 
-        let inner = Arc::new(Mutex::new(Inner {
+        let inner = Rc::new(Mutex::new(Inner {
             status_change_callback,
         }));
 

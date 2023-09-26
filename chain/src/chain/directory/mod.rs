@@ -20,7 +20,8 @@ use segment::DirectorySegment;
 mod config;
 pub use config::DirectoryChainStoreConfig;
 
-pub(self) mod tracker;
+mod tracker;
+
 use self::tracker::SegmentTracker;
 use super::{ChainData, Segments};
 

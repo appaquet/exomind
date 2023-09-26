@@ -77,9 +77,9 @@ impl<E: HostEnvironment> WasmTimeRuntime<E> {
             .call(&mut self.store, (message_ptr, message_size));
         wasm_free(&mut self.store, &self.instance, message_ptr, message_size)?;
 
-        match MessageStatus::from_i32(res? as i32) {
-            Some(MessageStatus::Ok) => {}
-            other => return Err(Error::MessageStatus(other)),
+        match MessageStatus::try_from(res? as i32) {
+            Ok(MessageStatus::Ok) => {}
+            other => return Err(Error::MessageStatus(other.ok())),
         }
 
         Ok(())

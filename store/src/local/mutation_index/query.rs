@@ -321,13 +321,13 @@ impl<'s> QueryParser<'s> {
                 SubPredicate::Boolean(bool_pred) => self.parse_bool_pred(bool_pred)?,
             };
 
-            let tantivy_occur = match ProtoOccur::from_i32(sub_query.occur) {
-                Some(ProtoOccur::Should) => Occur::Should,
-                Some(ProtoOccur::Must) => Occur::Must,
-                Some(ProtoOccur::MustNot) => Occur::MustNot,
-                None => {
+            let tantivy_occur = match ProtoOccur::try_from(sub_query.occur) {
+                Ok(ProtoOccur::Should) => Occur::Should,
+                Ok(ProtoOccur::Must) => Occur::Must,
+                Ok(ProtoOccur::MustNot) => Occur::MustNot,
+                Err(err) => {
                     return Err(Error::QueryParsing(anyhow!(
-                        "Invalid occur value: {}",
+                        "Invalid occur value: {}. err: {err}",
                         sub_query.occur
                     )));
                 }

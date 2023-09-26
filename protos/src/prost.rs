@@ -7,7 +7,9 @@ pub trait ProstTimestampExt {
     fn to_chrono_datetime(&self) -> chrono::DateTime<chrono::Utc>;
 
     fn to_timestamp_nanos(&self) -> u64 {
-        self.to_chrono_datetime().timestamp_nanos() as u64
+        self.to_chrono_datetime()
+            .timestamp_nanos_opt()
+            .unwrap_or_default() as u64
     }
 }
 

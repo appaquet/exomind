@@ -200,8 +200,8 @@ impl<S: Store> Applications<S> {
             async move {
                 let in_sender = Arc::new(Mutex::new(in_sender));
                 while let Some(message) = out_receiver.next().await {
-                    match OutMessageType::from_i32(message.r#type) {
-                        Some(OutMessageType::StoreEntityQuery) => {
+                    match OutMessageType::try_from(message.r#type) {
+                        Ok(OutMessageType::StoreEntityQuery) => {
                             let store = store.clone();
                             handle_store_message(
                                 message.rendez_vous_id,
@@ -210,7 +210,7 @@ impl<S: Store> Applications<S> {
                                 move || handle_entity_query(message, store),
                             )
                         }
-                        Some(OutMessageType::StoreMutationRequest) => {
+                        Ok(OutMessageType::StoreMutationRequest) => {
                             let store = store.clone();
                             handle_store_message(
                                 message.rendez_vous_id,

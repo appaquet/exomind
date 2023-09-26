@@ -73,11 +73,18 @@ pub extern "C" fn __exocore_in_message(ptr: *const u8, size: usize) -> u32 {
         }
     };
 
-    let res = match InMessageType::from_i32(msg.r#type) {
-        Some(InMessageType::StoreEntityResults) => exomind.store.handle_query_results(msg),
-        Some(InMessageType::StoreMutationResult) => exomind.store.handle_mutation_result(msg),
-        Some(InMessageType::Invalid) | None => {
+    let res = match InMessageType::try_from(msg.r#type) {
+        Ok(InMessageType::StoreEntityResults) => exomind.store.handle_query_results(msg),
+        Ok(InMessageType::StoreMutationResult) => exomind.store.handle_mutation_result(msg),
+        Ok(InMessageType::Invalid) => {
             error!("Received an invalid message type: {}", msg.r#type);
+            return MessageStatus::Unhandled as u32;
+        }
+        Err(err) => {
+            error!(
+                "Received an invalid message type: {}, err: {err}",
+                msg.r#type
+            );
             return MessageStatus::Unhandled as u32;
         }
     };
