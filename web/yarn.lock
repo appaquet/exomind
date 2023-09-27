@@ -1929,10 +1929,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-flatpickr@^3.8.7":
-  version "3.8.8"
-  resolved "https://registry.yarnpkg.com/@types/react-flatpickr/-/react-flatpickr-3.8.8.tgz#bff2d88f814ad7b63837110e46ccf48ff518c23d"
-  integrity sha512-wxpSvmO23Qj6Ig0grw+nLAf2CzJZsS6WljXm6PiljSIZPAZrXLH1ggJPShi/uZZ1BPWIIRLJcehH685NiSFjzw==
+"@types/react-flatpickr@^3.8.9":
+  version "3.8.9"
+  resolved "https://registry.yarnpkg.com/@types/react-flatpickr/-/react-flatpickr-3.8.9.tgz#8c7d5226dfee79d0195bee75212035b7cc8ee287"
+  integrity sha512-qgvzb6UppkSeFGvNpxsGi8nTqweZUu0jF7+y4qd0hHte+GNYQy2ziebOyEpnfbLPsvesKUmEyDq0eGTGU5JLVQ==
   dependencies:
     "@types/react" "*"
     flatpickr "^4.0.6"
