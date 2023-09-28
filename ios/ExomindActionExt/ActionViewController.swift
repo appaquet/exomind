@@ -21,9 +21,14 @@ class ActionViewController: UIViewController {
                 itemProvider.loadItem(forTypeIdentifier: "public.url", options: nil, completionHandler: { (data, err) -> Void in
                     if let url = data as? URL {
                         let title = inputItem.attributedTitle?.string ?? inputItem.attributedContentText?.string ?? url.absoluteString
-                        ExtensionUtils.createLinkObject(url: url.absoluteString, title: title)
+                        ExtensionUtils.createLinkObject(url: url.absoluteString, title: title) {
+                            DispatchQueue.main.async {
+                                self.messageLabel.text = "Added!!"
+                            }
+                        }
                     } else {
                         print("Only URL can be added. \(String(describing: self.extensionContext?.inputItems))")
+                        self.messageLabel.text = "Only URL can be added. \(String(describing: self.extensionContext?.inputItems))"
                     }
                 })
             }

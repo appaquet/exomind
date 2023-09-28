@@ -14,7 +14,7 @@ class ExtensionUtils {
         keychain.set(authToken, forKey: "store_auth_token")
     }
 
-    static func createLinkObject(url: String, title: String) {
+    static func createLinkObject(url: String, title: String, done: (()->Void)? = nil) {
         let keychain = KeychainSwift()
         guard let endpoint = keychain.get("store_http_endpoint"),
               let authToken = keychain.get("store_auth_token") else {
@@ -45,7 +45,7 @@ class ExtensionUtils {
         request.httpBody = mutationRequest
 
         let task = URLSession.shared.dataTask(with: request as URLRequest, completionHandler: { data, response, error in
-            print("Posted")
+            done?()
         })
         task.resume()
     }
