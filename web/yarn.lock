@@ -1889,10 +1889,10 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-0.7.31.tgz#31b7ca6407128a3d2bbc27fe2d21b345397f6197"
   integrity sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==
 
-"@types/node@*", "@types/node@>=13.7.0", "@types/node@^20.5.9":
-  version "20.6.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.6.5.tgz#4c6a79adf59a8e8193ac87a0e522605b16587258"
-  integrity sha512-2qGq5LAOTh9izcc0+F+dToFigBWiK1phKPt7rNhOqJSr35y8rlIBjDwGtFSgAI6MGIhjwOVNSQZVdJsZJ2uR1w==
+"@types/node@*", "@types/node@>=13.7.0", "@types/node@^20.8.1":
+  version "20.8.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.8.1.tgz#53452f1c4a6d88b9ab1b8a9cb190c41d52bafc23"
+  integrity sha512-iN6stS2QGMl50pjH0h/dIfmcEUogljAreQZ+cubPw3ISWp5fJrZw9NOh/sDHJfw92A41hCU+Ls5zTIsNYzcnuA==
 
 "@types/node@^18.11.18":
   version "18.17.0"
