@@ -78,7 +78,7 @@ struct ReserveItem<E, S: Ord> {
 
 impl<E, S: Ord> PartialOrd for ReserveItem<E, S> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.penalized_score.partial_cmp(&other.penalized_score)
+        Some(self.penalized_score.cmp(&other.penalized_score))
     }
 }
 

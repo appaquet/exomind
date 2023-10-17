@@ -402,7 +402,7 @@ impl BlockBuilder {
         header_msg_builder.set_previous_offset(previous_offset);
         header_msg_builder.set_previous_hash(previous_hash);
         header_msg_builder.set_proposed_operation_id(proposed_operation_id);
-        header_msg_builder.set_proposed_node_id(&local_node.id().to_string());
+        header_msg_builder.set_proposed_node_id(local_node.id().to_string().as_str().into());
         header_msg_builder.set_operations_size(operations_data_size);
         header_msg_builder.set_operations_hash(&operations.hash.to_bytes());
 
@@ -729,7 +729,7 @@ impl BlockSignature {
     }
 
     pub fn copy_into_builder(&self, builder: &mut block_signature::Builder) {
-        builder.set_node_id(&self.node_id.to_string());
+        builder.set_node_id(self.node_id.to_string().as_str().into());
         builder.set_node_signature(self.signature.get_bytes());
     }
 }

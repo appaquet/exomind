@@ -93,7 +93,10 @@ impl PendingBlocks {
                             operations.push(operation_header.get_operation_id());
                         }
 
-                        let node_id_str = operation_reader.get_node_id()?;
+                        let node_id_str = operation_reader
+                            .get_node_id()?
+                            .to_str()
+                            .map_err(|err| anyhow!("couldn't convert node id to utf8: {err}"))?;
                         let node_id = NodeId::from_str(node_id_str)
                             .map_err(|_| anyhow!("Couldn't convert to NodeID: {}", node_id_str))?;
                         let node = cell.nodes().get(&node_id).map(|cn| cn.node().clone());
@@ -207,9 +210,7 @@ impl PendingBlocks {
         let mut operations_blocks: HashMap<OperationId, HashSet<OperationId>> = HashMap::new();
         for block in pending_blocks.values() {
             for operation_id in &block.operations {
-                let operation = operations_blocks
-                    .entry(*operation_id)
-                    .or_insert_with(HashSet::new);
+                let operation = operations_blocks.entry(*operation_id).or_default();
                 operation.insert(block.group_id);
             }
         }
@@ -372,7 +373,10 @@ impl PendingBlockRefusal {
         let inner_operation = operation_reader.get_operation();
         match inner_operation.which()? {
             chain_operation::operation::Which::BlockRefuse(_sig) => {
-                let node_id_str = operation_reader.get_node_id()?;
+                let node_id_str = operation_reader
+                    .get_node_id()?
+                    .to_str()
+                    .map_err(|err| anyhow!("couldn't convert node id to utf8: {err}"))?;
                 let node_id = NodeId::from_str(node_id_str)
                     .map_err(|_| anyhow!("Couldn't convert to NodeID: {}", node_id_str))?;
                 Ok(PendingBlockRefusal { node_id })
@@ -401,7 +405,10 @@ impl PendingBlockSignature {
                 let op_signature_reader = sig?;
                 let signature_reader = op_signature_reader.get_signature()?;
 
-                let node_id_str = operation_reader.get_node_id()?;
+                let node_id_str = operation_reader
+                    .get_node_id()?
+                    .to_str()
+                    .map_err(|err| anyhow!("couldn't convert node id to utf8: {err}"))?;
                 let node_id = NodeId::from_str(node_id_str)
                     .map_err(|_| anyhow!("Couldn't convert to NodeID: {}", node_id_str))?;
                 let signature = Signature::from_bytes(signature_reader.get_node_signature()?);

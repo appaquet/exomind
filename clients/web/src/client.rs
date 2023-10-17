@@ -198,7 +198,7 @@ impl ExocoreClient {
             .store_handle
             .store_node()
             .map(|node| node.http_addresses())
-            .unwrap_or_else(Vec::new)
+            .unwrap_or_default()
             .into_iter()
             .map(|url| JsValue::from(url.to_string()));
 

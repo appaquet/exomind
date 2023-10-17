@@ -249,7 +249,10 @@ async fn two_nodes_one_data_node() -> anyhow::Result<()> {
         let (offset, _height) = handle.get_chain_last_block_info()?.unwrap();
         let block = handle.get_chain_block(offset)?.unwrap();
         let block_header_reader = block.header.get_reader()?;
-        assert_eq!(node0_id, block_header_reader.get_proposed_node_id()?);
+        assert_eq!(
+            node0_id,
+            block_header_reader.get_proposed_node_id()?.to_string()?
+        );
     }
 
     Ok(())

@@ -65,7 +65,7 @@ pub fn query_results_to_response_frame(
             msg_builder.set_response(&buf);
         }
         Err(err) => {
-            msg_builder.set_error(&err.to_string());
+            msg_builder.set_error(err.to_string().as_str().into());
         }
     }
 
@@ -80,7 +80,9 @@ where
 {
     let reader = frame.get_reader()?;
     if reader.has_error() {
-        Err(Error::Remote(reader.get_error()?.to_owned()))
+        Err(Error::Remote(reader.get_error()?.to_string().map_err(
+            |err| anyhow!("couldn't convert error to utf8: {err}"),
+        )?))
     } else {
         let data = reader.get_response()?;
         let res = EntityResults::decode(data)?;
@@ -125,7 +127,7 @@ pub fn mutation_result_to_response_frame(
             msg_builder.set_response(&buf);
         }
         Err(err) => {
-            msg_builder.set_error(&err.to_string());
+            msg_builder.set_error(err.to_string().as_str().into());
         }
     }
 
@@ -140,7 +142,9 @@ where
 {
     let reader = frame.get_reader()?;
     if reader.has_error() {
-        Err(Error::Remote(reader.get_error()?.to_owned()))
+        Err(Error::Remote(reader.get_error()?.to_string().map_err(
+            |err| anyhow!("couldn't convert error to utf8: {err}"),
+        )?))
     } else {
         let data = reader.get_response()?;
         Ok(MutationResult::decode(data)?)

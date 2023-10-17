@@ -36,7 +36,8 @@ impl OutMessage {
         envelope_message_builder.set_service(service.to_code());
         envelope_message_builder.set_type(T::MESSAGE_TYPE);
         envelope_message_builder.set_cell_id(cell.id().as_bytes());
-        envelope_message_builder.set_from_node_id(&cell.local_node().id().to_string());
+        envelope_message_builder
+            .set_from_node_id(cell.local_node().id().to_string().as_str().into());
         envelope_message_builder.set_data(&frame.as_bytes());
 
         Ok(OutMessage {

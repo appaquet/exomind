@@ -277,7 +277,7 @@ impl NetworkBehaviour for ExocoreBehaviour {
             .peers
             .get(peer_id)
             .map(|p| p.addresses.clone())
-            .unwrap_or_else(Vec::new);
+            .unwrap_or_default();
 
         Ok(addrs)
     }

@@ -19,29 +19,32 @@ pub struct OrderingValueWrapper {
 
 impl PartialOrd for OrderingValueWrapper {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        // an ignored result should be always be less, unless they are both
-        if self.ignore && other.ignore {
-            return Some(std::cmp::Ordering::Equal);
-        } else if self.ignore {
-            return Some(std::cmp::Ordering::Less);
-        } else if other.ignore {
-            return Some(std::cmp::Ordering::Greater);
-        }
-
-        let cmp = self.value.partial_cmp(&other.value);
-
-        // reverse if needed
-        if self.reverse {
-            cmp.map(|o| o.reverse())
-        } else {
-            cmp
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for OrderingValueWrapper {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        // an ignored result should be always be less, unless they are both
+        if self.ignore && other.ignore {
+            return std::cmp::Ordering::Equal;
+        } else if self.ignore {
+            return std::cmp::Ordering::Less;
+        } else if other.ignore {
+            return std::cmp::Ordering::Greater;
+        }
+
+        let cmp = self
+            .value
+            .partial_cmp(&other.value)
+            .expect("expected value to be comparable");
+
+        // reverse if needed
+        if self.reverse {
+            cmp.reverse()
+        } else {
+            cmp
+        }
     }
 }
 
