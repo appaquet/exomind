@@ -14,5 +14,5 @@ crate-type = ['cdylib']
 
 [dependencies]
 exocore = {version = "0.1.3", path = "../..", default-features = false, features = ["apps-sdk"]}
-futures = "0.3.28"
+futures = "0.3.29"
 log = "0.4.20"

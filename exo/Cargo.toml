@@ -23,7 +23,7 @@ exocore-discovery = {version = "0.1.25", path = "../discovery", features = ["ser
 exocore-protos = {version = "0.1.25", path = "../protos"}
 exocore-store = {version = "0.1.25", path = "../store"}
 exocore-transport = {version = "0.1.25", path = "../transport", features = ["http-server"]}
-futures = "0.3.28"
+futures = "0.3.29"
 indicatif = "0.17.7"
 log = "0.4.20"
 log4rs = "1.2.0"
