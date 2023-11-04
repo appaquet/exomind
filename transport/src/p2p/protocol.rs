@@ -23,7 +23,8 @@ use super::bytes_channel::BytesChannelSender;
 const MAX_MESSAGE_SIZE: usize = 20 * 1024 * 1024; // 20MB
 const STREAM_BUFFER_SIZE: usize = 1024;
 
-type HandlerEvent = ConnectionHandlerEvent<ExocoreProtoConfig, (), MessageData, io::Error>;
+type HandlerEvent =
+    ConnectionHandlerEvent<ExocoreProtoConfig, (), Result<MessageData, io::Error>, io::Error>;
 
 // TODO: Remove dyn dispatched future once type_alias_impl_trait lands: https://github.com/rust-lang/rust/issues/63063
 type InboundStreamFuture =
@@ -94,7 +95,7 @@ impl Default for ExocoreProtoHandler {
 
 impl ConnectionHandler for ExocoreProtoHandler {
     type FromBehaviour = MessageData;
-    type ToBehaviour = MessageData;
+    type ToBehaviour = Result<MessageData, io::Error>;
     type Error = io::Error;
     type InboundProtocol = ExocoreProtoConfig;
     type InboundOpenInfo = ();
@@ -198,7 +199,7 @@ impl ConnectionHandler for ExocoreProtoHandler {
                     }
                     Poll::Ready(Err(err)) => {
                         debug!("Error sending message: {}", err);
-                        return Poll::Ready(ConnectionHandlerEvent::Close(err));
+                        return Poll::Ready(ConnectionHandlerEvent::NotifyBehaviour(Err(err)));
                     }
                     Poll::Pending => {
                         self.outbound_stream_futures.push(fut);
@@ -220,12 +221,14 @@ impl ConnectionHandler for ExocoreProtoHandler {
                         // copying data to a stream consumed by the application
                         if let Some(message) = opt_msg {
                             trace!("Successfully read a message on substream");
-                            return Poll::Ready(ConnectionHandlerEvent::NotifyBehaviour(message));
+                            return Poll::Ready(ConnectionHandlerEvent::NotifyBehaviour(Ok(
+                                message,
+                            )));
                         }
                     }
                     Poll::Ready(Err(err)) => {
                         debug!("Error receiving on substream (it may have closed): {}", err);
-                        return Poll::Ready(ConnectionHandlerEvent::Close(err));
+                        return Poll::Ready(ConnectionHandlerEvent::NotifyBehaviour(Err(err)));
                     }
                     Poll::Pending => {
                         self.inbound_stream_futures.push(fut);

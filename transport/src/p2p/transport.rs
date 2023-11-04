@@ -117,13 +117,10 @@ impl Libp2pTransport {
                 .map(|(peer, muxer), _| (peer, libp2p::core::muxing::StreamMuxerBox::new(muxer)))
                 .boxed();
 
-            libp2p::swarm::SwarmBuilder::without_executor(
-                transport,
-                behaviour,
-                *self.local_node.peer_id(),
-            )
-            .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
-            .build()
+            let config = libp2p::swarm::Config::with_wasm_executor()
+                .with_dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap());
+
+            libp2p::swarm::Swarm::new(transport, behaviour, *self.local_node.peer_id(), config)
         };
 
         #[cfg(feature = "p2p-full")]
@@ -140,14 +137,10 @@ impl Libp2pTransport {
                 }
             }
 
-            libp2p::swarm::SwarmBuilder::with_executor(
-                transport,
-                behaviour,
-                *self.local_node.peer_id(),
-                CoreExecutor,
-            )
-            .dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap())
-            .build()
+            let config = libp2p::swarm::Config::with_executor(CoreExecutor)
+                .with_dial_concurrency_factor(NonZeroU8::new(DIAL_CONCURRENCY_FACTOR).unwrap());
+
+            libp2p::swarm::Swarm::new(transport, behaviour, *self.local_node.peer_id(), config)
         };
 
         let listen_addresses = self.config.listen_addresses(&self.local_node)?;
@@ -413,7 +406,7 @@ pub fn build_transport(
 {
     let transport = {
         let dns_tcp = || {
-            libp2p::dns::TokioDnsConfig::custom(
+            libp2p::dns::tokio::Transport::custom(
                 libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::new().nodelay(true)),
                 libp2p::dns::ResolverConfig::google(),
                 Default::default(),

@@ -306,17 +306,31 @@ impl NetworkBehaviour for ExocoreBehaviour {
         connection: ConnectionId,
         event: libp2p::swarm::THandlerOutEvent<Self>,
     ) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
-            trace!("Received message from {}", peer.node);
+        match event {
+            Ok(event) => {
+                if let Some(peer) = self.peers.get_mut(&peer_id) {
+                    trace!("Received message from {}", peer.node);
 
-            self.actions
-                .push_back(ToSwarm::GenerateEvent(ExocoreBehaviourEvent::Message(
-                    ExocoreBehaviourMessage {
-                        source: peer_id,
-                        connection,
-                        message: event,
-                    },
-                )));
+                    self.actions
+                        .push_back(ToSwarm::GenerateEvent(ExocoreBehaviourEvent::Message(
+                            ExocoreBehaviourMessage {
+                                source: peer_id,
+                                connection,
+                                message: event,
+                            },
+                        )));
+                }
+            }
+            Err(err) => {
+                warn!(
+                    "Error on connection handler for peer {} and connection {}. Closing it. Error: {}",
+                    peer_id, connection, err
+                );
+                self.actions.push_back(ToSwarm::CloseConnection {
+                    peer_id,
+                    connection: CloseConnection::One(connection),
+                });
+            }
         }
     }
 
