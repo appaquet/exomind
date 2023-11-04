@@ -426,6 +426,7 @@ impl Client {
         })
     }
 
+    #[allow(clippy::redundant_locals)] // because of redefinition of callback_ctx
     unsafe fn mutate(
         &self,
         mutation_bytes: *const libc::c_uchar,
@@ -468,6 +469,7 @@ impl Client {
         })
     }
 
+    #[allow(clippy::redundant_locals)] // because of redefinition of callback_ctx
     unsafe fn query(
         &self,
         query_bytes: *const libc::c_uchar,
@@ -536,6 +538,7 @@ impl Client {
         })
     }
 
+    #[allow(clippy::redundant_locals)] // because of redefinition of callback_ctx
     unsafe fn watched_query(
         &self,
         query_bytes: *const libc::c_uchar,

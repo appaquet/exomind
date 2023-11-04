@@ -95,6 +95,7 @@ pub unsafe extern "C" fn exocore_discovery_new(
 /// * On success, the `LocalNode` passed is owned by client and will need to be
 ///   freed.
 #[no_mangle]
+#[allow(clippy::redundant_locals)] // because of redefinition of callback_ctx
 pub unsafe extern "C" fn exocore_discovery_join_cell(
     disco: *mut Discovery,
     node: *mut LocalNode,

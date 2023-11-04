@@ -16,10 +16,10 @@ exocore-protos = {version = "0.1.25", path = "../../protos", default-features = 
 exocore-store = {version = "0.1.25", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.25", path = "../../transport", default-features = false, features = ["p2p-web"]}
 futures = "0.3.29"
-js-sys = "0.3.64"
+js-sys = "0.3.65"
 log = "0.4.20"
 thiserror = "1.0.50"
-wasm-bindgen = { version = "0.2.87", features = ["serde-serialize"] }# serde for serialization from JsValue
+wasm-bindgen = { version = "0.2.88", features = ["serde-serialize"] }# serde for serialization from JsValue
 wasm-bindgen-futures = "0.4.38"
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.65", features = ["Storage", "Window"] }
