@@ -1256,12 +1256,12 @@
     prosemirror-transform "^1.7.3"
     prosemirror-view "^1.31.6"
 
-"@bangle.dev/react@0.32.0":
-  version "0.32.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.32.0.tgz#1f96599039d1e1903d23f5d055fdbbd233b92715"
-  integrity sha512-MX99tK4j4ctXdvtJI7/G+zn+gsVTK4MM8GAv4jCKsSJB654c+a2j4c+DB8D4kUrugaez4h3p54m0vjbJXdWf/w==
+"@bangle.dev/react@0.32.1":
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/react/-/react-0.32.1.tgz#736fa6fa6601c0a2b33ef11b67075475b06da900"
+  integrity sha512-HaX8mpd/O/wMjU5ftT3Rtk9MwzF7+QJANHMFjsj+587xm7Y9dOYpiOjcmT1jCCFbb0Bq5QXBcTTuRtoefrbd+g==
   dependencies:
-    "@bangle.dev/utils" "0.32.0"
+    "@bangle.dev/utils" "0.32.1"
     "@types/jest" "^29.5.3"
     prop-types "^15.7.2"
     punycode "^2.1.1"
@@ -9101,15 +9101,10 @@ punycode@^1.2.4, punycode@^1.4.1:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
   integrity sha512-jmYNElW7yvO7TV33CjSmvSiE2yco3bV2czu/OzDKdMNVZQWfxCblURLhf+47syQRBntjfLdd/H0egrzIG+oaFQ==
 
-punycode@^2.1.0:
+punycode@^2.1.0, punycode@^2.1.1:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.1.tgz#027422e2faec0b25e1549c3e1bd8309b9133b6e5"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
-
-punycode@^2.1.1:
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.0.tgz#f67fa67c94da8f4d0cfff981aee4118064199b8f"
-  integrity sha512-rRV+zQD8tVFys26lAGR9WUuS4iUAngJScM+ZRSKtvl5tKeZ2t5bvdNFdNHBW9FWR4guGHlgmsZ1G7BSm2wTbuA==
 
 pure-rand@^6.0.0:
   version "6.0.3"
