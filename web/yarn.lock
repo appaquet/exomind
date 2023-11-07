@@ -7989,10 +7989,10 @@ mobx-react-lite@^4.0.4:
   dependencies:
     use-sync-external-store "^1.2.0"
 
-mobx-react@^9.0.1:
-  version "9.0.1"
-  resolved "https://registry.yarnpkg.com/mobx-react/-/mobx-react-9.0.1.tgz#f03fd8a2f009af260971a558acc29c0e04808e26"
-  integrity sha512-0idiElBgNMJg20YqGgHvYEnlqIJpPDQaOkxj2dHJIZeqCvUh+zBkBkMkpUFw/uEd1OdPUvT0y+AFBqsWIUAXww==
+mobx-react@^9.0.2:
+  version "9.0.2"
+  resolved "https://registry.yarnpkg.com/mobx-react/-/mobx-react-9.0.2.tgz#2774da98c9baefc7699104c225ed807aa0094d07"
+  integrity sha512-EB7uHSEiwre69k+d4sx4qnEz378kvTgGzCNyBKDrTbgjXBnsjCNF9ZOKuXu/uBFWNg8Notb46ksVLv1Zau/t7g==
   dependencies:
     mobx-react-lite "^4.0.4"
 
