@@ -1974,10 +1974,10 @@
   resolved "https://registry.yarnpkg.com/@types/linkify-it/-/linkify-it-3.0.2.tgz#fd2cd2edbaa7eaac7e7f3c1748b52a19143846c9"
   integrity sha512-HZQYqbiFVWufzCwexrvh694SOim8z2d+xJl5UNamcvQFejLY/2YUtzXHYi3cHdI7PMlS8ejH2slRAOJQ32aNbA==
 
-"@types/linkifyjs@^2.1.5":
-  version "2.1.6"
-  resolved "https://registry.yarnpkg.com/@types/linkifyjs/-/linkifyjs-2.1.6.tgz#6d7e6a5d966f8c78b96d138644d43d4819908c1b"
-  integrity sha512-aGPPyRkdQG6VWkbw1fSHqcJM9cvPwktg8IrctON0X/C7Dmstgv82vBtdDp20P94CTWKdBJyx/XGr2FGqhtrS8w==
+"@types/linkifyjs@^2.1.7":
+  version "2.1.7"
+  resolved "https://registry.yarnpkg.com/@types/linkifyjs/-/linkifyjs-2.1.7.tgz#000b1630ff7a3776f98c8e53ba98b8ad7d92efc4"
+  integrity sha512-+SIYXs1lajyD7t/2+V9GLfdFlc/6Nr2tr65kjA2F5oOzBlPH+NiPqySJDHzREoGcL91Au9Qef8M5JdZiRXsaJw==
   dependencies:
     "@types/react" "*"
 
