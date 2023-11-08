@@ -1193,22 +1193,14 @@
     "@bangle.dev/utils" "0.32.1"
     "@types/jest" "^29.5.3"
 
-"@bangle.dev/core@0.32.0":
-  version "0.32.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/core/-/core-0.32.0.tgz#c945d26f36a3107dbd961807290ef4f98adde59a"
-  integrity sha512-GQbcj0H44Cp4XHv+CXh6wq8M2zRp5CVUIQoPYua4eQ6jlT0/Pv7ToAWQ7RfsBoML9ZFl/WidL5SqFzKTf8rj8A==
+"@bangle.dev/core@0.32.1":
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/core/-/core-0.32.1.tgz#0a6817a1d38ee1a0277d79afd4a03a072d7c70b9"
+  integrity sha512-/eMz9xnSQ8wZAG5RrqeH7shNUevVPQU1ryBhzdyeDAFbXGNkUMpgBxxxPjVhGpNf390UYAQIlTQkTqQ5C7PZmQ==
   dependencies:
-    "@bangle.dev/pm-commands" "0.32.0"
-    "@bangle.dev/shared-types" "0.32.0"
-    "@bangle.dev/utils" "0.32.0"
-
-"@bangle.dev/pm-commands@0.32.0":
-  version "0.32.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/pm-commands/-/pm-commands-0.32.0.tgz#f0206ad929ce284a5d562bdb0a42831f537f97a6"
-  integrity sha512-oyQ8uoaSpJoahmIN042y1CziFBtGPoOh5sIgOunc9TGxkzAoCHGygW48Y5H9OADEadcxdQmrG3pcaaE2crxn2A==
-  dependencies:
-    "@bangle.dev/utils" "0.32.0"
-    "@types/jest" "^29.5.3"
+    "@bangle.dev/pm-commands" "0.32.1"
+    "@bangle.dev/shared-types" "0.32.1"
+    "@bangle.dev/utils" "0.32.1"
 
 "@bangle.dev/pm-commands@0.32.1":
   version "0.32.1"
@@ -1217,25 +1209,6 @@
   dependencies:
     "@bangle.dev/utils" "0.32.1"
     "@types/jest" "^29.5.3"
-
-"@bangle.dev/pm@0.32.0":
-  version "0.32.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/pm/-/pm-0.32.0.tgz#651e59eee64bcf28df57c5c1ea9425d1d5c4e0ec"
-  integrity sha512-U8z+ISfUvXyLOg0lt3HABpvvILkI+a4pRWXOP3oEe2S2FNwsIqHlBqy1/isZ6ItxYzhA0ZspVqQli2GlOE3apQ==
-  dependencies:
-    "@types/jest" "^29.5.3"
-    prosemirror-commands "^1.5.2"
-    prosemirror-dropcursor "^1.8.1"
-    prosemirror-gapcursor "^1.3.2"
-    prosemirror-history "^1.3.2"
-    prosemirror-inputrules "^1.2.1"
-    prosemirror-keymap "^1.2.2"
-    prosemirror-model "^1.19.3"
-    prosemirror-schema-list "^1.3.0"
-    prosemirror-state "^1.4.3"
-    prosemirror-tables "^1.3.4"
-    prosemirror-transform "^1.7.3"
-    prosemirror-view "^1.31.6"
 
 "@bangle.dev/pm@0.32.1":
   version "0.32.1"
@@ -1266,26 +1239,15 @@
     prop-types "^15.7.2"
     punycode "^2.1.1"
 
-"@bangle.dev/shared-types@0.32.0":
-  version "0.32.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/shared-types/-/shared-types-0.32.0.tgz#9fa948043656babf2bd6a7c8dff6ea7fe0030d6f"
-  integrity sha512-wcfbC0oXr7k6uIHRC76ux8/8KazFc6ZpBYdFdg73laDjV916OG9r+7CzlecdE3Vln7eU3KqUFa69pbNPOWnV2w==
+"@bangle.dev/shared-types@0.32.1":
+  version "0.32.1"
+  resolved "https://registry.yarnpkg.com/@bangle.dev/shared-types/-/shared-types-0.32.1.tgz#9c81362db04dddf375a3ae18049c27ad0e8e2000"
+  integrity sha512-nqzVhTZNEw7oxP2uwSVPbcDSCiH+zfwMF32a0i7BdIBUn1XGh/LEf8bJtWYSd/jzBH8Y6JcAzB8P/Zjxpzj3/g==
   dependencies:
-    "@bangle.dev/pm" "0.32.0"
-    "@bangle.dev/pm-commands" "0.32.0"
-    "@bangle.dev/utils" "0.32.0"
+    "@bangle.dev/pm" "0.32.1"
+    "@bangle.dev/pm-commands" "0.32.1"
+    "@bangle.dev/utils" "0.32.1"
     prosemirror-markdown "^1.11.1"
-
-"@bangle.dev/utils@0.32.0":
-  version "0.32.0"
-  resolved "https://registry.yarnpkg.com/@bangle.dev/utils/-/utils-0.32.0.tgz#ffcff254e3043cee6d371896c785e4464b77e7a8"
-  integrity sha512-6pFEQ4KsK8PxPv/ZrDnXZkKw8U2/B9/regc3l+Snv5xClhyJ+zRyysDgPEf0XMw4pAW1KwiJIih8KGDTdXiAvg==
-  dependencies:
-    "@types/jest" "^29.5.3"
-    prosemirror-model "^1.19.3"
-    prosemirror-state "^1.4.3"
-    prosemirror-utils-bangle "0.0.4"
-    tsd "^0.22.0"
 
 "@bangle.dev/utils@0.32.1":
   version "0.32.1"
@@ -8992,11 +8954,6 @@ prosemirror-transform@^1.0.0, prosemirror-transform@^1.1.0, prosemirror-transfor
   integrity sha512-qDapyx5lqYfxVeUWEw0xTGgeP2S8346QtE7DxkalsXlX89lpzkY6GZfulgfHyk1n4tf74sZ7CcXgcaCcGjsUtA==
   dependencies:
     prosemirror-model "^1.0.0"
-
-prosemirror-utils-bangle@0.0.4:
-  version "0.0.4"
-  resolved "https://registry.yarnpkg.com/prosemirror-utils-bangle/-/prosemirror-utils-bangle-0.0.4.tgz#a47b2bccd6d92a95b7b402f8330b33fe60caa727"
-  integrity sha512-Z/JUE5nu/ZNvztH8Ou+ux274wOx9g9cz1d8ZAP+anWZT+mXY3UiMvEsdtf2iT5v4skLEh0XQj/FromEjbHmu4w==
 
 prosemirror-utils-bangle@0.1.0:
   version "0.1.0"
