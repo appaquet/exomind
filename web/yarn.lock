@@ -2015,10 +2015,10 @@
   dependencies:
     "@types/react" "*"
 
-"@types/react-flatpickr@^3.8.9":
-  version "3.8.10"
-  resolved "https://registry.yarnpkg.com/@types/react-flatpickr/-/react-flatpickr-3.8.10.tgz#0fac9e6420b5b9432d973be0667dfad7b854db97"
-  integrity sha512-Mo87h+Lx4QGvZpQvvEKzzIXB1PV3Q4jUc9EvY0a7gvkGhdPFARJ2FgBy6l04w9Kk5zMKC0Eq4AMEsQKgx89EAA==
+"@types/react-flatpickr@^3.8.11":
+  version "3.8.11"
+  resolved "https://registry.yarnpkg.com/@types/react-flatpickr/-/react-flatpickr-3.8.11.tgz#cec7d9afa535bff0631842b286e149f47fbeadfb"
+  integrity sha512-wXGyGRpUjiGknioxWzWJdNvF2XxKw5lAI7H64Iv7w4iL+1iT7QvAzrigz5FkW4lTg9IJOww6t7g21FzsrmRV6A==
   dependencies:
     "@types/react" "*"
     flatpickr "^4.0.6"
