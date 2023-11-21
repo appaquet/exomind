@@ -18,7 +18,7 @@ duration-string = { version = "0.3.0", features = ["serde"] }
 exocore = { version = "0.1.25", default-features = false, features = ["client", "logger"] }
 exomind-protos = {version = "0.1.15", path = "../../protos"}
 google-gmail1 = "5.0.3"
-hyper = "0.14.27"
+hyper = "1.0.1"
 hyper-rustls = {version="0.24.2", features=["http2"]}
 log = "0.4.20"
 mailparse = "0.14.0"
