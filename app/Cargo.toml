@@ -16,5 +16,5 @@ crate-type = ['cdylib']
 anyhow = "1.0.76"
 exocore = { version = "0.1.25", default-features = false, features = ["apps-sdk"] }
 exomind-protos = {version = "0.1.15", path = "../protos"}
-futures = "0.3.29"
+futures = "0.3.30"
 log = "0.4.20"
