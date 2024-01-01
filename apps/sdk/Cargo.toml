@@ -18,7 +18,7 @@ futures = "0.3.30"
 lazy_static = "1.4.0"
 log = "0.4.20"
 quote = "1.0.33"
-thiserror = "1.0.52"
+thiserror = "1.0.53"
 chrono = { version = "0.4.31", default-features = false, features = [] }
 
 [dev-dependencies]
