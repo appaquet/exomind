@@ -29,7 +29,7 @@ tests-utils = []
 
 [dependencies]
 anyhow = "1.0.77"
-async-trait = "0.1.76"
+async-trait = "0.1.77"
 bytes = "1.5.0"
 chrono = {version = "0.4.31", features = ["serde"]}
 exocore-protos = {version = "0.1.25", path = "../protos"}
