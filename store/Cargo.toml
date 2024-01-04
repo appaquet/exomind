@@ -51,7 +51,7 @@ extsort = {version = "0.4.2", optional = true}
 lru = {version = "0.12.1", optional = true}
 serde = {version = "1.0.194", optional = true}
 serde_derive = {version = "1.0.193", optional = true}
-serde_json = {version = "1.0.109", optional = true}
+serde_json = {version = "1.0.111", optional = true}
 tantivy = {version = "0.19.2", optional = true}
 
 [dev-dependencies]
