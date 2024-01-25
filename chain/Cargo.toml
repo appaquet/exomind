@@ -32,7 +32,7 @@ bytes = "1.5.0"
 
 # For directory chain
 extindex = { version = "0.5.1", optional = true }
-memmap2 = { version = "0.9.3", optional = true }
+memmap2 = { version = "0.9.4", optional = true }
 
 # For tests
 tempfile = { version = "3.9.0", optional = true }
