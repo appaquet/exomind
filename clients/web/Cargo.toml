@@ -16,7 +16,7 @@ exocore-protos = {version = "0.1.25", path = "../../protos", default-features = 
 exocore-store = {version = "0.1.25", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.25", path = "../../transport", default-features = false, features = ["p2p-web"]}
 futures = "0.3.30"
-js-sys = "0.3.66"
+js-sys = "0.3.67"
 log = "0.4.20"
 thiserror = "1.0.56"
 wasm-bindgen = { version = "0.2.90", features = ["serde-serialize"] }# serde for serialization from JsValue

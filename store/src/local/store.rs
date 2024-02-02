@@ -670,7 +670,7 @@ pub mod tests {
 
     use super::{super::TestStore, *};
     use crate::{
-        local::{entity_index::GarbageCollectorConfig, EntityIndexConfig},
+        local::{entity_index::gc::GarbageCollectorConfig, EntityIndexConfig},
         mutation::MutationBuilder,
         query::QueryBuilder,
         store::Store,

@@ -29,9 +29,9 @@ log = "0.4.20"
 log4rs = "1.2.0"
 rand = "0.8"
 reqwest = { version = "0.11.23", default-features = false, features = ["rustls-tls"] }
-serde = "1.0.195"
-serde_derive = "1.0.193"
-serde_json = "1.0.111"
+serde = "1.0.196"
+serde_derive = "1.0.196"
+serde_json = "1.0.112"
 tempfile = "3.9.0"
 thiserror = "1.0.56"
 tokio = { version = "1.35.1", features = ["macros"], default-features = false }

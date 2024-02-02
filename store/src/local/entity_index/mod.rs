@@ -36,8 +36,7 @@ pub use config::*;
 mod aggregator;
 pub use aggregator::*;
 
-mod gc;
-pub use gc::GarbageCollectorConfig;
+pub mod gc;
 
 mod searcher;
 
