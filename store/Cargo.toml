@@ -34,7 +34,7 @@ bytes = "1.5.0"
 chrono = {version = "0.4.33", features = ["serde"]}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.30"
-itertools = "0.12.0"
+itertools = "0.12.1"
 log = "0.4.20"
 smallvec = "1.13.1"
 thiserror = "1.0.56"
