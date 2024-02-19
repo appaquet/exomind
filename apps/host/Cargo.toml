@@ -13,7 +13,7 @@ version = "0.1.25"
 default = []
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = "1.0.80"
 exocore-core = {version = "0.1.25", path = "../../core"}
 exocore-protos = {version = "0.1.25", path = "../../protos"}
 exocore-store = {version = "0.1.25", path = "../../store"}
