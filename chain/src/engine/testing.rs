@@ -590,7 +590,7 @@ pub fn create_dummy_block<I: FrameReader>(
         block_builder.set_height(height);
         block_builder.set_operations_size(operations_size);
         block_builder.set_signatures_size(signatures_size);
-        block_builder.set_proposed_node_id(format!("seed={}", seed).as_str().into());
+        block_builder.set_proposed_node_id(format!("seed={}", seed).as_str());
 
         if let Some(previous_block) = previous_block {
             let previous_block_header_reader: block_header::Reader =

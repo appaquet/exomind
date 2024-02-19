@@ -185,7 +185,7 @@ pub mod pending_sync_request {
         }
     }
 
-    impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
+    impl<'a> ::capnp::traits::SetterInput<Owned> for Reader<'a> {
         fn set_pointer_builder(
             mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
             value: Self,
@@ -229,11 +229,11 @@ pub mod pending_sync_request {
         pub fn set_ranges(
             &mut self,
             value: ::capnp::struct_list::Reader<
-                'a,
+                '_,
                 crate::data_transport_capnp::pending_sync_range::Owned,
             >,
         ) -> ::capnp::Result<()> {
-            ::capnp::traits::SetPointerBuilder::set_pointer_builder(
+            ::capnp::traits::SetterInput::set_pointer_builder(
                 self.builder.reborrow().get_pointer_field(0),
                 value,
                 false,
@@ -353,9 +353,11 @@ pub mod pending_sync_request {
                 encoded_node: &ENCODED_NODE,
                 nonunion_members: NONUNION_MEMBERS,
                 members_by_discriminant: MEMBERS_BY_DISCRIMINANT,
+                members_by_name: MEMBERS_BY_NAME,
             };
         pub static NONUNION_MEMBERS: &[u16] = &[0, 1];
         pub static MEMBERS_BY_DISCRIMINANT: &[u16] = &[];
+        pub static MEMBERS_BY_NAME: &[u16] = &[1, 0];
         pub const TYPE_ID: u64 = 0xf23b_fe58_29c7_1a4b;
     }
 }
@@ -581,7 +583,7 @@ pub mod pending_sync_range {
         }
     }
 
-    impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
+    impl<'a> ::capnp::traits::SetterInput<Owned> for Reader<'a> {
         fn set_pointer_builder(
             mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
             value: Self,
@@ -676,9 +678,9 @@ pub mod pending_sync_range {
         #[inline]
         pub fn set_operations_frames(
             &mut self,
-            value: ::capnp::data_list::Reader<'a>,
+            value: ::capnp::data_list::Reader<'_>,
         ) -> ::capnp::Result<()> {
-            ::capnp::traits::SetPointerBuilder::set_pointer_builder(
+            ::capnp::traits::SetterInput::set_pointer_builder(
                 self.builder.reborrow().get_pointer_field(1),
                 value,
                 false,
@@ -713,11 +715,11 @@ pub mod pending_sync_range {
         pub fn set_operations_headers(
             &mut self,
             value: ::capnp::struct_list::Reader<
-                'a,
+                '_,
                 crate::data_chain_capnp::chain_operation_header::Owned,
             >,
         ) -> ::capnp::Result<()> {
-            ::capnp::traits::SetPointerBuilder::set_pointer_builder(
+            ::capnp::traits::SetterInput::set_pointer_builder(
                 self.builder.reborrow().get_pointer_field(2),
                 value,
                 false,
@@ -938,9 +940,11 @@ pub mod pending_sync_range {
                 encoded_node: &ENCODED_NODE,
                 nonunion_members: NONUNION_MEMBERS,
                 members_by_discriminant: MEMBERS_BY_DISCRIMINANT,
+                members_by_name: MEMBERS_BY_NAME,
             };
         pub static NONUNION_MEMBERS: &[u16] = &[0, 1, 2, 3, 4, 5, 6, 7];
         pub static MEMBERS_BY_DISCRIMINANT: &[u16] = &[];
+        pub static MEMBERS_BY_NAME: &[u16] = &[1, 0, 5, 6, 4, 7, 3, 2];
         pub const TYPE_ID: u64 = 0xfb10_27d7_6f28_4abd;
     }
 }
@@ -1123,7 +1127,7 @@ pub mod chain_sync_request {
         }
     }
 
-    impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
+    impl<'a> ::capnp::traits::SetterInput<Owned> for Reader<'a> {
         fn set_pointer_builder(
             mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
             value: Self,
@@ -1290,9 +1294,11 @@ pub mod chain_sync_request {
                 encoded_node: &ENCODED_NODE,
                 nonunion_members: NONUNION_MEMBERS,
                 members_by_discriminant: MEMBERS_BY_DISCRIMINANT,
+                members_by_name: MEMBERS_BY_NAME,
             };
         pub static NONUNION_MEMBERS: &[u16] = &[0, 1, 2];
         pub static MEMBERS_BY_DISCRIMINANT: &[u16] = &[];
+        pub static MEMBERS_BY_NAME: &[u16] = &[0, 2, 1];
         pub const TYPE_ID: u64 = 0xb664_cf5f_668b_294b;
     }
 
@@ -1584,7 +1590,7 @@ pub mod chain_sync_response {
         }
     }
 
-    impl<'a> ::capnp::traits::SetPointerBuilder for Reader<'a> {
+    impl<'a> ::capnp::traits::SetterInput<Owned> for Reader<'a> {
         fn set_pointer_builder(
             mut pointer: ::capnp::private::layout::PointerBuilder<'_>,
             value: Self,
@@ -1641,11 +1647,11 @@ pub mod chain_sync_response {
         pub fn set_headers(
             &mut self,
             value: ::capnp::struct_list::Reader<
-                'a,
+                '_,
                 crate::data_chain_capnp::block_partial_header::Owned,
             >,
         ) -> ::capnp::Result<()> {
-            ::capnp::traits::SetPointerBuilder::set_pointer_builder(
+            ::capnp::traits::SetterInput::set_pointer_builder(
                 self.builder.reborrow().get_pointer_field(0),
                 value,
                 false,
@@ -1674,8 +1680,8 @@ pub mod chain_sync_response {
             )
         }
         #[inline]
-        pub fn set_blocks(&mut self, value: ::capnp::data_list::Reader<'a>) -> ::capnp::Result<()> {
-            ::capnp::traits::SetPointerBuilder::set_pointer_builder(
+        pub fn set_blocks(&mut self, value: ::capnp::data_list::Reader<'_>) -> ::capnp::Result<()> {
+            ::capnp::traits::SetterInput::set_pointer_builder(
                 self.builder.reborrow().get_pointer_field(1),
                 value,
                 false,
@@ -1820,9 +1826,11 @@ pub mod chain_sync_response {
                 encoded_node: &ENCODED_NODE,
                 nonunion_members: NONUNION_MEMBERS,
                 members_by_discriminant: MEMBERS_BY_DISCRIMINANT,
+                members_by_name: MEMBERS_BY_NAME,
             };
         pub static NONUNION_MEMBERS: &[u16] = &[0, 1, 2, 3];
         pub static MEMBERS_BY_DISCRIMINANT: &[u16] = &[];
+        pub static MEMBERS_BY_NAME: &[u16] = &[3, 0, 2, 1];
         pub const TYPE_ID: u64 = 0xb729_d9b2_39e7_4f27;
     }
 }

@@ -65,7 +65,7 @@ pub fn query_results_to_response_frame(
             msg_builder.set_response(&buf);
         }
         Err(err) => {
-            msg_builder.set_error(err.to_string().as_str().into());
+            msg_builder.set_error(err.to_string().as_str());
         }
     }
 
@@ -127,7 +127,7 @@ pub fn mutation_result_to_response_frame(
             msg_builder.set_response(&buf);
         }
         Err(err) => {
-            msg_builder.set_error(err.to_string().as_str().into());
+            msg_builder.set_error(err.to_string().as_str());
         }
     }
 

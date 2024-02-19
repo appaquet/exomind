@@ -219,12 +219,23 @@ impl Registry {
     fn get_field_u32s_option(field: &FieldDescriptorProto, option_field_id: u32) -> Vec<u32> {
         let mut ret = Vec::new();
         for (field_id, value) in field.options.unknown_fields().iter() {
-            if let UnknownValueRef::Varint(v) = value {
-                // unfortunately, doesn't allow getting multiple values for one field other than
-                // iterating on all options
-                if field_id == option_field_id {
+            // unfortunately, doesn't allow getting multiple values for one field other than
+            // iterating on all options
+            if field_id != option_field_id {
+                continue;
+            }
+
+            println!("field_id: {}, value: {:?}", field_id, value);
+            match value {
+                UnknownValueRef::Varint(v) => {
                     ret.push(v as u32);
                 }
+                UnknownValueRef::LengthDelimited(values) => {
+                    for value in values {
+                        ret.push(*value as u32);
+                    }
+                }
+                _ => (),
             }
         }
         ret

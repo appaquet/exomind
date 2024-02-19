@@ -11,6 +11,9 @@
         },
         {
             "pattern": "badge.svg"
+        },
+        {
+            "pattern": "^https://stackoverflow.com"
         }
     ]
 }
