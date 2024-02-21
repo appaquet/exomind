@@ -110,7 +110,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-flatpickr": "^3.10.12",
-    "sanitize-html": "=2.7.1",
+    "sanitize-html": "=2.12.0",
     "source-map-support": "^0.5.21",
     "starts-with-emoji": "^2.0.0"
   },
@@ -127,7 +127,7 @@
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.15",
     "@types/react-flatpickr": "^3.8.11",
-    "@types/sanitize-html": "^2.6.0",
+    "@types/sanitize-html": "^2.11.0",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
     "babel-loader": "^8.2.5",
