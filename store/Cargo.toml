@@ -57,5 +57,5 @@ tantivy = {version = "0.19.2", optional = true}
 [dev-dependencies]
 exocore-chain = {version = "0.1.25", path = "../chain", features = ["tests-utils"]}
 exocore-core = {version = "0.1.25", path = "../core", features = ["tests-utils"]}
-tempfile = "3.10.0"
+tempfile = "3.10.1"
 tokio = {version = "1.36.0", features = ["macros"], default-features = false}
