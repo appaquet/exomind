@@ -17,7 +17,7 @@ exocore-store = {version = "0.1.25", path = "../../store", default-features = fa
 exocore-transport = {version = "0.1.25", path = "../../transport", default-features = false, features = ["p2p-web"]}
 futures = "0.3.30"
 js-sys = "0.3.68"
-log = "0.4.20"
+log = "0.4.21"
 thiserror = "1.0.57"
 wasm-bindgen = { version = "0.2.91", features = ["serde-serialize"] }# serde for serialization from JsValue
 wasm-bindgen-futures = "0.4.41"
