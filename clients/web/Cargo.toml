@@ -19,7 +19,7 @@ futures = "0.3.30"
 js-sys = "0.3.68"
 log = "0.4.21"
 thiserror = "1.0.57"
-wasm-bindgen = { version = "0.2.91", features = ["serde-serialize"] }# serde for serialization from JsValue
+wasm-bindgen = { version = "0.2.92", features = ["serde-serialize"] }# serde for serialization from JsValue
 wasm-bindgen-futures = "0.4.41"
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.68", features = ["Storage", "Window"] }
