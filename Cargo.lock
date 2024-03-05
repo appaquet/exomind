@@ -1742,9 +1742,9 @@ dependencies = [
 
 [[package]]
 name = "google-gmail1"
-version = "5.0.3+20230116"
+version = "5.0.4+20240226"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36f614d84a62ccfa21dcb2c97036668b30fc7caa4404aaf6337b8c51dee45bd3"
+checksum = "72e8412a6ac2b47c9103331fd183e2c4b7fd30bca7512ff625206c7c88f36210"
 dependencies = [
  "anyhow",
  "google-apis-common",
