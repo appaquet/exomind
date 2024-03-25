@@ -100,11 +100,11 @@ impl Libp2pTransport {
 
         #[cfg(all(feature = "p2p-web", target_arch = "wasm32"))]
         let mut swarm = {
-            use libp2p::wasm_ext::{ffi::websocket_transport, ExtTransport};
+            use libp2p::websocket_websys::Transport;
 
             let keypair = self.local_node.keypair().to_libp2p();
 
-            let transport = ExtTransport::new(websocket_transport())
+            let transport = Transport::default()
                 .upgrade(libp2p::core::upgrade::Version::V1)
                 .authenticate(
                     libp2p::noise::Config::new(keypair)
@@ -412,8 +412,8 @@ pub fn build_transport(
                 Default::default(),
             )
         };
-        let ws_dns_tcp = libp2p::websocket::WsConfig::new(dns_tcp()?);
-        ws_dns_tcp.or_transport(dns_tcp()?)
+        let ws_dns_tcp = libp2p::websocket::WsConfig::new(dns_tcp());
+        ws_dns_tcp.or_transport(dns_tcp())
     };
 
     Ok(transport

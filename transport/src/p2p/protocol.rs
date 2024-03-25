@@ -12,7 +12,7 @@ use libp2p::{
     swarm::{
         handler::{
             ConnectionEvent, ConnectionHandler, ConnectionHandlerEvent, DialUpgradeError,
-            KeepAlive, SubstreamProtocol,
+            SubstreamProtocol,
         },
         Stream,
     },
@@ -23,8 +23,7 @@ use super::bytes_channel::BytesChannelSender;
 const MAX_MESSAGE_SIZE: usize = 20 * 1024 * 1024; // 20MB
 const STREAM_BUFFER_SIZE: usize = 1024;
 
-type HandlerEvent =
-    ConnectionHandlerEvent<ExocoreProtoConfig, (), Result<MessageData, io::Error>, io::Error>;
+type HandlerEvent = ConnectionHandlerEvent<ExocoreProtoConfig, (), Result<MessageData, io::Error>>;
 
 // TODO: Remove dyn dispatched future once type_alias_impl_trait lands: https://github.com/rust-lang/rust/issues/63063
 type InboundStreamFuture =
@@ -51,7 +50,7 @@ pub struct ExocoreProtoHandler {
     outbound_stream_futures: Vec<OutboundStreamFuture>,
     idle_outbound_stream: Option<WrappedStream<Stream>>,
     send_queue: VecDeque<MessageData>,
-    keep_alive: KeepAlive,
+    keep_alive: bool,
 }
 
 impl ExocoreProtoHandler {
@@ -88,7 +87,7 @@ impl Default for ExocoreProtoHandler {
             outbound_stream_futures: Vec::new(),
             idle_outbound_stream: None,
             send_queue: VecDeque::new(),
-            keep_alive: KeepAlive::Yes,
+            keep_alive: true,
         }
     }
 }
@@ -96,7 +95,6 @@ impl Default for ExocoreProtoHandler {
 impl ConnectionHandler for ExocoreProtoHandler {
     type FromBehaviour = MessageData;
     type ToBehaviour = Result<MessageData, io::Error>;
-    type Error = io::Error;
     type InboundProtocol = ExocoreProtoConfig;
     type InboundOpenInfo = ();
     type OutboundProtocol = ExocoreProtoConfig;
@@ -141,10 +139,13 @@ impl ConnectionHandler for ExocoreProtoHandler {
             ConnectionEvent::RemoteProtocolsChange(_event) => {
                 debug!("Remote protocols change");
             }
+            _ => {
+                debug!("Unhandled connection event");
+            }
         }
     }
 
-    fn connection_keep_alive(&self) -> KeepAlive {
+    fn connection_keep_alive(&self) -> bool {
         self.keep_alive
     }
 

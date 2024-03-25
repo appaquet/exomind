@@ -225,7 +225,6 @@ impl Registry {
                 continue;
             }
 
-            println!("field_id: {}, value: {:?}", field_id, value);
             match value {
                 UnknownValueRef::Varint(v) => {
                     ret.push(v as u32);

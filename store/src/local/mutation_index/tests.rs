@@ -246,7 +246,7 @@ fn search_query_matches_recent_boost() -> anyhow::Result<()> {
         },
     });
 
-    let two_year = Utc::now() - Duration::days(730);
+    let two_year = Utc::now() - Duration::try_days(730).unwrap();
     let trait2 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(2),
         operation_id: 11,
@@ -265,7 +265,7 @@ fn search_query_matches_recent_boost() -> anyhow::Result<()> {
         },
     });
 
-    let one_year = Utc::now() - Duration::days(365);
+    let one_year = Utc::now() - Duration::try_days(365).unwrap();
     let trait3 = IndexOperation::PutTrait(PutTraitMutation {
         block_offset: Some(3),
         operation_id: 12,
