@@ -31,7 +31,7 @@ tests-utils = []
 anyhow = "1.0.81"
 async-trait = "0.1.79"
 bytes = "1.6.0"
-chrono = {version = "0.4.35", features = ["serde"]}
+chrono = {version = "0.4.37", features = ["serde"]}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 futures = "0.3.30"
 itertools = "0.12.1"
