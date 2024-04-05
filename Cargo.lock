@@ -1376,7 +1376,7 @@ dependencies = [
  "capnp",
  "capnpc",
  "chrono",
- "prost",
+ "prost 0.11.9",
  "prost-build",
  "prost-types",
  "protobuf",
@@ -1471,7 +1471,7 @@ name = "exomind-protos"
 version = "0.1.15"
 dependencies = [
  "exocore",
- "prost",
+ "prost 0.12.4",
  "prost-build",
  "prost-types",
 ]
@@ -1973,7 +1973,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite 0.2.13",
- "socket2 0.4.10",
+ "socket2 0.5.5",
  "tokio",
  "tower-service",
  "tracing",
@@ -3480,7 +3480,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b82eaa1d779e9a4bc1c3217db8ffbeabaae1dca241bf70183242128d48681cd"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.11.9",
+]
+
+[[package]]
+name = "prost"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0f5d036824e4761737860779c906171497f6d55681139d8312388f8fe398922"
+dependencies = [
+ "bytes",
+ "prost-derive 0.12.4",
 ]
 
 [[package]]
@@ -3497,7 +3507,7 @@ dependencies = [
  "multimap",
  "petgraph",
  "prettyplease",
- "prost",
+ "prost 0.11.9",
  "prost-types",
  "regex",
  "syn 1.0.109",
@@ -3519,12 +3529,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "prost-derive"
+version = "0.12.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "19de2de2a00075bf566bee3bd4db014b11587e84184d3f7a791bc17f1a8e9e48"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.46",
+]
+
+[[package]]
 name = "prost-types"
 version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "213622a1460818959ac1181aaeb2dc9c7f63df720db7d788b3e24eacd1983e13"
 dependencies = [
- "prost",
+ "prost 0.11.9",
 ]
 
 [[package]]
