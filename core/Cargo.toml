@@ -58,7 +58,7 @@ wasm-timer = "0.2.5"
 web-sys = { version = "0.3.69", features = ["Storage"], optional = true }
 
 [target."cfg(target_arch = \"wasm32\")".dependencies]
-getrandom = "0.2.12"
+getrandom = "0.2.14"
 wasm-bindgen = "0.2.92"
 wasm-bindgen-futures = "0.4.42"
 chrono = { version = "0.4.35", default-features = false, features = [] }
