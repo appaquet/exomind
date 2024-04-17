@@ -17,5 +17,5 @@ anyhow = "1.0.82"
 futures = "0.3.30"
 log = "0.4.21"
 quote = "1.0.36"
-syn = { version = "2.0.59", features = ["full", "fold"] }
+syn = { version = "2.0.60", features = ["full", "fold"] }
 thiserror = "1.0.58"
