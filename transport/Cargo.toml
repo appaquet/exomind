@@ -30,7 +30,7 @@ libp2p-identity = { version = "0.2.8", features = ["secp256k1", "ed25519"], defa
 libp2p-mplex = {version = "0.41.0", optional = true}
 log = "0.4.21"
 pin-project = "1.1.5"
-thiserror = "1.0.58"
+thiserror = "1.0.59"
 url = {version = "2.5.0", optional = true}
 
 [dev-dependencies]
