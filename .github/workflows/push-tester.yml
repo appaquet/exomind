@@ -56,7 +56,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
           - target: x86_64-apple-darwin
-            os: macOS-11
+            os: macos-14
           - target: x86_64-pc-windows-msvc
             os: windows-latest
 
@@ -95,7 +95,7 @@ jobs:
             os: ubuntu-latest
             cross: true
           - target: aarch64-apple-darwin
-            os: macOS-11
+            os: macos-14
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
@@ -167,7 +167,7 @@ jobs:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
   ios_build:
-    runs-on: macos-11
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
 

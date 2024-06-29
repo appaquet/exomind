@@ -1,6 +1,6 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
+// https://protobuf.dev/
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -339,7 +339,7 @@ message MethodDescriptorProto {
 //   extension number. You can declare multiple options with only one extension
 //   number by putting them in a sub-message. See the Custom Options section of
 //   the docs for examples:
-//   https://developers.google.com/protocol-buffers/docs/proto#options
+//   https://protobuf.dev/docs/proto#options
 //   If this turns out to be popular, a web service will be set up
 //   to automatically assign option numbers.
 
