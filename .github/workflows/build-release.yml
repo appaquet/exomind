@@ -24,11 +24,11 @@ jobs:
             bin: exm
             cross: true
           - target: x86_64-apple-darwin
-            os: macOS-11
+            os: macos-14
             bin: exm
             cross: false
           - target: aarch64-apple-darwin
-            os: macOS-11
+            os: macos-14
             bin: exm
             cross: false
           - target: x86_64-pc-windows-msvc
@@ -153,7 +153,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-11, ubuntu-latest, windows-latest]
+        os: [macos-14, ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -178,7 +178,7 @@ jobs:
           yarn electron_dist
 
           mkdir pkg
-          if [ "${{ matrix.os }}" == "macos-11" ]; then
+          if [ "${{ matrix.os }}" == "macos-14" ]; then
             mv dist/Exomind-*-arm64.dmg pkg/exomind-electron-macos-aarch64.dmg
             mv dist/Exomind-*.dmg pkg/exomind-electron-macos-x86_64.dmg
           elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
