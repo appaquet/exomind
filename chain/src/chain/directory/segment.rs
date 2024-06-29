@@ -370,6 +370,7 @@ impl SegmentFile {
             .read(true)
             .write(true)
             .create(true)
+            .truncate(false)
             .open(path)
             .map_err(|err| {
                 Error::new_io(

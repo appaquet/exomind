@@ -4,7 +4,6 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc, Mutex,
     },
-    usize,
 };
 
 type SegmentId = usize;

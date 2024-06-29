@@ -52,6 +52,7 @@ impl Directory for OsDirectory {
         let file = OpenOptions::new()
             .write(true)
             .create(true)
+            .truncate(false)
             .read(true)
             .open(path)?;
         Ok(Box::new(OsFile { file }))

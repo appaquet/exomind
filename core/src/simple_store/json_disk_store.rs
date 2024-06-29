@@ -54,6 +54,7 @@ impl<T: Serialize + DeserializeOwned> SimpleStore<T> for JsonDiskStore<T> {
             .read(false)
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&tmp_file)?;
         serde_json::to_writer(file, value)?;
 

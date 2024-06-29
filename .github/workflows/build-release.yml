@@ -24,11 +24,11 @@ jobs:
             bin: exo
             cross: true
           - target: x86_64-apple-darwin
-            os: macOS-11
+            os: macos-14
             bin: exo
             cross: false
           - target: aarch64-apple-darwin
-            os: macOS-11
+            os: macos-14
             bin: exo
             cross: false
           # TODO: Enable back when Rust v1.70 is released
@@ -114,7 +114,7 @@ jobs:
           if-no-files-found: error
 
   ios_client:
-    runs-on: macos-11 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+    runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v4
 
@@ -127,7 +127,7 @@ jobs:
         run: |
           HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
           rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim # actions-rs doesn't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
-          cargo install cargo-lipo --debug # make build faster, no need for speed from it
+          cargo install cargo-lipo cbindgen --debug # make build faster, no need for speed from it
 
       - name: Build client & pod
         run: |

@@ -20,7 +20,7 @@
 
 ## End to end testing
 
-* Install Playwright dependencies `npx playwright install --with-deps`
+* Install Playwright dependencies `npx playwright install --with-deps chromium`
 
 * Run test server in background `exo -d tests/node daemon &`
 

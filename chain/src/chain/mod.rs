@@ -70,8 +70,8 @@ impl Segments {
         from_offset: Option<BlockOffset>,
         to_offset: Option<BlockOffset>,
     ) -> Segments {
-        let from_offset = from_offset.unwrap_or(std::u64::MIN);
-        let to_offset = to_offset.unwrap_or(std::u64::MAX);
+        let from_offset = from_offset.unwrap_or(u64::MIN);
+        let to_offset = to_offset.unwrap_or(u64::MAX);
 
         Segments(
             self.0

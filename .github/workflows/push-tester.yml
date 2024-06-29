@@ -52,7 +52,7 @@ jobs:
             os: ubuntu-latest
             cross: true
           - target: aarch64-apple-darwin
-            os: macOS-11
+            os: macos-14
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
@@ -91,7 +91,7 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
           - target: x86_64-apple-darwin
-            os: macOS-11
+            os: macos-14
           - target: x86_64-pc-windows-msvc
             os: windows-latest
 
@@ -149,7 +149,7 @@ jobs:
           ./tools/coverage.sh lcov
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
@@ -223,7 +223,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/examples/web
           npm install
-          npx playwright install --with-deps
+          npx playwright install --with-deps chromium
 
       - name: Run end-to-end tests
         run: |
@@ -243,7 +243,7 @@ jobs:
           retention-days: 7
 
   ios_client_build:
-    runs-on: macos-11 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+    runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v4
 
@@ -258,7 +258,7 @@ jobs:
         run: |
           HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
           rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim # actions-rs doesn't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
-          cargo install cargo-lipo --debug # make build faster, no need for speed from it
+          cargo install cargo-lipo cbindgen --debug # make build faster, no need for speed from it
 
       - name: Build client & pod
         run: |
