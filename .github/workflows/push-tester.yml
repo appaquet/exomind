@@ -153,7 +153,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
-          fail_ci_if_error: true
+          fail_ci_if_error: false
 
   apps_sdk_runtime_tests:
     runs-on: ubuntu-latest
