@@ -1482,8 +1482,10 @@ pub fn copy_local_node_to_cells(ctx: &Context, node_config: LocalNodeConfig) {
             .find_node(&node_config.public_key)
             .and_then(|c| c.node.as_mut())
         {
-            cell_node_config.name = node_config.name.clone();
-            cell_node_config.addresses = node_config.addresses.clone();
+            cell_node_config.name.clone_from(&node_config.name);
+            cell_node_config
+                .addresses
+                .clone_from(&node_config.addresses);
             true
         } else {
             false

@@ -523,7 +523,7 @@ impl QueryString {
             } else if chr == '-' {
                 part.occur = QSOccur::MustNot;
             } else if chr == ':' {
-                part.field = part.text.clone();
+                part.field.clone_from(&part.text);
                 part.text.clear();
             } else if chr == '"' {
                 part.phrase = true;

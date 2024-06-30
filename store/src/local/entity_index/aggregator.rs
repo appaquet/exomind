@@ -112,7 +112,7 @@ impl EntityAggregator {
             // soon as one operation is made since we can't guarantee anything
             digest.update(&current_operation_id.to_ne_bytes());
 
-            entity_id = current_mutation.entity_id.clone();
+            entity_id.clone_from(&current_mutation.entity_id);
 
             match &current_mutation.mutation_type {
                 MutationType::TraitPut(put_trait) => {
@@ -185,7 +185,7 @@ impl EntityAggregator {
                 MutationType::PendingDeletion => pending_deletion = true,
             }
 
-            if current_operation_id > last_operation_id.unwrap_or(std::u64::MIN) {
+            if current_operation_id > last_operation_id.unwrap_or(u64::MIN) {
                 last_operation_id = Some(current_operation_id);
             }
 

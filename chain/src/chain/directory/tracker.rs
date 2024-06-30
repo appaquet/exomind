@@ -82,7 +82,7 @@ impl SegmentTracker {
                 path: segment.path.clone(),
                 access_count_live: segment.access_count.clone(),
                 access_count_last: 0,
-                state: OpenState::Read(mmap),
+                state: OpenState::Read { _mmap: mmap },
             },
         );
 
@@ -159,7 +159,7 @@ struct TrackedSegment {
 }
 
 enum OpenState {
-    Read(Arc<memmap2::Mmap>),
+    Read { _mmap: Arc<memmap2::Mmap> },
     Write,
 }
 

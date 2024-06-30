@@ -16,19 +16,19 @@ pub struct Keypair {
 
 #[derive(Clone)]
 enum KeypairType {
-    Ed25519(libp2p_ed25519::Keypair),
-    Secp256k1(libp2p_secp256k1::Keypair),
+    Ed25519 { keypair: libp2p_ed25519::Keypair },
+    Secp256k1 { _keypair: libp2p_secp256k1::Keypair },
 }
 
 impl Keypair {
     pub fn from_libp2p(keypair: libp2p_Keypair) -> Keypair {
         let keypair_type = match keypair.key_type() {
-            libp2p_identity::KeyType::Ed25519 => {
-                KeypairType::Ed25519(keypair.clone().try_into_ed25519().unwrap())
-            }
-            libp2p_identity::KeyType::Secp256k1 => {
-                KeypairType::Secp256k1(keypair.clone().try_into_secp256k1().unwrap())
-            }
+            libp2p_identity::KeyType::Ed25519 => KeypairType::Ed25519 {
+                keypair: keypair.clone().try_into_ed25519().unwrap(),
+            },
+            libp2p_identity::KeyType::Secp256k1 => KeypairType::Secp256k1 {
+                _keypair: keypair.clone().try_into_secp256k1().unwrap(),
+            },
             _ => unimplemented!(),
         };
 
@@ -48,8 +48,8 @@ impl Keypair {
 
     pub fn algorithm(&self) -> Algorithm {
         match self.keypair_type {
-            KeypairType::Ed25519(_) => Algorithm::Ed25519,
-            KeypairType::Secp256k1(_) => Algorithm::Secp256k1,
+            KeypairType::Ed25519 { keypair: _ } => Algorithm::Ed25519,
+            KeypairType::Secp256k1 { _keypair: _ } => Algorithm::Secp256k1,
         }
     }
 
@@ -68,11 +68,11 @@ impl Keypair {
     /// Encode the keypair into a bytes representation.
     pub fn encode(&self) -> Vec<u8> {
         match &self.keypair_type {
-            KeypairType::Ed25519(kp) => {
+            KeypairType::Ed25519 { keypair } => {
                 let mut vec = vec![0; 66];
                 vec[0] = ENCODE_KEYPAIR_CODE;
                 vec[1] = Algorithm::Ed25519.to_code();
-                vec[2..].copy_from_slice(&kp.to_bytes());
+                vec[2..].copy_from_slice(&keypair.to_bytes());
                 vec
             }
             _ => unimplemented!(),

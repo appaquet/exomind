@@ -83,7 +83,7 @@ impl OutMessage {
         let envelope = self.envelope_builder.as_owned_frame();
 
         let mut msg = InMessage::from_node_and_frame(from_node, envelope)?;
-        msg.connection = self.connection.clone();
+        msg.connection.clone_from(&self.connection);
 
         Ok(msg)
     }

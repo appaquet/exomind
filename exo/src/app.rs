@@ -253,7 +253,7 @@ impl AppPackage {
 
         let mut cell_app_config = CellApplicationConfig::from_manifest(self.app.manifest().clone());
         cell_app_config.location = None;
-        cell_app_config.package_url = self.url.clone();
+        cell_app_config.package_url.clone_from(&self.url);
 
         print_action("Writing cell config...");
         let mut cell_config = cell.config().clone();

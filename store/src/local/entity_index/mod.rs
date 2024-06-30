@@ -575,7 +575,7 @@ where
             .sorted_by_key(|result| {
                 // sorts mutations in order they got committed (block offset/pending, then
                 // operation id)
-                let block_offset = result.block_offset.unwrap_or(std::u64::MAX);
+                let block_offset = result.block_offset.unwrap_or(u64::MAX);
                 (block_offset, result.operation_id)
             })
             .dedup_by(|a, b| {

@@ -40,14 +40,14 @@ mod test {
         let r3 = 40..50;
         let r4 = 80..100;
 
-        let ranges = vec![r2, r1, r4, r3];
+        let ranges = [r2, r1, r4, r3];
         let gaps = get_gaps(ranges.iter());
         assert_eq!(gaps, vec![20..30, 50..80]);
         assert!(!are_continuous(ranges.iter()));
 
         let r5 = 30..40;
         let r6 = 40..50;
-        let ranges = vec![r5, r6];
+        let ranges = [r5, r6];
         assert!(are_continuous(ranges.iter()));
     }
 }

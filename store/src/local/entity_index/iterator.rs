@@ -130,7 +130,7 @@ impl<'s> ChainEntityIterator<'s> {
                 .expect("entity mutation didn't have a mutation")
                 .entity_id;
             if entity_id.is_empty() {
-                entity_id = next_id.clone();
+                entity_id.clone_from(next_id);
             } else if entity_id != *next_id {
                 break;
             }
