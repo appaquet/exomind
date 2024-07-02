@@ -15,7 +15,7 @@ exocore-apps-macros = {version = "0.1.25", path = "../macros"}
 exocore-protos = {version = "0.1.25", path = "../../protos"}
 exocore-store = {version = "0.1.25", path = "../../store", default-features = false}
 futures = "0.3.30"
-lazy_static = "1.4.0"
+lazy_static = "1.5.0"
 log = "0.4.21"
 quote = "1.0.36"
 thiserror = "1.0.59"
