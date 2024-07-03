@@ -31,7 +31,7 @@ libp2p-mplex = {version = "0.41.0", optional = true}
 log = "0.4.21"
 pin-project = "1.1.5"
 thiserror = "1.0.59"
-url = {version = "2.5.0", optional = true}
+url = {version = "2.5.2", optional = true}
 
 [dev-dependencies]
 exocore-core = {version = "0.1.25", path = "../core", features = ["tests-utils"]}
