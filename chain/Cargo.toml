@@ -31,7 +31,7 @@ thiserror = "1.0.59"
 bytes = "1.6.1"
 
 # For directory chain
-extindex = { version = "0.7.0", optional = true }
+extindex = { version = "0.8.0", optional = true }
 memmap2 = { version = "0.9.4", optional = true }
 
 # For tests

@@ -1835,9 +1835,9 @@ dependencies = [
 
 [[package]]
 name = "extindex"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df3af6786b0611dc719006c212cd4d273d9630b3140aaad717cd179642a927bf"
+checksum = "81c060ad642e48ecadb6668bb9b45695b9a9df19c5ccaaab072d446991e068fa"
 dependencies = [
  "bincode 2.0.0-rc.3",
  "byteorder",
