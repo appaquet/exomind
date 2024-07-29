@@ -125,15 +125,15 @@ A cell consists of:
 
 ## Clients
 
-#### Web
+### Web
 
 * See [Web WASM client README](./clients/web/README.md)
 
-#### C
+### C
 
 * See [C client README](./clients/c/README.md)
 
-#### iOS
+### iOS
 
 * See [iOS client README](./clients/ios/README.md)
   

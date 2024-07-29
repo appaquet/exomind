@@ -11,7 +11,7 @@
     "checkJs": false,
     "moduleResolution": "node",
     "lib": [
-      "es2017",
+      "es2018",
       "esnext.array",
       "dom"
     ],
