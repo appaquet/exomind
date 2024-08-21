@@ -22,6 +22,6 @@
     "typescript": "^5.5.4"
   },
   "dependencies": {
-    "protobufjs": "^7.3.2"
+    "protobufjs": "^7.3.3"
   }
 }
