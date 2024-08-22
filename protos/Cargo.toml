@@ -10,18 +10,18 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.25"
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow = "1.0.86"
 base64 = "0.22"
 capnp = { version = "0.19", features = ["sync_reader"] }
 chrono = "0.4.38"
 prost = "0.12.6"
-prost-types = "0.12.4"
-protobuf = "3.5.0"
-serde = "1.0.203"
-serde_derive = "1.0.197"
-serde_json = "1.0.120"
-thiserror = "1.0.59"
+prost-types = "0.12.6"
+protobuf = "3.5.1"
+serde = "1.0.208"
+serde_derive = "1.0.208"
+serde_json = "1.0.125"
+thiserror = "1.0.63"
 
 [build-dependencies]
 capnpc = "0.19"
-prost-build = "0.12.4"
+prost-build = "0.12.6"

@@ -18,30 +18,30 @@ mmap = ["memmap2"]
 tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exocore-core/tests-utils", "exocore-transport/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow = "1.0.86"
 byteorder = "1.5.0"
 exocore-core = {version = "0.1.25", path = "../core"}
 exocore-protos = {version = "0.1.25", path = "../protos"}
 exocore-transport = {version = "0.1.25", path = "../transport", default-features = false}
 futures = "0.3.30"
 itertools = "0.13.0"
-log = "0.4.21"
-serde = { version = "1.0.203", features = ["derive"] }
-thiserror = "1.0.59"
-bytes = "1.6.1"
+log = "0.4.22"
+serde = { version = "1.0.208", features = ["derive"] }
+thiserror = "1.0.63"
+bytes = "1.7.1"
 
 # For directory chain
 extindex = { version = "0.8.0", optional = true }
 memmap2 = { version = "0.9.4", optional = true }
 
 # For tests
-tempfile = { version = "3.10.1", optional = true }
+tempfile = { version = "3.12.0", optional = true }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.25", path = "../core", features = ["tests-utils"]}
 exocore-transport = {version = "0.1.25", path = "../transport", features = ["tests-utils"]}
-tempfile = "3.10.1"
-tokio = { version = "1.38.0", features = ["macros"], default-features = false }
+tempfile = "3.12.0"
+tokio = { version = "1.39.3", features = ["macros"], default-features = false }
 
 [[test]]
 name = "engine"

@@ -1,1 +1,3 @@
 nodejs 20
+protoc latest
+buf latest

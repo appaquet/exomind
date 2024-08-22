@@ -40,3 +40,6 @@ perf.*
 *.tgz
 test-results/
 playwright-report/
+.direnv
+.env
+.envrc

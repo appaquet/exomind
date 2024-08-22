@@ -10,16 +10,16 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.25"
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow = "1.0.86"
 exocore-apps-macros = {version = "0.1.25", path = "../macros"}
 exocore-protos = {version = "0.1.25", path = "../../protos"}
 exocore-store = {version = "0.1.25", path = "../../store", default-features = false}
 futures = "0.3.30"
 lazy_static = "1.5.0"
-log = "0.4.21"
+log = "0.4.22"
 quote = "1.0.36"
-thiserror = "1.0.59"
+thiserror = "1.0.63"
 chrono = { version = "0.4.38", default-features = false, features = [] }
 
 [dev-dependencies]
-tokio = { version = "1.38.0", features = ["macros"], default-features = false }
+tokio = { version = "1.39.3", features = ["macros"], default-features = false }
