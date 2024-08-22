@@ -39,3 +39,4 @@ cobertura*
 flamegraph*
 perf.*
 *.tar.gz
+.direnv

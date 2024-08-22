@@ -17,14 +17,14 @@ charset = "0.1.5"
 duration-string = { version = "0.4.0", features = ["serde"] }
 exocore = { version = "0.1.25", default-features = false, features = ["client", "logger"] }
 exomind-protos = {version = "0.1.15", path = "../../protos"}
-google-gmail1 = "5.0.3"
-hyper = "0.14.28"
+google-gmail1 = "5.0.5"
+hyper = "0.14.30"
 hyper-rustls = {version="0.24.2", features=["http2"]}
 log = "0.4.22"
 mailparse = "0.15.0"
-serde = "1.0.204"
-serde_derive = "1.0.193"
-serde_json = "1.0.120"
+serde = "1.0.208"
+serde_derive = "1.0.208"
+serde_json = "1.0.125"
 serde_yaml = "0.9.34"
 structopt = "0.3.26"
 
