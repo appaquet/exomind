@@ -34,6 +34,7 @@ module.exports = {
     "deprecation/deprecation": "warn",
     "semi": ["error", "always"],
     "no-trailing-spaces": ["error"],
+    "react/prop-types": "off"
   },
   overrides: [
     {
