@@ -21,15 +21,15 @@ futures = "0.3.30"
 log = "0.4.22"
 rand = "0.8"
 reqwest = { version = "0.12.7", default-features = false, features = ["json", "rustls-tls"] }
-serde = "1.0.208"
-serde_derive = "1.0.208"
-serde_json = "1.0.125"
+serde = "1.0.209"
+serde_derive = "1.0.209"
+serde_json = "1.0.127"
 thiserror = "1.0.63"
 wasm-timer = "0.2.5"
 
 # For server
 hyper = { version = "0.14.30", features = ["full"], optional = true }
-tokio = { version = "1.39.3", default-features = false, features = ["macros", "time"], optional = true }
+tokio = { version = "1.40.0", default-features = false, features = ["macros", "time"], optional = true }
 
 [[test]]
 name = "discovery"

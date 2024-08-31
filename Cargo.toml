@@ -1,6 +1,11 @@
 [package]
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
-categories = ["database-implementations", "command-line-interface", "wasm", "web-programming"]
+categories = [
+  "database-implementations",
+  "command-line-interface",
+  "wasm",
+  "web-programming",
+]
 description = "Distributed applications framework"
 edition = "2021"
 exclude = ["examples", "tools"]
@@ -11,18 +16,17 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.25"
 
 [features]
-default = [
-  "apps-sdk",
-  "client",
-  "logger",
-  "web",
-]
+default = ["apps-sdk", "client", "logger", "web"]
 
 # Top level features
 apps-sdk = ["exocore-apps-sdk", "exocore-store", "protos"]
 client = ["core-runtime", "transport-p2p", "store-remote", "protos", "anyhow"]
 logger = ["core-logger"]
-tests-utils = ["exocore-core/tests-utils", "exocore-transport/tests-utils", "exocore-store/tests-utils"]
+tests-utils = [
+  "exocore-core/tests-utils",
+  "exocore-transport/tests-utils",
+  "exocore-store/tests-utils",
+]
 web = ["transport-p2p-web", "protos", "exocore-core/web"]
 
 # Underlying crates features
@@ -41,22 +45,22 @@ transport-p2p-web = ["exocore-transport/p2p-web"]
 
 [dependencies]
 anyhow = { version = "1.0.86", optional = true }
-exocore-apps-sdk = {version = "0.1.25", path = "./apps/sdk", default-features = false, optional = true}
-exocore-chain = {version = "0.1.25", path = "./chain", default-features = false, optional = true}
-exocore-core = {version = "0.1.25", path = "./core", default-features = false, optional = true}
-exocore-discovery = {version = "0.1.25", path = "./discovery", default-features = false, optional = true}
-exocore-protos = {version = "0.1.25", path = "./protos", default-features = false, optional = true}
-exocore-store = {version = "0.1.25", path = "./store", default-features = false, optional = true}
-exocore-transport = {version = "0.1.25", path = "./transport", default-features = false, optional = true}
+exocore-apps-sdk = { version = "0.1.25", path = "./apps/sdk", default-features = false, optional = true }
+exocore-chain = { version = "0.1.25", path = "./chain", default-features = false, optional = true }
+exocore-core = { version = "0.1.25", path = "./core", default-features = false, optional = true }
+exocore-discovery = { version = "0.1.25", path = "./discovery", default-features = false, optional = true }
+exocore-protos = { version = "0.1.25", path = "./protos", default-features = false, optional = true }
+exocore-store = { version = "0.1.25", path = "./store", default-features = false, optional = true }
+exocore-transport = { version = "0.1.25", path = "./transport", default-features = false, optional = true }
 log = "0.4.22"
 
 [dev-dependencies]
-exocore-core = {version = "0.1.25", path = "./core", features = ["tests-utils"]}
+exocore-core = { version = "0.1.25", path = "./core", features = [
+  "tests-utils",
+] }
 
 [workspace]
-exclude = [
-  "3rd",
-]
+exclude = ["3rd"]
 members = [
   "core",
   "protos",
@@ -72,6 +76,7 @@ members = [
   "clients/web",
   "clients/android",
   "clients/c",
+  "3rd/if-watch",
 ]
 
 [profile.production]
@@ -83,5 +88,5 @@ lto = "thin"
 debug = true
 
 [patch.crates-io]
-# See https://github.com/mullvad/system-configuration-rs/issues/41
-system-configuration = { git = "https://github.com/tmpfs/system-configuration-rs", rev = "572913bf0c74ed996b2beeac3d61ed681075cbd4"}
+# Unmaintained... Will have to get rid of libp2p anyway
+if-watch = { path = "./3rd/if-watch" }
