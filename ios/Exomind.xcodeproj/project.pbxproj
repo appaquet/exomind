@@ -987,7 +987,7 @@
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev.ExomindActionExt;
@@ -1014,7 +1014,7 @@
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ExomindActionExt/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				MARKETING_VERSION = 0.1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev.ExomindActionExt;
@@ -1155,7 +1155,7 @@
 				CURRENT_PROJECT_VERSION = 0.1.15;
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				INFOPLIST_FILE = Exomind/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev;
@@ -1181,7 +1181,7 @@
 				CURRENT_PROJECT_VERSION = 0.1.15;
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				INFOPLIST_FILE = Exomind/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 0.1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = io.exomind.ios.ExomindDev;
@@ -1203,7 +1203,7 @@
 				CLANG_ANALYZER_NONNULL = YES;
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				INFOPLIST_FILE = ExomindTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.exomind.ios.ExomindTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1223,7 +1223,7 @@
 				CLANG_ANALYZER_NONNULL = YES;
 				DEVELOPMENT_TEAM = FHZCN4GU2K;
 				INFOPLIST_FILE = ExomindTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.exomind.ios.ExomindTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
