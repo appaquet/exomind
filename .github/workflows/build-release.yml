@@ -161,11 +161,11 @@ jobs:
 
           assets=()
           for asset in ./artifacts/*/*.tar.gz; do
-            assets+=("-a" "$asset")
+            assets+=("$asset")
           done
 
           TAG="${GITHUB_REF##*/}"
           echo "Creating release for tag $TAG"
-          gh release create $TAG "${assets[@]}" --title "$TAG" --notes "Release $TAG" --target $TAG
+          gh release create $TAG --title "$TAG" --notes "Release $TAG" --target $TAG ${assets[@]}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
