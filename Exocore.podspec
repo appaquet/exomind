@@ -8,7 +8,7 @@ Pod::Spec.new do |spec|
     spec.homepage     = 'https://github.com/appaquet/exocore'
 
     spec.swift_version = '5.0'
-    spec.ios.deployment_target = '11.0'
+    spec.ios.deployment_target = '17.0'
 
     # Rust binaries don't have bitcode (would need to build with https://github.com/getditto/rust-bitcode)
     spec.pod_target_xcconfig = { 'ENABLE_BITCODE' => 'NO' }

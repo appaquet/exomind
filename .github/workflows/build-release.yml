@@ -165,6 +165,7 @@ jobs:
           done
 
           TAG="${GITHUB_REF##*/}"
-          hub release create "${assets[@]}" --draft --message "$TAG" "$TAG"
+          echo "Creating release for tag $TAG"
+          gh release create $TAG "${assets[@]}" --title "$TAG" --notes "Release $TAG" --target $TAG
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
