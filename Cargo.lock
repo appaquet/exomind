@@ -438,9 +438,9 @@ checksum = "8b75356056920673b02621b35afd0f7dda9306d03c79a30f5c56c44cf256e3de"
 
 [[package]]
 name = "async-trait"
-version = "0.1.81"
+version = "0.1.82"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e0c28dcc82d7c8ead5cb13beb15405b57b8546e93215673ff8ca0349a028107"
+checksum = "a27b8a3a6e1a44fa4c8baf1f653e4172e81486d4941f2237e20dc2d0cf4ddff1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -518,7 +518,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "miniz_oxide 0.7.4",
- "object 0.36.3",
+ "object 0.36.4",
  "rustc-demangle",
 ]
 
@@ -1722,7 +1722,7 @@ dependencies = [
 
 [[package]]
 name = "exo"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1755,7 +1755,7 @@ dependencies = [
 
 [[package]]
 name = "exocore"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "exocore-apps-sdk",
@@ -1779,7 +1779,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-host"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1795,7 +1795,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-macros"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "futures",
@@ -1807,7 +1807,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-apps-sdk"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1824,7 +1824,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-chain"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -1845,7 +1845,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-android"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "exocore-core",
@@ -1856,7 +1856,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-c"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "exocore-core",
  "exocore-discovery",
@@ -1873,7 +1873,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-client-web"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "console_error_panic_hook",
@@ -1895,7 +1895,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-core"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "bs58",
@@ -1933,7 +1933,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-discovery"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1953,7 +1953,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-protos"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1972,7 +1972,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-store"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2001,7 +2001,7 @@ dependencies = [
 
 [[package]]
 name = "exocore-transport"
-version = "0.1.25"
+version = "0.1.26"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -2462,7 +2462,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http 0.2.12",
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "slab",
  "tokio",
  "tokio-util",
@@ -2771,7 +2771,7 @@ dependencies = [
  "tokio",
  "tokio-rustls",
  "tower-service",
- "webpki-roots 0.26.3",
+ "webpki-roots 0.26.5",
 ]
 
 [[package]]
@@ -2898,9 +2898,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.4.0"
+version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93ead53efc7ea8ed3cfb0c79fc8023fbb782a5432b52830b6518941cebe6505c"
+checksum = "68b900aa2f7301e21c36462b170ee99994de34dff39a4a6a528e80e7376d07e5"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.5",
@@ -4122,9 +4122,9 @@ dependencies = [
 
 [[package]]
 name = "object"
-version = "0.36.3"
+version = "0.36.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27b64972346851a39438c60b341ebc01bba47464ae329e55cf343eb93964efd9"
+checksum = "084f1a5821ac4c651660a94a7153d27ac9d8a53736203f58b31945ded098070a"
 dependencies = [
  "memchr",
 ]
@@ -4269,7 +4269,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
 dependencies = [
  "fixedbitset",
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
 ]
 
 [[package]]
@@ -4568,9 +4568,9 @@ dependencies = [
 
 [[package]]
 name = "psm"
-version = "0.1.21"
+version = "0.1.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5787f7cda34e3033a72192c018bc5883100330f362ef279a8cbccfce8bb4e874"
+checksum = "3b1f9bf148c15500d44581654fb9260bc9d82970f3ef777a79a40534f6aa784f"
 dependencies = [
  "cc",
 ]
@@ -4616,9 +4616,9 @@ dependencies = [
 
 [[package]]
 name = "quinn"
-version = "0.11.3"
+version = "0.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b22d8e7369034b9a7132bc2008cac12f2013c8132b45e0554e6e20e2617f2156"
+checksum = "a2d2fb862b7ba45e615c1429def928f2e15f815bdf933b27a2d3824e224c1f46"
 dependencies = [
  "bytes",
  "futures-io",
@@ -4635,9 +4635,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.11.6"
+version = "0.11.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba92fb39ec7ad06ca2582c0ca834dfeadcaf06ddfc8e635c80aa7e1c05315fdd"
+checksum = "ea0a9b3a42929fad8a7c3de7f86ce0814cfa893328157672680e9fb1145549c5"
 dependencies = [
  "bytes",
  "rand 0.8.5",
@@ -4889,7 +4889,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webpki-roots 0.26.3",
+ "webpki-roots 0.26.5",
  "windows-registry",
 ]
 
@@ -5211,7 +5211,7 @@ version = "0.9.34+deprecated"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
 dependencies = [
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "itoa",
  "ryu",
  "serde",
@@ -5846,7 +5846,7 @@ version = "0.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "396e4d48bbb2b7554c944bde63101b5ae446cff6ec4a24227428f15eb72ef338"
 dependencies = [
- "indexmap 2.4.0",
+ "indexmap 2.5.0",
  "toml_datetime",
  "winnow",
 ]
@@ -6565,9 +6565,9 @@ checksum = "5f20c57d8d7db6d3b86154206ae5d8fba62dd39573114de97c2cb0578251f8e1"
 
 [[package]]
 name = "webpki-roots"
-version = "0.26.3"
+version = "0.26.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd7c23921eeb1713a4e851530e9b9756e4fb0e89978582942612524cf09f01cd"
+checksum = "0bd24728e5af82c6c4ec1b66ac4844bdf8156257fccda846ec58b42cd0cdbe6a"
 dependencies = [
  "rustls-pki-types",
 ]
