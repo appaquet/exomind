@@ -23,19 +23,10 @@ jobs:
             os: ubuntu-latest
             bin: exo
             cross: true
-          - target: x86_64-apple-darwin
-            os: macos-14
-            bin: exo
-            cross: false
           - target: aarch64-apple-darwin
             os: macos-14
             bin: exo
             cross: false
-          # TODO: Enable back when Rust v1.70 is released
-          # - target: x86_64-pc-windows-msvc
-          #   os: windows-latest
-          #   bin: exo.exe
-          #   cross: false
 
     runs-on: ${{ matrix.pair.os }}
 
@@ -78,7 +69,7 @@ jobs:
           if-no-files-found: error
 
   web_client:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
