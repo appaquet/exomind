@@ -26,7 +26,7 @@ mkdir -p $EXOCORE_IOS_LIB_DIR/header
 
 # Build static libs
 pushd $EXOCORE_C_ROOT
-SIM_TARGETS="aarch64-apple-ios-sim,x86_64-apple-ios"
+SIM_TARGETS="aarch64-apple-ios-sim"
 cargo lipo $CARGO_ARGS --targets $SIM_TARGETS 
 mkdir -p $EXOCORE_IOS_LIB_DIR/libs/sim
 cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/sim
