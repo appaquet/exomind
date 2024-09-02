@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 use crate::{IfEvent, IpNet, Ipv4Net, Ipv6Net};
 use core_foundation::array::CFArray;
 use core_foundation::runloop::{kCFRunLoopCommonModes, CFRunLoop};

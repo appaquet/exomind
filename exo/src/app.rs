@@ -14,7 +14,7 @@ use exocore_core::{
 };
 use exocore_protos::{apps::Manifest, core::CellApplicationConfig};
 use tempfile::{tempdir_in, TempDir};
-use zip::write::FileOptions;
+use zip::write::SimpleFileOptions;
 
 use crate::{
     term::{print_action, print_error, print_info, print_success, print_warning, style_value},
@@ -110,7 +110,7 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
     let mut zip_archive = zip::ZipWriter::new(zip_file_buf);
 
     zip_archive
-        .start_file("app.yaml", FileOptions::default())
+        .start_file("app.yaml", SimpleFileOptions::default())
         .expect("Couldn't start zip file");
     manifest
         .write_yaml(&mut zip_archive)
@@ -118,7 +118,7 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
 
     if let Some(module) = &manifest.module {
         zip_archive
-            .start_file(&module.file, FileOptions::default())
+            .start_file(&module.file, SimpleFileOptions::default())
             .expect("Couldn't start zip file");
 
         let mut module_file = File::open(&module.file).expect("Couldn't open app module");
@@ -128,7 +128,7 @@ fn cmd_package(_ctx: &Context, _app_opts: &AppOptions, pkg_opts: &PackageOptions
     for schema in &manifest.schemas {
         if let Some(exocore_protos::apps::manifest_schema::Source::File(file)) = &schema.source {
             zip_archive
-                .start_file(file, FileOptions::default())
+                .start_file(file, SimpleFileOptions::default())
                 .expect("Couldn't start zip file");
 
             let abs_file = app_dir.join(file);
