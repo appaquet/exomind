@@ -166,6 +166,6 @@ jobs:
 
           TAG="${GITHUB_REF##*/}"
           echo "Creating release for tag $TAG"
-          gh release create $TAG --title "$TAG" --notes "Release $TAG" --target $TAG ${assets[@]}
+          gh release create $TAG ${assets[@]}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
