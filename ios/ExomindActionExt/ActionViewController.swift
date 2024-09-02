@@ -17,10 +17,11 @@ class ActionViewController: UIViewController {
             let inputItem = item as! NSExtensionItem
 
             for provider: Any in inputItem.attachments! {
+                let title = inputItem.attributedTitle?.string ?? inputItem.attributedContentText?.string
                 let itemProvider = provider as! NSItemProvider
                 itemProvider.loadItem(forTypeIdentifier: "public.url", options: nil, completionHandler: { (data, err) -> Void in
                     if let url = data as? URL {
-                        let title = inputItem.attributedTitle?.string ?? inputItem.attributedContentText?.string ?? url.absoluteString
+                        let title = title ?? url.absoluteString
                         ExtensionUtils.createLinkObject(url: url.absoluteString, title: title) {
                             DispatchQueue.main.async {
                                 self.messageLabel.text = "Added!!"

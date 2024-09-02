@@ -1,4 +1,4 @@
-platform :ios, '14.0'
+platform :ios, '17.0'
 use_frameworks!
 
 target 'Exomind' do
@@ -13,27 +13,27 @@ target 'Exomind' do
   pod 'AppCenter'
   pod 'Introspect'
 
-  pod 'Exocore', '0.1.25'
+  # pod 'Exocore', '0.1.25'
   # pod 'Exocore', :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.25/exocore-ios.tar.gz'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.26/exocore-ios.tar.gz'
 end
 
 target 'ExomindActionExt' do
   pod 'KeychainSwift', '~> 19.0'
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', '0.1.25'
+  # pod 'Exocore', '0.1.25'
   # pod 'Exocore' , :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.25/exocore-ios.tar.gz'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.26/exocore-ios.tar.gz'
 end
 
 target 'ExomindTests' do
   pod 'SwiftyJSON', '~> 5.0.1'
   pod 'SwiftProtobuf', '~> 1.10'
 
-  pod 'Exocore', '0.1.25'
+  # pod 'Exocore', '0.1.25'
   # pod 'Exocore', :path => '../../exocore'
-  # pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.25/exocore-ios.tar.gz'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.26/exocore-ios.tar.gz'
 end
 
 
@@ -42,7 +42,7 @@ end
 post_install do |pi|
     pi.pods_project.targets.each do |t|
       t.build_configurations.each do |config|
-        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
       end
     end
 end

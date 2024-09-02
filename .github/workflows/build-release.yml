@@ -23,17 +23,9 @@ jobs:
             os: ubuntu-latest
             bin: exm
             cross: true
-          - target: x86_64-apple-darwin
-            os: macos-14
-            bin: exm
-            cross: false
           - target: aarch64-apple-darwin
             os: macos-14
             bin: exm
-            cross: false
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            bin: exm.exe
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
@@ -153,7 +145,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, ubuntu-latest, windows-latest]
+        os: [macos-14, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v4
