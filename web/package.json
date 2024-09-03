@@ -134,7 +134,7 @@
     "cookie-parser": "^1.4.6",
     "css-loader": "^5.2.7",
     "electron": "^31.1.0",
-    "electron-builder": "^24.6.4",
+    "electron-builder": "^25.0.5",
     "electron-webpack": "^2.8.2",
     "eslint": "^8.49.0",
     "eslint-plugin-deprecation": "^2.0.0",
