@@ -35,7 +35,7 @@ jobs:
           TAG="${{ github.event.inputs.ref }}"
 
           mkdir $GITHUB_WORKSPACE/assets && cd $GITHUB_WORKSPACE/assets
-          hub release download $TAG
+          gh release download $TAG
 
           tar -zxf exo.x86_64-unknown-linux-gnu.tar.gz
           mv exo exo-amd64

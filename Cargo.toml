@@ -76,7 +76,6 @@ members = [
   "clients/web",
   "clients/android",
   "clients/c",
-  "3rd/if-watch",
 ]
 
 [profile.production]
