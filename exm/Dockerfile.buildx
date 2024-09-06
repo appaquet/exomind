@@ -1,0 +1,10 @@
+FROM debian:buster-slim
+
+ARG TARGETPLATFORM
+ARG TARGETARCH
+
+RUN echo "Building for platform $TARGETPLATFORM arch $TARGETARCH"
+COPY "exm-$TARGETARCH" /usr/local/bin/exm
+
+WORKDIR /volume
+ENTRYPOINT ["/usr/local/bin/exm"]

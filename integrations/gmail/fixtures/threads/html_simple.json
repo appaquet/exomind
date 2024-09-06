@@ -1,0 +1,69 @@
+{
+  "historyId": "32145170",
+  "id": "17199eb1b9ffdc7b",
+  "messages": [
+    {
+      "historyId": "32145170",
+      "id": "17199eb1b9ffdc7b",
+      "internalDate": "1587425236000",
+      "labelIds": [
+        "UNREAD",
+        "CATEGORY_UPDATES",
+        "INBOX"
+      ],
+      "payload": {
+        "body": {
+          "size": 0
+        },
+        "filename": "",
+        "headers": [
+          {
+            "name": "Subject",
+            "value": "Some subject"
+          },
+          {
+            "name": "To",
+            "value": "some@one.com"
+          },
+          {
+            "name": "From",
+            "value": "From Someone <some@email.com>"
+          },
+          {
+            "name": "Date",
+            "value": "Tue, 21 Apr 2020 00:27:16 +0100"
+          },
+          {
+            "name": "Content-Type",
+            "value": "multipart/alternative; boundary=\"--178AF9D9BD71E59F761931FE8\""
+          }
+        ],
+        "mimeType": "multipart/alternative",
+        "partId": "",
+        "parts": [
+          {
+            "body": {
+              "data": "PGh0bWw-PGJvZHk-U29tZSBodG1sPC9ib2R5PjwvaHRtbD4K"
+            },
+            "filename": "",
+            "headers": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=\"UTF-8\""
+              },
+              {
+                "name": "Content-Transfer-Encoding",
+                "value": "quoted-printable"
+              }
+            ],
+            "mimeType": "text/html",
+            "partId": "0"
+          }
+        ]
+      },
+      "sizeEstimate": 44423,
+      "snippet": "Some snippet",
+      "threadId": "17199eb1b9ffdc7b"
+    }
+  ]
+}

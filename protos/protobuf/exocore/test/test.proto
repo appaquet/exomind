@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package exocore.test;
+
+import "exocore/store/options.proto";
+import "exocore/store/entity.proto";
+import "google/protobuf/timestamp.proto";
+
+message TestMessage {
+    option (exocore.short_name) = "test";
+
+    string string1 = 1 [(exocore.text) = true];
+
+    string string2 = 2 [(exocore.text) = false];
+
+    string string3 = 12 [(exocore.indexed) = true];
+
+    TestStruct struct1 = 3 [(exocore.indexed) = true];
+
+    oneof fields {
+        string oneof_string1 = 4;
+        uint32 oneof_int1 = 5;
+    }
+
+    google.protobuf.Timestamp date1 = 8 [(exocore.indexed) = true];
+
+    google.protobuf.Timestamp date2 = 9 [(exocore.indexed) = false];
+
+    google.protobuf.Timestamp date3 = 17 [(exocore.indexed) = true, (exocore.sorted) = true];
+
+    uint32 uint1 = 10 [(exocore.indexed) = true];
+
+    uint32 uint2 = 11 [(exocore.indexed) = false];
+
+    uint32 uint3 = 18 [(exocore.indexed) = true, (exocore.sorted) = true];
+
+    int32 int1 = 15 [(exocore.indexed) = true];
+
+    int32 int2 = 16 [(exocore.indexed) = false];
+
+    int32 int3 = 19 [(exocore.indexed) = true, (exocore.sorted) = true];
+
+    exocore.store.Reference ref1 = 13 [(exocore.indexed) = true];
+
+    exocore.store.Reference ref2 = 14;
+
+    string grouped1 = 20 [(exocore.field_group) = 1];
+
+    string grouped2 = 21 [(exocore.field_group) = 1, (exocore.field_group) = 2];
+
+    map<string, string> map1 = 22;
+}
+
+message TestStruct {
+    string string1 = 1 [(exocore.text) = true];
+}
+
+message TestMessage2 {
+    string string1 = 1 [(exocore.text) = true];
+
+    string string2 = 2 [(exocore.text) = false];
+}

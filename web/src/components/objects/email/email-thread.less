@@ -1,0 +1,157 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-component.email-thread {
+  .thread {
+    .make-list();
+
+    overflow: scroll;
+    .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
+
+    outline: none !important; // prevent tabindex outline on focus
+
+    padding-bottom: @entity-component-header-height; // make sure we have plenty of space bellow for scroll
+    height: 100%;
+
+    & > li {
+      @extra-padding-between: 5px;
+      padding: @entity-component-padding-between + @extra-padding-between
+        @entity-component-padding-side;
+      border-bottom: var(--entity-component-list-separator-border);
+      position: relative;
+      display: block;
+
+      .preview-header {
+        position: relative;
+        overflow: hidden;
+        height: 20px;
+        cursor: pointer;
+        .from {
+          display: inline-block;
+        }
+        .snippet,
+        .to {
+          font-weight: normal;
+          margin-left: 5px;
+          font-size: 0.8em;
+        }
+        .time {
+          position: absolute;
+          top: 3px;
+          right: 15px;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-item-fg);
+          padding-left: 10px;
+          padding-right: 5px;
+          font-size: 11px;
+        }
+        .header-controls {
+          position: absolute;
+          top: 1px;
+          right: 0;
+          text-align: center;
+          display: block;
+          width: 15px;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-item-fg);
+          cursor: pointer;
+          .icon {
+            .icon-font-awesome("plus-square-o");
+            font-size: 14px;
+          }
+        }
+      }
+
+      &.closed:hover {
+        background: var(--entity-component-bg-hover);
+        .time {
+          background: var(--entity-component-bg-hover);
+        }
+        .header-controls {
+          background: var(--entity-component-bg-hover);
+        }
+      }
+
+      &.closed {
+        background: var(--entity-component-bg-disabled);
+        .time {
+          background: var(--entity-component-bg-disabled);
+        }
+        .header-controls {
+          background: var(--entity-component-bg-disabled);
+        }
+      }
+
+      &.opened {
+        .preview-header {
+          border-bottom: 1px solid #f6f6f6;
+          font-weight: bold;
+          margin-bottom: 5px;
+        }
+        .object-body {
+          min-height: 100px;
+        }
+      }
+
+      &.collapsed {
+        padding: 5px 0;
+        background: var(--entity-component-bg-disabled);
+
+        .line {
+          width: 100%;
+          margin: 5px 0;
+          border: var(--entity-component-list-separator-border);
+          height: 0;
+        }
+
+        .count {
+          .center-vertical-element();
+          left: 20px;
+          background: var(--entity-component-header-bg);
+          color: var(--body-fg);
+          width: 20px;
+          height: 20px;
+          border-radius: 20px;
+          font-size: 10px;
+          text-align: center;
+          line-height: 20px;
+        }
+      }
+
+      .object-body {
+        padding-bottom: 50px; // enough space for email controls to appear non awklardly
+
+        .email-body {
+          // make sure text is always good on dark mode
+          color: @body-fg;
+        }
+
+        .more {
+          position: relative;
+          margin-top: 10px;
+          cursor: pointer;
+          width: 25px;
+          height: 15px;
+          border: 1px solid #d0d0d0;
+          .icon {
+            .icon-font-awesome("ellipsis-h");
+            .center-element();
+            color: #d0d0d0;
+          }
+        }
+      }
+    }
+  }
+}
+
+:root[data-theme="theme-dark"] {
+  .entity-component.email-thread .email-body {
+    // See https://dev.to/akhilarjun/one-line-dark-mode-using-css-24li
+    filter: invert(1) hue-rotate(180deg);
+
+    // Invert back images
+    img, div[style*="background-image"] {
+      filter: invert(1) hue-rotate(180deg);
+    }
+  }
+}

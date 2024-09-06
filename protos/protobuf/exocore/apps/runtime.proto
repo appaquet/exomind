@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package exocore.apps;
+
+// Message sent to application running in WASM from runtime.
+message InMessage {
+  enum InMessageType {
+    INVALID = 0;
+    STORE_ENTITY_RESULTS = 1;
+    STORE_MUTATION_RESULT = 2;
+  }
+
+  InMessageType type = 1;
+
+  // if message is a response to a previous outgoing message, this identifier
+  // will be the same as the outgoing message
+  uint32 rendez_vous_id = 2;
+
+  bytes data = 3;
+
+  string error = 4;
+}
+
+// Message sent from application running in WASM to runtime.
+message OutMessage {
+  enum OutMessageType {
+    INVALID = 0;
+    STORE_ENTITY_QUERY = 1;
+    STORE_MUTATION_REQUEST = 2;
+  }
+
+  OutMessageType type = 1;
+
+  // if message require a response, id that will be used to match
+  // response back to callee
+  uint32 rendez_vous_id = 2;
+
+  bytes data = 3;
+}
+
+enum MessageStatus {
+  MESSAGE_STATUS_OK = 0;
+  MESSAGE_STATUS_UNHANDLED = 1;
+  MESSAGE_STATUS_DECODE_ERROR = 2;
+}

@@ -1,0 +1,49 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.bottom-menu {
+  .center-horizontal-element();
+
+  bottom: 10px;
+  height: 45px;
+  padding: 5px;
+  position: absolute;
+  white-space: nowrap; // prevent line break and icons wrapping on second line
+
+  background-color: var(--contextual-menu-bg);
+  color: var(--contextual-menu-fg);
+  border: var(--contextual-menu-border);
+  border-radius: 5px;
+
+  .shadow-z-3();
+
+  ul {
+    .make-list();
+    li {
+      .make-list-item();
+
+      display: inline-block;
+      height: 35px;
+
+      &.action {
+        margin: 0 5px;
+        padding: 8px 0;
+        width: 35px;
+        text-align: center;
+        border-radius: 5px;
+        cursor: pointer;
+
+        &:hover {
+          background-color: var(--contextual-menu-bg-hover);
+        }
+      }
+
+      &.divider {
+        cursor: default;
+        margin-left: 4px;
+        border-left: var(--contextual-menu-border);
+        height: 20px;
+      }
+    }
+  }
+}

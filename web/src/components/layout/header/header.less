@@ -1,0 +1,47 @@
+@import (reference) "../../../style/mixins.less";
+
+#header {
+  background: @navbar-bg;
+  .shadow-z-1();
+
+  .container-fluid {
+    .make-row();
+
+    .search-col {
+      .make-sm-column-offset(2);
+      .make-md-column-offset(2);
+
+      .make-xs-column(12);
+      .make-sm-column(8);
+      .make-md-column(8);
+
+      .center-vertical-element();
+
+      // Note: To fix alignment of search box with columns, see columns.less
+
+      .input-group {
+        width: 100%;
+        position: relative;
+        background: fadeout(white, 90%);
+
+        .icon {
+          position: absolute;
+          color: @navbar-fg;
+          top: 1px;
+          left: -2px;
+          border: none;
+          background: none;
+        }
+
+        input {
+          background: none;
+          border: none;
+          height: 28px;
+          color: @navbar-fg;
+          font-size: 13px;
+          padding-left: 30px;
+        }
+      }
+    }
+  }
+}

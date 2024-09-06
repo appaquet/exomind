@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19529" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19519"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Entity View Controller-->
+        <scene sceneID="f6v-tQ-Gid">
+            <objects>
+                <viewController storyboardIdentifier="EntityViewController" id="qL7-9E-tda" customClass="EntityViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="9yr-cB-kTY">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="wly-Xg-aNf"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                    <connections>
+                        <segue destination="oCJ-fT-ikc" kind="show" identifier="showCollectionViewController" id="9yF-QM-ilN"/>
+                        <segue destination="WvS-tc-XhX" kind="show" identifier="showEmailViewController" id="AAl-j3-gHa"/>
+                        <segue destination="dxD-Bz-3pH" kind="show" identifier="showEMailThreadViewController" id="gDx-5b-ZMn"/>
+                        <segue destination="mAW-lj-BYs" kind="show" identifier="showLinkViewController" id="kT4-lE-hqb"/>
+                        <segue destination="eVP-LY-YbG" kind="show" identifier="showTaskViewController" id="kda-bl-rRT"/>
+                        <segue destination="Ulk-7O-j3K" kind="show" identifier="showNoteViewController" id="rvy-fW-IBa"/>
+                        <segue destination="uQL-4e-TUW" kind="show" identifier="showNewDraftEmailViewController" id="fnF-p1-k5T"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="2iJ-FH-uI8" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1719" y="2740"/>
+        </scene>
+        <!--Collection View Controller-->
+        <scene sceneID="3ic-dN-D5D">
+            <objects>
+                <viewController storyboardIdentifier="CollectionViewController" id="oCJ-fT-ikc" customClass="CollectionViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="sIS-UZ-uTy">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="z17-Rd-f2q"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="DiO-9G-1Fr" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2710" y="3688"/>
+        </scene>
+        <!--Email View Controller-->
+        <scene sceneID="nby-3M-BHD">
+            <objects>
+                <viewController storyboardIdentifier="EmailViewController" id="WvS-tc-XhX" customClass="EmailViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="iX0-zy-djU">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="ZZu-KO-XQF"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="wIs-Ot-CZS" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-1378" y="3680"/>
+        </scene>
+        <!--Email Thread View Controller-->
+        <scene sceneID="Lyo-9Y-0ma">
+            <objects>
+                <tableViewController storyboardIdentifier="EmailThreadViewController" id="dxD-Bz-3pH" customClass="EmailThreadViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="grouped" separatorStyle="default" rowHeight="100" sectionHeaderHeight="5" sectionFooterHeight="5" id="kT2-dj-UTw">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <prototypes>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="collapsed" rowHeight="47" id="Pa3-Mx-pfv" userLabel="collapsed" customClass="EmailThreadClosedTableViewCell" customModule="Exomind" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="49.5" width="375" height="47"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="Pa3-Mx-pfv" id="AwW-UD-AIp">
+                                    <rect key="frame" x="0.0" y="0.0" width="375" height="47"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="249" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="7gR-Yb-Pd9">
+                                            <rect key="frame" x="16" y="11" width="311" height="11"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="999" verticalCompressionResistancePriority="999" text="Date" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="9xh-1V-hcs">
+                                            <rect key="frame" x="330" y="11" width="29" height="16"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" text="Snippet" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0bT-bK-CQc">
+                                            <rect key="frame" x="16" y="25" width="343" height="16"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
+                                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                                    <constraints>
+                                        <constraint firstItem="0bT-bK-CQc" firstAttribute="leading" secondItem="AwW-UD-AIp" secondAttribute="leadingMargin" id="2iE-zz-eYK"/>
+                                        <constraint firstItem="7gR-Yb-Pd9" firstAttribute="top" secondItem="AwW-UD-AIp" secondAttribute="topMargin" id="JGD-bI-KON"/>
+                                        <constraint firstItem="9xh-1V-hcs" firstAttribute="top" secondItem="7gR-Yb-Pd9" secondAttribute="top" id="cRU-CF-e9X"/>
+                                        <constraint firstItem="7gR-Yb-Pd9" firstAttribute="leading" secondItem="AwW-UD-AIp" secondAttribute="leadingMargin" id="f8C-cv-brL"/>
+                                        <constraint firstItem="0bT-bK-CQc" firstAttribute="top" secondItem="7gR-Yb-Pd9" secondAttribute="bottom" constant="3" id="gg7-JW-um4"/>
+                                        <constraint firstItem="9xh-1V-hcs" firstAttribute="trailing" secondItem="AwW-UD-AIp" secondAttribute="trailingMargin" id="sQw-gF-UC4"/>
+                                        <constraint firstAttribute="bottomMargin" secondItem="0bT-bK-CQc" secondAttribute="bottom" constant="-5" id="wyP-yB-X2d"/>
+                                        <constraint firstItem="9xh-1V-hcs" firstAttribute="leading" secondItem="7gR-Yb-Pd9" secondAttribute="trailing" constant="3" id="xtq-l2-qEG"/>
+                                        <constraint firstItem="0bT-bK-CQc" firstAttribute="trailing" secondItem="AwW-UD-AIp" secondAttribute="trailingMargin" id="zhN-Nh-kvg"/>
+                                    </constraints>
+                                </tableViewCellContentView>
+                                <connections>
+                                    <outlet property="date" destination="9xh-1V-hcs" id="uo3-fR-O59"/>
+                                    <outlet property="snippet" destination="0bT-bK-CQc" id="c31-9J-AGZ"/>
+                                    <outlet property="title" destination="7gR-Yb-Pd9" id="DvR-ru-69j"/>
+                                </connections>
+                            </tableViewCell>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="attachments" rowHeight="47" id="oeQ-F5-UJB" userLabel="attachments" customClass="EmailThreadAttachmentTableViewCell" customModule="Exomind" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="96.5" width="375" height="47"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="oeQ-F5-UJB" id="pn8-Jf-nKa">
+                                    <rect key="frame" x="0.0" y="0.0" width="375" height="47"/>
+                                    <autoresizingMask key="autoresizingMask"/>
+                                </tableViewCellContentView>
+                            </tableViewCell>
+                        </prototypes>
+                        <connections>
+                            <outlet property="dataSource" destination="dxD-Bz-3pH" id="zOP-vh-Xcx"/>
+                            <outlet property="delegate" destination="dxD-Bz-3pH" id="9sD-CJ-5C6"/>
+                        </connections>
+                    </tableView>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="qZC-8l-eMw" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-730" y="3680"/>
+        </scene>
+        <!--Note View Controller-->
+        <scene sceneID="L1n-fq-bqQ">
+            <objects>
+                <viewController storyboardIdentifier="NoteViewController" id="Ulk-7O-j3K" customClass="NoteViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="4az-6k-QmA">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="bJq-I4-Uxx"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="J96-1f-iox" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-3356" y="3688"/>
+        </scene>
+        <!--Link View Controller-->
+        <scene sceneID="2OA-jN-HHn">
+            <objects>
+                <viewController storyboardIdentifier="LinkViewController" id="mAW-lj-BYs" customClass="LinkViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="oKM-mw-xs1">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <wkWebView contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7De-1q-0CL">
+                                <rect key="frame" x="-4" y="-64" width="383" height="760"/>
+                                <color key="backgroundColor" systemColor="secondarySystemBackgroundColor"/>
+                                <wkWebViewConfiguration key="configuration">
+                                    <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
+                                    <wkPreferences key="preferences"/>
+                                </wkWebViewConfiguration>
+                            </wkWebView>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="Cba-Pg-kZM"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="Cba-Pg-kZM" firstAttribute="bottom" secondItem="7De-1q-0CL" secondAttribute="bottom" constant="-49" id="1k3-pa-1QW"/>
+                            <constraint firstItem="7De-1q-0CL" firstAttribute="leading" secondItem="oKM-mw-xs1" secondAttribute="leadingMargin" constant="-20" id="FO1-Ek-Pad"/>
+                            <constraint firstItem="7De-1q-0CL" firstAttribute="top" secondItem="Cba-Pg-kZM" secondAttribute="top" constant="-64" id="M9c-Ob-Mjo"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="7De-1q-0CL" secondAttribute="trailing" constant="-20" id="gk2-8p-yfn"/>
+                            <constraint firstItem="7De-1q-0CL" firstAttribute="leading" secondItem="oKM-mw-xs1" secondAttribute="leadingMargin" constant="20" id="qYf-kD-SwG"/>
+                        </constraints>
+                        <variation key="default">
+                            <mask key="constraints">
+                                <exclude reference="qYf-kD-SwG"/>
+                            </mask>
+                        </variation>
+                    </view>
+                    <connections>
+                        <outlet property="webView" destination="7De-1q-0CL" id="zXQ-lj-zBU"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="YBy-Vo-J5C" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-70" y="3660"/>
+        </scene>
+        <!--Task View Controller-->
+        <scene sceneID="A8M-fw-OrY">
+            <objects>
+                <viewController storyboardIdentifier="TaskViewController" id="eVP-LY-YbG" customClass="TaskViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="6FD-Tu-6A1">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Cnl-qN-jf1">
+                                <rect key="frame" x="6" y="51" width="363" height="34"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <textInputTraits key="textInputTraits"/>
+                                <connections>
+                                    <action selector="nameChanged:" destination="eVP-LY-YbG" eventType="editingChanged" id="gMg-j9-71j"/>
+                                </connections>
+                            </textField>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Task name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="c7C-HX-0iy">
+                                <rect key="frame" x="6" y="20" width="82" height="21"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                        </subviews>
+                        <viewLayoutGuide key="safeArea" id="6Xl-vk-SLm"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <constraints>
+                            <constraint firstItem="Cnl-qN-jf1" firstAttribute="top" secondItem="c7C-HX-0iy" secondAttribute="bottom" constant="10" id="4IG-8u-VGd"/>
+                            <constraint firstItem="c7C-HX-0iy" firstAttribute="top" secondItem="6Xl-vk-SLm" secondAttribute="top" constant="20" id="MFB-GU-iy8"/>
+                            <constraint firstItem="c7C-HX-0iy" firstAttribute="leading" secondItem="6FD-Tu-6A1" secondAttribute="leadingMargin" constant="-10" id="Ux9-zp-rrt"/>
+                            <constraint firstAttribute="trailingMargin" secondItem="Cnl-qN-jf1" secondAttribute="trailing" constant="-10" id="fEB-Ul-vTa"/>
+                            <constraint firstItem="Cnl-qN-jf1" firstAttribute="leading" secondItem="6FD-Tu-6A1" secondAttribute="leadingMargin" constant="-10" id="pgK-XH-7sa"/>
+                        </constraints>
+                    </view>
+                    <connections>
+                        <outlet property="taskNameField" destination="Cnl-qN-jf1" id="md5-jl-qlX"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="WDV-dv-dWL" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2048" y="3680"/>
+        </scene>
+        <!--Draft Email View Controller-->
+        <scene sceneID="AYo-9G-W3w">
+            <objects>
+                <viewController storyboardIdentifier="DraftEmailViewController" id="uQL-4e-TUW" customClass="DraftEmailViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="ri1-Nh-6N3">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="647"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <viewLayoutGuide key="safeArea" id="PVr-ph-78T"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="bym-eE-76r" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="584" y="3660"/>
+        </scene>
+        <!--Entity List View Controller-->
+        <scene sceneID="MbX-8e-Ogs">
+            <objects>
+                <tableViewController storyboardIdentifier="EntityListViewController" id="fvL-AR-CUc" userLabel="Entity List View Controller" customClass="EntityListViewController" customModule="Exomind" customModuleProvider="target" sceneMemberID="viewController">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="77" sectionHeaderHeight="28" sectionFooterHeight="28" id="BgP-Ns-GLn">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                        <inset key="separatorInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
+                        <color key="sectionIndexBackgroundColor" systemColor="systemBackgroundColor"/>
+                        <view key="tableHeaderView" contentMode="scaleToFill" id="dDK-WW-7q1">
+                            <rect key="frame" x="0.0" y="0.0" width="375" height="40"/>
+                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                            <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        </view>
+                        <connections>
+                            <outlet property="dataSource" destination="fvL-AR-CUc" id="kpN-AP-ZYZ"/>
+                            <outlet property="delegate" destination="fvL-AR-CUc" id="oD3-ad-zVu"/>
+                        </connections>
+                    </tableView>
+                    <tabBarItem key="tabBarItem" title="Item" id="dzs-77-uNj"/>
+                    <navigationItem key="navigationItem" id="eZU-Vc-2jn"/>
+                    <connections>
+                        <outlet property="tableView" destination="BgP-Ns-GLn" id="NXe-zu-uRR"/>
+                    </connections>
+                </tableViewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="W66-J3-3YZ" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-4010" y="3688"/>
+        </scene>
+    </scenes>
+    <resources>
+        <systemColor name="secondarySystemBackgroundColor">
+            <color red="0.94901960784313721" green="0.94901960784313721" blue="0.96862745098039216" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

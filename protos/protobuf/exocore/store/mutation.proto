@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package exocore.store;
+
+import "exocore/store/entity.proto";
+
+message MutationRequest {
+    // Mutations to apply.
+    repeated EntityMutation mutations = 1;
+
+    // Waits for mutation to be indexed.
+    bool wait_indexed = 2;
+
+    // Waits for mutation to be indexed and returns the mutated entities.
+    bool return_entities = 3;
+
+    // If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
+    bool common_entity_id = 4;
+}
+
+message MutationResult {
+    // Unique operation ids for each mutations.
+    repeated uint64 operation_ids = 1;
+
+    // Mutated entities if requested.
+    repeated Entity entities = 2;
+}
+
+message EntityMutation {
+    string entity_id = 1;
+
+    oneof mutation {
+        PutTraitMutation put_trait = 2;
+        DeleteTraitMutation delete_trait = 3;
+        DeleteEntityMutation delete_entity = 4;
+        DeleteOperationsMutation delete_operations = 7;
+
+        TestMutation test = 99;
+    }
+}
+
+// Creates or overrides a trait of the entity.
+message PutTraitMutation {
+    Trait trait = 1;
+}
+
+// Deletes a trait of an entity.
+message DeleteTraitMutation {
+    string trait_id = 1;
+}
+
+// Deletes all the traits of an entity, effectively deleting the entity itself.
+message DeleteEntityMutation {
+}
+
+// Deletes mutations of an entity that have an operation id specified in the given list.
+// This mutation is used for index management purpose only since the mutations are not 
+// actually deleted from the chain. Since the chain indices are built in a semi-versioned
+// way, this actually delete the mutations from the indices.
+message DeleteOperationsMutation {
+    repeated uint64 operation_ids = 1;
+}
+
+// Mutation used in tests.
+message TestMutation {
+    bool success = 1;
+}
+
+// Internal message used by entity iterator for external sorting.
+message CommittedEntityMutation {
+    uint64 block_offset = 1;
+
+    uint64 operation_id = 2;
+
+    EntityMutation mutation = 3;
+}

@@ -1,0 +1,96 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.html-editor-controls {
+  ul {
+    .make-list();
+
+    li {
+      .make-list-item();
+      display: inline-block;
+      padding: 6px 7px;
+      margin-right: 2px; 
+      font-size: 10px;
+
+      &:hover {
+        cursor: pointer;
+        background: var(--entity-component-bg-hover);
+      }
+
+      &.active {
+        background: var(--entity-component-bg-selected);
+      }
+
+      .icon {
+        font-size: 14px !important;
+        color: var(--entity-component-item-fg);
+
+        &.bold {
+          .icon-font-awesome('bold');
+        }
+        &.italic {
+          .icon-font-awesome('italic');
+        }
+        &.underline {
+          .icon-font-awesome('underline');
+        }
+        &.strikethrough {
+          .icon-font-awesome('strikethrough');
+        }
+        &.link {
+          .icon-font-awesome('link');
+        }
+        &.header-one, &.header-two, &.header-three, &.header-four {
+          font-weight: bold;
+          line-height: 10px;
+          font-size: 13px;
+          font-style: normal;
+        }
+        &.header-one {
+          &:before {
+            content: "H1"
+          }
+        }
+        &.header-two {
+          &:before {
+            content: "H2"
+          }
+        }
+        &.header-three {
+          &:before {
+            content: "H3"
+          }
+        }
+        &.header-four {
+          &:before {
+            content: "H4"
+          }
+        }
+
+        &.list-ul {
+          .icon-font-awesome('list-ul');
+        }
+        &.list-ol {
+          .icon-font-awesome('list-ol');
+        }
+        &.list-todo {
+          .icon-font-awesome('check-square');
+        }
+        &.quote-right {
+          .icon-font-awesome('quote-right');
+        }
+        &.code {
+          .icon-font-awesome('code');
+        }
+
+        &.indent {
+          .icon-font-awesome('indent');
+        }
+        &.outdent {
+          .icon-font-awesome('outdent');
+        }
+      }
+    }
+  }
+}
+

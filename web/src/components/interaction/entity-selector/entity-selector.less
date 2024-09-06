@@ -1,0 +1,39 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.entity-selector {
+  .scrollable {
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  ul {
+    height: 100%;
+    .make-list();
+
+    li {
+      .make-list-item();
+      padding: 5px;
+      border-bottom: var(--entity-component-list-separator-border);
+      .ellipsis-text-overflow();
+      cursor: pointer;
+
+      &.hovered {
+        background-color: var(--entity-component-bg-hover);
+      }
+
+      .entity-icon {
+        margin-right: 5px;
+      }
+
+      input[type="checkbox"] {
+        margin-right: 5px;
+      }
+
+      .hierarchy-pills {
+        margin-top: 5px;
+        margin-left: 20px;
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-list {
+  .scrollable {
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+
+    .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
+  }
+
+  .list {
+    .make-list();
+    margin-bottom: 0; // because list-group adds margin we don't control
+    padding-bottom: 80px; // enough space for email controls to appear non awklardly
+    min-height: 120%; // so that we can hide the parent type switcher
+
+    & > li {
+      .make-list-item();
+    }
+  }
+
+  .empty {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    .drag-and-drop {
+      height: 100%;
+    }
+    margin: 5px;
+  }
+}

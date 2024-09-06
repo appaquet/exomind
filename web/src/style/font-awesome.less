@@ -1,0 +1,11 @@
+@import "~font-awesome/less/font-awesome.less";
+
+/*
+ * Font awesome icons
+ */
+.icon-font-awesome(@icon, @postfix: '') {
+  .fa();
+  &:before{
+    content: "@{fa-var-@{icon}}@{postfix}";
+  }
+}

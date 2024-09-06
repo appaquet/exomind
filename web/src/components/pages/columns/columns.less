@@ -1,0 +1,234 @@
+@import (reference) "../../../style/mixins.less";
+
+.columns {
+  @columns-gutter: 10px;
+  .make-row(@columns-gutter);
+  margin: 0 5px;
+  padding-bottom: 0;
+  height: 100%;
+  overflow: hidden;
+
+  .column-container {
+    height: 100%;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0); // fixes chrome scrollbar appearing on top
+  }
+
+  &.count-1 {
+    .column-container-0 {
+      // NOTE: See at the end of this file for hamburger menu offset fix
+      .make-xs-column(12, @columns-gutter);
+      .make-md-column-offset(2);
+      .make-md-column(8, @columns-gutter);
+      height: 100%;
+    }
+  }
+  &.count-2 {
+    .column-container-0 {
+      .make-xs-column(1, @columns-gutter);
+      .make-sm-column(2, @columns-gutter);
+      .make-md-column(4, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-1 {
+      .make-xs-column(11, @columns-gutter);
+      .make-sm-column(10, @columns-gutter);
+      .make-md-column(8, @columns-gutter);
+      height: 100%;
+    }
+  }
+  &.count-3 {
+    .column-container-0 {
+      .make-xs-column(1, @columns-gutter);
+      .make-sm-column(2, @columns-gutter);
+      .make-md-column(3, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-1 {
+      .make-xs-column(1, @columns-gutter);
+      .make-sm-column(2, @columns-gutter);
+      .make-md-column(3, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-2 {
+      .make-xs-column(10, @columns-gutter);
+      .make-sm-column(8, @columns-gutter);
+      .make-md-column(6, @columns-gutter);
+      height: 100%;
+    }
+  }
+  &.count-4 {
+    .column-container-0 {
+      .make-xs-column(1, @columns-gutter);
+      .make-md-column(2, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-1 {
+      .make-xs-column(1, @columns-gutter);
+      .make-md-column(2, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-2 {
+      .make-xs-column(1, @columns-gutter);
+      .make-md-column(2, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-3 {
+      .make-xs-column(9, @columns-gutter);
+      .make-md-column(6, @columns-gutter);
+      height: 100%;
+    }
+  }
+  &.count-5 {
+    .column-container-0 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-1 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-2 {
+      .make-xs-column(1, @columns-gutter);
+      .make-md-column(2, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-3 {
+      .make-xs-column(1, @columns-gutter);
+      .make-md-column(2, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-4 {
+      .make-xs-column(8, @columns-gutter);
+      .make-md-column(6, @columns-gutter);
+      height: 100%;
+    }
+  }
+  &.count-6 {
+    .column-container-0 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-1 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-2 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-3 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-4 {
+      .make-xs-column(1, @columns-gutter);
+      .make-md-column(2, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-5 {
+      .make-xs-column(7, @columns-gutter);
+      .make-md-column(6, @columns-gutter);
+      height: 100%;
+    }
+  }
+  &.count-7 {
+    .column-container-0 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-1 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-2 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-3 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-4 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-5 {
+      .make-xs-column(1, @columns-gutter);
+      height: 100%;
+    }
+    .column-container-6 {
+      .make-xs-column(6, @columns-gutter);
+      height: 100%;
+    }
+  }
+
+  /*
+   * Fix z-index for each column so that they appear ok when overlapping
+   */
+  .column-container-0 {
+    z-index: 100;
+    .bottom-menu {
+      z-index: 110;
+    }
+  }
+  .column-container-1 {
+    z-index: 200;
+    .bottom-menu {
+      z-index: 210;
+    }
+  }
+  .column-container-2 {
+    z-index: 300;
+    .bottom-menu {
+      z-index: 310;
+    }
+  }
+  .column-container-3 {
+    z-index: 400;
+    .bottom-menu {
+      z-index: 410;
+    }
+  }
+  .column-container-4 {
+    z-index: 500;
+    .bottom-menu {
+      z-index: 510;
+    }
+  }
+  .column-container-5 {
+    z-index: 600;
+    .bottom-menu {
+      z-index: 610;
+    }
+  }
+  .column-container-6 {
+    z-index: 700;
+    .bottom-menu {
+      z-index: 710;
+    }
+  }
+  .column-container-7 {
+    z-index: 800;
+    .bottom-menu {
+      z-index: 810;
+    }
+  }
+
+  // If a column is hovered, we bump its z-index to appear on top of the others
+  .column-container:hover {
+    z-index: 900;
+    .bottom-menu {
+      z-index: 910;
+    }
+  }
+}
+
+// When we have only 1 column, we make sure that we are centering correctly the column if the hamburger is opened
+.hamburger-open {
+  .columns.count-1 {
+    @media (min-width: @screen-md-min) {
+      margin-left: -@hamburger-width + 7px; // from trial & errors
+    }
+  }
+}

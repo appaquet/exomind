@@ -1,0 +1,8 @@
+mapping {
+  module_name: "Exocore"
+  proto_file_path: "exocore/store/options.proto"
+}
+mapping {
+  module_name: "Exocore"
+  proto_file_path: "exocore/store/entity.proto"
+}

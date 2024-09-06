@@ -1,0 +1,28 @@
+{
+    "manifest_version": 2,
+    "name": "Exomind",
+    "description": "Import into Exomind",
+    "version": "0.1.15",
+    "background": {
+        "scripts": [
+            "event.js"
+        ],
+        "persistent": false
+    },
+    "browser_action": {
+        "default_icon": "icon.png",
+        "default_popup": "popup.html"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{48d7803a-e8bd-47d4-a8f9-17b287549167}",
+            "strict_min_version": "42.0"
+        }
+    },
+    "permissions": [
+        "tabs",
+        "storage",
+        "http://*/*",
+        "https://*/*"
+    ]
+}

@@ -1,0 +1,7 @@
+.idea
+dist
+node_modules/
+chrome_data
+.psync_ignore
+yarn-error.log
+package-lock.json

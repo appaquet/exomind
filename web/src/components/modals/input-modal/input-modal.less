@@ -1,0 +1,31 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.input-modal {
+	@input-modal-bg: @entity-component-header-bg;
+
+	position: absolute;
+	max-width: 90%;
+	min-width: 300px;
+	background: @input-modal-bg;
+	z-index: @z-index-modal;
+	padding: 10px;
+
+	.shadow-z-3();
+
+	.text {
+		text-align: center;
+	}
+
+	.value > input {
+		width: 99%;
+	}
+
+	.buttons {
+        text-align: right;
+        
+        button {
+            margin: 5px 0 0 5px;
+        }
+	}
+}

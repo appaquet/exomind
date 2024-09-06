@@ -1,0 +1,182 @@
+@import (reference) "./variables.less";
+@import "~bootstrap/less/mixins.less";
+
+/*
+ * List resets
+ */
+.make-list() {
+  margin: 0;
+  padding-left: 0;
+}
+.make-list-item() {
+  list-style-type: none;
+  margin: 0;
+}
+
+/*
+ * Shadows
+ */
+.shadow-z-0 {
+  box-shadow: none;
+}
+
+.shadow-z-1 {
+  box-shadow: rgba(0, 0, 0, 0.117647) 0 1px 6px 0, rgba(0, 0, 0, 0.117647) 0 1px 6px 0;
+}
+
+.shadow-z-2 {
+  box-shadow: rgba(0, 0, 0, 0.17) 0 4px 14px 0, rgba(0, 0, 0, 0.160) 0 2px 14px 0;
+}
+
+.shadow-z-3 {
+  box-shadow: rgba(0, 0, 0, 0.2) 0 8px 17px 0, rgba(0, 0, 0, 0.188235) 0 6px 20px 0;
+}
+
+.shadow-z-4 {
+  box-shadow: rgba(0, 0, 0, 0.239216) 0 12px 15px 0, rgba(0, 0, 0, 0.188235) 0 17px 50px 0;
+}
+
+.shadow-z-5 {
+  box-shadow: rgba(0, 0, 0, 0.219608) 0 16px 28px 0, rgba(0, 0, 0, 0.207843) 0 25px 55px 0;
+}
+
+.shadow-z-6 {
+  box-shadow: rgba(0, 0, 0, 0.2) 0 27px 24px 0, rgba(0, 0, 0, 0.219608) 0 40px 77px 0;
+}
+
+/*
+ * Scrollbar
+ */
+.styled-scrollbar(@bg, @fg, @width: 6px) {
+  scrollbar-color: @fg @bg;
+  scrollbar-width: @width;
+  
+  // https://stackoverflow.com/questions/59588519/how-do-you-make-your-own-customize-the-scroll-bar-in-electron
+  &::-webkit-scrollbar {
+    background-color: @bg;
+    width: @width;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: @fg;
+    border-radius: 6px;
+    border: 4px solid @fg;
+    background-clip: content-box;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  &::-webkit-scrollbar-corner {
+    background: @bg;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: @bg;
+  }
+}
+
+
+/*
+ * Alignments
+ */
+.center-element() {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  .translate(-50%, -50%);
+}
+
+.center-vertical-element() {
+  position: absolute;
+  top: 50%;
+  .translate(0, -50%);
+}
+
+.center-horizontal-element() {
+  position: absolute;
+  left: 50%;
+  .translate(-50%, 0);
+}
+
+
+.flex-center() {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.flex-center-vertical() {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flex-center-horizontal() {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+
+
+/*
+ * Misc
+ */
+.ellipsis-text-overflow() {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.img-retina-wp(@file-1x; @file-2x; @width-1x; @height-1x) {
+  background-image: @file-1x;
+  width: @width-1x;
+  height: @height-1x;
+  background-size: @width-1x @height-1x;
+
+  @media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (   min--moz-device-pixel-ratio: 2), only screen and (     -o-min-device-pixel-ratio: 2/1), only screen and (        min-device-pixel-ratio: 2), only screen and (                min-resolution: 192dpi), only screen and (                min-resolution: 2dppx) {
+    background-image: @file-2x;
+  }
+}
+
+/**
+ * Triangles
+ * From: https://github.com/stijnj/less-triangle/blob/master/less-triangle.less
+ */
+.triangle-base() {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  transform: scale(.9999);
+}
+
+.triangle(@direction, @size, @color) {
+  .triangle(@direction, @size * 2, @size, @color);
+}
+
+.triangle(@direction, @width, @height, @color) when (@direction = up) {
+  .triangle-base();
+  border-left: (@width / 2) solid transparent;
+  border-right: (@width / 2) solid transparent;
+  border-bottom: @height solid @color;
+}
+
+.triangle(@direction, @width, @height, @color) when (@direction = down) {
+  .triangle-base();
+  border-left: (@width / 2) solid transparent;
+  border-right: (@width / 2) solid transparent;
+  border-top: @height solid @color;
+}
+
+.triangle(@direction, @width, @height, @color) when (@direction = left) {
+  .triangle-base();
+  border-top: (@width / 2) solid transparent;
+  border-bottom: (@width / 2) solid transparent;
+  border-right: @height solid @color;
+}
+
+.triangle(@direction, @width, @height, @color) when (@direction = right) {
+  .triangle-base();
+  border-top: (@width / 2) solid transparent;
+  border-bottom: (@width / 2) solid transparent;
+  border-left: @height solid @color;
+}

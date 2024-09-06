@@ -1,0 +1,22 @@
+
+.drag-and-drop {
+  position: relative;
+
+  .drop-indicator {
+    position: absolute;
+    background: #a0a0a0;
+    height: 5px;
+
+    top: 0; bottom: inherit; left: 0; right: 0;
+
+    &.after {
+      top: inherit; bottom: 0; left: 0; right: 0;
+    }
+
+    &.into {
+      height: auto;
+      top: 0; bottom: 0; left: 0; right: 0;
+      background: #a0a0a06b;
+    }
+  }
+}

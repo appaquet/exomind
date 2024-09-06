@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+package exocore.core;
+
+import "exocore/apps/manifest.proto";
+import "google/protobuf/wrappers.proto";
+
+message LocalNodeConfig {
+    reserved 5;
+
+    string keypair = 1;
+
+    string public_key = 2;
+
+    string name = 3;
+
+    string id = 4;
+
+    NodeAddresses listen_addresses = 10;
+
+    NodeAddresses addresses = 6;
+
+    repeated NodeCellConfig cells = 7;
+
+    NodeStoreConfig store = 8;
+
+    ChainConfig chain = 9;
+}
+
+message NodeAddresses {
+    repeated string p2p = 1;
+
+    repeated string http = 2;
+}
+
+message NodeCellConfig {
+    reserved 2;
+
+    oneof location {
+       CellConfig inline = 1;
+    }
+
+    string id = 3;
+}
+
+// Entity store configuration for the node (i.e. not global)
+message NodeStoreConfig {
+    // Entity index config.
+    EntityIndexConfig index = 1;
+
+    // Maximum number of queries to execute in parallel.
+    google.protobuf.UInt32Value query_parallelism = 2;
+}
+
+message ChainConfig {
+    // Maximum size in bytes per segment. This is a soft limit since the last
+    // block could overflow that maximum. This should be small enough so
+    // that a few segments can fit in allocable virtual space on 32b
+    // systems. See `segment_max_open` for maximum concurrently opened
+    // segments.
+    google.protobuf.UInt64Value segment_max_size = 1;
+
+    // Maximum number of segments concurrently mmap. On 64b systems, where
+    // virtual memory isn't a problem, this can be high. But on 32b
+    // systems, one should aim to have maximum ~1-2gb of concurrently mmap
+    // segments. See `segment_max_size` for maximum size per segment.
+    google.protobuf.UInt32Value segment_max_open_mmap = 2;
+}
+
+// Configuration of the entity index
+message EntityIndexConfig {
+    // What is the minimum depth that a block needs to be the chain to be
+    // indexed. This is required to lower the odds that we are going to
+    // revert the block if our local chain forked.
+    //
+    // `CommitManagerConfig`.`operations_cleanup_after_block_depth`
+    google.protobuf.UInt64Value chain_index_min_depth = 1;
+
+    // If specified, prevent indexing every new block on each commit.
+    // Operations will be kept in pending index for a bit longer and
+    // preventing the costly chain index modification.
+    google.protobuf.UInt64Value chain_index_depth_leeway = 2;
+
+    // Specifies the interval at which new blocks in the chain get indexed.
+    // New blocks may not necessarily get immediately indexed if they don't
+    // fall in the interval of `chain_index_min_depth` and `chain_index_depth_leeway`.
+    //
+    // Indexation can also be prevented if user queries were recently executed 
+    // (see `chain_index_deferred_query_secs`)
+    //
+    // If '0' is specified, deferred indexation is disabled and blocks are indexed 
+    // when the chain layer emits events.
+    google.protobuf.UInt64Value chain_index_deferred_interval_secs = 6;
+
+    // Specifies the minimum interval to wait before indexing chain blocks
+    // after receiving a user query. It prevents potential slow downs caused
+    // by chain indexation if a user query get executed frequently.
+    google.protobuf.UInt64Value chain_index_deferred_query_secs = 7;
+
+    // Specifies the maximum interval for which indexation may be blocked by
+    // incoming user queries.
+    google.protobuf.UInt64Value chain_index_deferred_max_secs = 8;
+
+    // Configuration for the in-memory traits index that are in the pending store
+    MutationIndexConfig pending_index = 3;
+
+    // Configuration for the persisted traits index that are in the chain
+    MutationIndexConfig chain_index = 4;
+
+    // Configuration for the entity garbage collector.
+    EntityGarbageCollectorConfig garbage_collector = 5;
+}
+
+// Trait index configuration
+message MutationIndexConfig {        
+    // Number of indexing threads.
+    google.protobuf.UInt32Value indexer_num_threads = 1;
+
+    // Maximum heap size of each indexing thread.
+    google.protobuf.UInt32Value indexer_heap_size_bytes = 2;
+
+    // Page size of results iterator.
+    google.protobuf.UInt32Value entity_mutations_cache_size = 3;
+}
+
+// Configuration for entity garbage collector.
+message EntityGarbageCollectorConfig {
+    // How often the garbage collection process will run in seconds.
+    //
+    // Since garbage collection doesn't happen on the whole index, but only on entities
+    // that got flagged during search, it is better to run more often than
+    // less. `GarbageCollectorConfig::queue_size` can be tweaked to control
+    // rate of collection.
+    google.protobuf.UInt32Value run_interval_secs = 1;
+
+    // Size of the queue of entities to be collected.
+    google.protobuf.UInt32Value queue_size = 2;
+}
+
+message CellConfig {
+    reserved 5;
+
+    string public_key = 1;
+
+    string keypair = 2;
+
+    string name = 3;
+
+    string id = 4;
+
+    repeated CellNodeConfig nodes = 6;
+
+    repeated CellApplicationConfig apps = 7;
+}
+
+message CellNodeConfig {
+    NodeConfig node = 1;
+
+    repeated Role roles = 2;
+
+    enum Role {
+        INVALID_ROLE = 0;
+        CHAIN_ROLE = 1;
+        STORE_ROLE = 2;
+        APP_HOST_ROLE = 3;
+    }
+}
+
+message NodeConfig {
+    string public_key = 1;
+
+    string name = 2;
+
+    string id = 3;
+
+    NodeAddresses addresses = 4;
+}
+
+message CellApplicationConfig {
+    reserved 6;
+
+    string name = 1;
+
+    string version = 2;
+
+    string public_key = 3;
+
+    string package_url = 4;
+
+    oneof location {
+        // Manifest is inline within the config.
+        exocore.apps.Manifest inline = 5;
+    }
+}

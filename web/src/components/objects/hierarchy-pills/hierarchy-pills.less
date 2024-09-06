@@ -1,0 +1,78 @@
+@import (reference) "../../../style/mixins.less";
+
+.hierarchy-pills {
+
+  & > ul {
+    .make-list();
+
+    li.pill {
+      .make-list-item();
+
+      color: var(--hierarchy-pills-fg);
+      background-color: var(--hierarchy-pills-bg);
+
+      display: inline-block;
+
+      border-radius: 12px;
+      margin-right: 5px;
+      padding: 0px 5px;
+      height: 20px;
+
+      white-space: nowrap;
+      overflow: hidden;
+
+      max-width: 400px;
+      &:hover {
+        cursor: pointer;
+        max-width: inherit
+      }
+
+      ul {
+        .make-list();
+        display: flex;
+        justify-content: flex-start;
+        height: inherit;
+
+        li {
+          .make-list-item();
+          overflow: hidden;
+          padding: 0 1px;
+          height: inherit;
+
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+
+          .name {
+            display: none;
+            padding: 0 5px;
+          }
+
+          .icon {
+            width: 20px; 
+            height: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+
+          &:hover {
+            .name {
+              display: inline-block;
+            }
+          }
+        }
+
+        li:last-of-type {
+          flex-grow: 1;
+          flex-shrink: 0;
+          max-width: 300px;
+
+          .name {
+            display: inline-block;
+          }
+        }
+      }
+    }
+  }
+}

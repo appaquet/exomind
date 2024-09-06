@@ -1,0 +1,54 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.collection-selector {
+  @collection-selector-filter-height: 30px;
+  @collection-selector-list-margin: 5px;
+
+  position: absolute;
+  height: 400px;
+  width: 400px;
+  max-width: 90%;
+
+  z-index: @z-index-modal;
+  .shadow-z-3();
+
+  background: var(--entity-component-header-bg);
+
+  display: flex;
+  flex-direction: column;
+
+  .collection-selector-header {
+    height: 20px;
+    padding: 2px @collection-selector-list-margin;
+    flex-shrink: 0;
+
+    background: var(--entity-component-header-bg);
+
+    font-weight: bold;
+  }
+
+  .filter {
+    height: 30px;
+    flex-shrink: 0;
+
+    width: 100%;
+    padding: 5px 5px 0 5px;
+    input {
+      border: none;
+      width: 100%;
+      &:focus {
+        outline: none;
+      }
+    }
+  }
+
+  .entity-selector {
+    background: var(--entity-component-bg);
+    height: inherit;
+
+    ul {
+      margin: @collection-selector-list-margin;
+    }
+  }
+}

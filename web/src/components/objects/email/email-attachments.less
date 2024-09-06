@@ -1,0 +1,32 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+ul.email-attachments {
+  .make-list();
+  margin-top: 5px;
+
+  li {
+    .make-list-item();
+    display: inline-block;
+    border: 1px solid #c0c0c0;
+    margin: 5px;
+
+    a, a:active, a:hover {
+      position: relative;
+      display: inline-block;
+      color: var(--entity-component-item-fg);
+      text-decoration: none;
+      padding: 10px 20px;
+
+      .icon {
+        .icon-font-awesome('paperclip');
+        .center-vertical-element();
+        left: 10px;
+        font-size: 16px;
+      }
+      .text {
+        margin-left: 15px;
+      }
+    }
+  }
+}

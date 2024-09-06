@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist/",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "module": "esnext",
+    "target": "es2017",
+    "jsx": "react",
+    "allowJs": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+
+    // needed for mobx https://mobx.js.org/enabling-decorators.html#typescript
+    "experimentalDecorators": true,
+    "useDefineForClassFields": true,
+    "lib": [
+      "es2017",
+      "dom"
+    ]
+  }
+}

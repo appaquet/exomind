@@ -1,0 +1,16 @@
+@import (reference) "../../style/mixins.less";
+
+#modal {
+  background: fadeout(black, 60%);
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: @z-index-modal-background;
+  -webkit-transform: translate3d(0, 0, 0); // fixes chrome scrollbar appearing on top
+
+  .content > div {
+    z-index: @z-index-modal;
+    .center-element();
+  }
+}

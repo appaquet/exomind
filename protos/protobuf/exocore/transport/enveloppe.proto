@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package exocore.transport;
+
+import "google/protobuf/any.proto";
+
+message Envelope {
+    bytes cell_id = 1;
+
+    bytes destination_node = 2;
+
+    bytes source_node = 3;
+
+    // if message require a response, id that will be used to match
+    // response back to callee
+    uint64 rendez_vous_id = 4;
+
+    // deadline of the message (consistent timestamp)
+    uint64 deadline = 5;
+
+    google.protobuf.Any data = 6;
+}
+
+enum ServiceType {
+    SERVICE_TYPE_INVALID = 0;
+    SERVICE_TYPE_META = 1;
+    SERVICE_TYPE_CORE = 3;
+    SERVICE_TYPE_CHAIN = 4;
+    SERVICE_TYPE_STORE = 5;
+    SERVICE_TYPE_APP = 6;
+    SERVICE_TYPE_CLIENT = 7;
+}

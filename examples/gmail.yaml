@@ -1,0 +1,11 @@
+# Path to Google API client secret file (downloaded from Google API Console. See gmail's integration README.md)
+client_secret: client_secret.json
+
+# Path to directory where oauth tokens will be saved
+tokens_directory: gmail_tokens
+
+# Save synchronized fixtures to disk to be used for tests
+save_fixtures: false
+
+# How often inboxes are fully synchronized (fixes incremental problems)
+full_sync_interval: 60m

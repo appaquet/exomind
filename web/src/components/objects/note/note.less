@@ -1,0 +1,25 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.entity-component.note {
+  .object-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+
+    .html-editor-controls {
+      padding-left: 5px;
+      border-bottom: var(--entity-component-border);
+    }
+
+    .html-editor {
+      flex-grow: 1;
+      height: 10px;  // this won't be taken into consideration because of flex, but this fixes scroll caused by the html editor
+      padding: 10px;
+      margin-bottom: 10px;
+
+      overflow-y: scroll;
+      .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
+    }
+  }
+}

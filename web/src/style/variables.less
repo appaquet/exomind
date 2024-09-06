@@ -1,0 +1,173 @@
+@import "~bootstrap/less/variables";
+
+@exomind-primary: #0F76C4;
+@exomind-secondary: #E09626;
+
+@navbar-bg: #3D434F;
+@navbar-fg: #b9b9b9;
+@navbar-height: 40px;
+
+@body-bg: #E2E2E2;
+@body-bg-dark: #181a1d;
+@body-fg: #000000;
+@body-fg-dark: #e1e1e1;
+
+@z-index-modal: 1100; // z-index of header in bootstrap is 1030
+@z-index-modal-background: 1099;
+@z-index-contextual-menu: 1200;
+
+@entity-component-border: 1px solid #D3D3D3;
+@entity-component-border-dark: 1px solid #505050;
+@entity-component-list-separator-border: 1px solid #ebebeb;
+@entity-component-list-separator-border-dark: 1px solid #616161;
+@entity-component-padding-side: 5px;
+@entity-component-padding-between: 5px;
+@entity-component-min-width: 250px;
+@entity-component-bg: #FFFFFF;
+@entity-component-bg-dark: #25292e;
+@entity-component-bg-selected: #e1e2d9;
+@entity-component-bg-selected-dark: #434c54;
+@entity-component-bg-done: #5CB296;
+@entity-component-bg-hover: #F0F0F0;
+@entity-component-bg-hover-dark: #30353a;
+@entity-component-bg-disabled: #F3F3F3;
+@entity-component-bg-disabled-dark: #30373c;
+@entity-component-drag-placeholder-bg: #D3D3D3;
+
+@entity-component-header-bg: #F5F5F5;
+@entity-component-header-bg-dark: #3D434F;
+@entity-component-header-fg: #8a8a8a;
+@entity-component-header-fg-dark: #c4c4c4;
+@entity-component-header-actions-fg: #7e7e7e;
+@entity-component-header-actions-fg-dark: #e1e1e1;
+@entity-component-header-actions-hover-fg: @exomind-secondary;
+@entity-component-header-fg-active: #6d6d6d;
+@entity-component-header-fg-active-dark: #e1e1e1;
+@entity-component-header-height: 35px;
+@entity-component-header-border: 1px solid #E0E0E0;
+@entity-component-header-border-dark: 1px solid #4d4d4d;
+
+@entity-component-item-fg: #000000;
+@entity-component-item-fg-dark: #e1e1e1;
+@entity-component-item-actions-icon-fg: #000000;
+@entity-component-item-actions-icon-fg-dark: #e1e1e1;
+@entity-component-item-indicators-fg: #bdbdbd;
+@entity-component-item-indicators-fg-dark: #646464;
+
+@entity-component-field-pill-fg: #490A3D;
+@entity-component-field-pill-bg: rgb(255, 186, 108);
+
+@hierarchy-pills-fg: #000;
+@hierarchy-pills-bg: #d8d8d8;
+@hierarchy-pills-fg-dark: rgb(214, 214, 214);
+@hierarchy-pills-bg-dark: #4d4d4d;
+
+@object-color-1: #A9CBD1;
+@object-color-2: #E9BD9D;
+@object-color-3: #E7CE94;
+@object-color-4: #939FC5;
+@object-color-5: #A0BA82;
+@object-color-6: #A4C7F0;
+@object-color-7: #C5AB94;
+@object-color-8: #A7F1E0;
+@object-color-9: #E3C4FE;
+@object-color-10: #FEC4C4;
+@object-color-fg: #4e4e4e;
+
+@hamburger-width: 175px;
+@hamburger-bg: #DDDDDD;
+@hamburger-bg-dark: #25292e;
+@hamburger-bg-hover: darken(@hamburger-bg, 2%);
+@hamburger-bg-hover-dark: darken(@hamburger-bg-dark, 2%);
+@hamburger-active-bg: #CCCCCC;
+@hamburger-active-bg-dark: #30363c;
+@hamburger-active-bg-hover: darken(@hamburger-active-bg, 2%);
+@hamburger-active-bg-hover-dark: darken(@hamburger-active-bg-dark, 2%);
+@hamburger-active-fg: @exomind-primary;
+@hamburger-items-text-color: #6A6A6A;
+@hamburger-items-text-color-dark: #9b9b9b;
+@hamburger-items-separator: 1px solid #D5D5D5;
+@hamburger-items-separator-dark: 1px solid #505050;
+
+@contextual-menu-bg: #dfdfdf;
+@contextual-menu-bg-hover: darken(@contextual-menu-bg, 15%);
+@contextual-menu-fg: #000;
+@contextual-menu-border:  1px solid darken(@contextual-menu-bg, 10%);
+@contextual-menu-bg-dark: #575757;
+@contextual-menu-bg-dark-hover: darken(@contextual-menu-bg-dark, 15%);
+@contextual-menu-fg-dark: #fff;
+@contextual-menu-border-dark:  1px solid darken(@contextual-menu-bg-dark, 10%);
+
+:root {
+    --body-bg: @body-bg;
+    --body-fg: @body-fg;
+
+    --entity-component-border: @entity-component-border;
+    --entity-component-list-separator-border: @entity-component-list-separator-border;
+    --entity-component-bg: @entity-component-bg;
+    --entity-component-bg-selected: @entity-component-bg-selected;
+    --entity-component-bg-hover: @entity-component-bg-hover;
+    --entity-component-bg-disabled: @entity-component-bg-disabled;
+
+    --entity-component-header-bg : @entity-component-header-bg;
+    --entity-component-header-fg: @entity-component-header-fg;
+    --entity-component-header-fg-active: @entity-component-header-fg-active;
+    --entity-component-header-actions-fg: @entity-component-header-actions-fg;
+    --entity-component-header-border: @entity-component-header-border;
+
+    --entity-component-item-fg: @entity-component-item-fg;
+    --entity-component-item-actions-icon-fg: @entity-component-item-actions-icon-fg;
+    --entity-component-item-indicators-fg: @entity-component-item-indicators-fg;
+
+    --hierarchy-pills-fg: @hierarchy-pills-fg;
+    --hierarchy-pills-bg: @hierarchy-pills-bg;
+
+    --hamburger-bg: @hamburger-bg;
+    --hamburger-bg-hover: @hamburger-bg-hover;
+    --hamburger-active-bg: @hamburger-active-bg;
+    --hamburger-active-bg-hover: @hamburger-active-bg-hover;
+    --hamburger-items-text-color: @hamburger-items-text-color;
+    --hamburger-items-separator: @hamburger-items-separator;
+
+    --contextual-menu-bg: @contextual-menu-bg;
+    --contextual-menu-fg: @contextual-menu-fg;
+    --contextual-menu-bg-hover: @contextual-menu-bg-hover;
+    --contextual-menu-border: @contextual-menu-border;
+}
+
+:root[data-theme="theme-dark"] {
+    --body-bg: @body-bg-dark;
+    --body-fg: @body-fg-dark;
+
+    --entity-component-border: @entity-component-border-dark;
+    --entity-component-list-separator-border: @entity-component-list-separator-border-dark;
+    --entity-component-bg: @entity-component-bg-dark;
+    --entity-component-bg-selected: @entity-component-bg-selected-dark;
+    --entity-component-bg-hover: @entity-component-bg-hover-dark;
+    --entity-component-bg-disabled: @entity-component-bg-disabled-dark;
+
+    --entity-component-header-bg : @entity-component-header-bg-dark;
+    --entity-component-header-fg: @entity-component-header-fg-dark;
+    --entity-component-header-fg-active: @entity-component-header-fg-active-dark;
+    --entity-component-header-actions-fg: @entity-component-header-actions-fg-dark;
+    --entity-component-header-border: @entity-component-header-border-dark;
+
+    --entity-component-item-fg: @entity-component-item-fg-dark;
+    --entity-component-item-actions-icon-fg: @entity-component-item-actions-icon-fg-dark;
+    --entity-component-item-indicators-fg: @entity-component-item-indicators-fg-dark;
+
+    --hierarchy-pills-fg: @hierarchy-pills-fg-dark;
+    --hierarchy-pills-bg: @hierarchy-pills-bg-dark;
+
+    --hamburger-bg: @hamburger-bg-dark;
+    --hamburger-bg-hover: @hamburger-bg-hover-dark;
+    --hamburger-active-bg: @hamburger-active-bg-dark;
+    --hamburger-active-bg-hover: @hamburger-active-bg-hover-dark;
+    --hamburger-items-text-color: @hamburger-items-text-color-dark;
+    --hamburger-items-separator: @hamburger-items-separator-dark;
+
+    --contextual-menu-bg: @contextual-menu-bg-dark;
+    --contextual-menu-fg: @contextual-menu-fg-dark;
+    --contextual-menu-bg-hover: @contextual-menu-bg-dark-hover;
+    --contextual-menu-border: @contextual-menu-border-dark;
+}

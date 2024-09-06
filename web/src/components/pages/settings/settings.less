@@ -1,0 +1,43 @@
+@import (reference) "../../../style/variables.less";
+@import (reference) "../../../style/mixins.less";
+
+.settings {
+  .center-element();
+
+  ul {
+    background: var(--entity-component-bg);
+    border: var(--entity-component-border);
+
+    .make-list();
+    li {
+      .make-list-item();
+
+      a, a:hover, a:active {
+        display: inline-block;
+        text-decoration: none;
+        color: var(--entity-component-item-fg);
+        padding: 10px;
+        width: 300px;
+
+        .fa {
+          margin-right: 5px;
+        }
+      }
+      a:hover {
+        background: var(--entity-component-bg-hover);
+      }
+
+      border-bottom: var(--entity-component-list-separator-border);
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+  }
+
+  .version {
+    padding-top: 15px;
+    text-align: center;
+    color: var(--entity-component-header-bg);
+  }
+}
+

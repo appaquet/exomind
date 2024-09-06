@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package exomind.base.v1;
+
+import "exocore/store/options.proto";
+import "exocore/store/entity.proto";
+import "google/protobuf/timestamp.proto";
+
+// Fields groups
+//  #1: Fields necessary for search/listing
+
+message Collection {
+    option (exocore.short_name) = "collection";
+
+    string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+
+    string description = 2 [(exocore.text) = true, (exocore.field_group) = 1];
+}
+
+message CollectionChild {
+    exocore.store.Reference collection = 1 [(exocore.indexed) = true, (exocore.field_group) = 1];
+
+    uint64 weight = 2 [(exocore.sorted) = true, (exocore.field_group) = 1];
+}
+
+message Snoozed {
+    google.protobuf.Timestamp until_date = 2 [(exocore.sorted) = true];
+}
+
+message Unread {
+    // Reference to the unread trait of the entity.
+    // Ex: points to the email trait that hasn't been read.
+    exocore.store.Reference entity = 1 [(exocore.field_group) = 1];
+}
+
+enum AccountType {
+    ACCOUNT_TYPE_INVALID = 0;
+    ACCOUNT_TYPE_GMAIL = 1;
+}
+
+enum AccountScope {
+    ACCOUNT_SCOPE_INVALID = 0;
+    ACCOUNT_SCOPE_EMAIL = 1;
+}
+
+message Account {
+    string key = 1;
+    string name = 2;
+    AccountType type = 3;
+    repeated AccountScope scopes = 4;
+    map<string, string> data = 5;
+}
+
+message EmailThread {
+    // TODO: These 2 fields should probably be into a "source" object ?
+    exocore.store.Reference account = 1 [(exocore.field_group) = 1];
+    string source_id = 2 [(exocore.field_group) = 1];
+
+    Contact from = 3 [(exocore.field_group) = 1, (exocore.indexed) = true];
+    string subject = 4 [(exocore.text) = true, (exocore.field_group) = 1];
+    string snippet = 5 [(exocore.text) = true, (exocore.field_group) = 1];
+
+    exocore.store.Reference last_email = 6;
+    bool read = 7 [(exocore.field_group) = 1, deprecated = true];
+}
+
+message Email {
+    option (exocore.short_name) = "email";
+
+    exocore.store.Reference account = 1 [(exocore.field_group) = 1];
+    string source_id = 2 [(exocore.field_group) = 1];
+
+    Contact from = 3 [(exocore.field_group) = 1, (exocore.indexed) = true];
+    google.protobuf.Timestamp received_date = 4 [(exocore.field_group) = 1];
+    repeated Contact to = 5;
+    repeated Contact cc = 6;
+    repeated Contact bcc = 7;
+
+    string subject = 8 [(exocore.text) = true, (exocore.field_group) = 1];
+    string snippet = 9 [(exocore.text) = true, (exocore.field_group) = 1];
+    repeated EmailPart parts = 10;
+    repeated EmailAttachment attachments = 11;
+
+    bool read = 14 [(exocore.field_group) = 1, deprecated = true];
+}
+
+message DraftEmail {
+    exocore.store.Reference account = 1;
+    exocore.store.Reference in_reply_to = 2;
+
+    repeated Contact to = 3;
+    repeated Contact cc = 4;
+    repeated Contact bcc = 5;
+
+    string subject = 6 [(exocore.field_group) = 1];
+    repeated EmailPart parts = 7;
+    repeated EmailAttachment attachments = 8;
+
+    google.protobuf.Timestamp sending_date = 9;
+    google.protobuf.Timestamp sent_date = 10;
+}
+
+message EmailPart {
+    string mime_type = 1;
+    string body = 2;
+}
+
+message EmailAttachment {
+    string key = 1;
+    string name = 2;
+    string mime_type = 3;
+    uint64 size = 4;
+    string inline_placeholder = 5;
+    map<string, string> data = 6;
+}
+
+message Note {
+    option (exocore.short_name) = "note";
+
+    string title = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+    string body = 2 [(exocore.text) = true];
+}
+
+message Contact {
+    string name = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+    string email = 2 [(exocore.text) = true];
+}
+
+message Task {
+    option (exocore.short_name) = "task";
+
+    string title = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+}
+
+message Link {
+    option (exocore.short_name) = "link";
+
+    string url = 1 [(exocore.text) = true, (exocore.field_group) = 1];
+    string title = 2 [(exocore.text) = true, (exocore.field_group) = 1];
+}

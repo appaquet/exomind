@@ -1,0 +1,60 @@
+@import (reference) "../../style/mixins.less";
+@import (reference) "../../style/font-awesome.less";
+
+.entity-component {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  .entity-details {
+    .field {
+      padding: @entity-component-padding-between @entity-component-padding-side;
+      border-bottom: var(--entity-component-border);
+      display: flex;
+      align-items: center; // vertical alignment
+
+      .field-label {
+        color: #C0C0C0;
+        padding-right: 10px;
+        flex-shrink: 0;
+      }
+
+      .field-content {
+        flex-grow: 1;
+
+        &.with-ellipsis {
+          .ellipsis-text-overflow();
+        }
+
+        input {
+          outline: none !important;
+          border: none;
+          padding: 0;
+          width: 100%;
+          background: var(--entity-component-bg);
+          color: var(--entity-component-fg);
+        }
+
+        span {
+          background: var(--entity-component-bg);
+          color: var(--entity-component-fg);
+        }
+
+        select {
+          background: var(--entity-component-bg);
+          color: var(--entity-component-fg);
+        }
+      }
+
+      .pill {
+        background-color: @entity-component-field-pill-bg;
+        color: @entity-component-field-pill-fg;
+        border-radius: 15px;
+        padding: 1px 5px;
+        margin: 2px 5px 2px 0;
+        display: inline-block;
+      }
+    }
+  }
+}

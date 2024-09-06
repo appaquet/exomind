@@ -1,0 +1,80 @@
+@import (reference) "../../../style/variables.less";
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+#hamburger {
+  @scrollbar-width: 5px;
+
+  padding-top: 20px + @navbar-height;
+  background: var(--hamburger-bg);
+
+  overflow-y: scroll;
+  overflow-x: hidden;
+  .styled-scrollbar(var(--hamburger-bg), var(--hamburger-bg-hover), @scrollbar-width);
+
+  & > ul {
+    .make-list();
+    min-width: 115px; // prevent from wrapping content when resizing
+    padding-bottom: 30px;
+
+    & > li {
+      .make-list-item();
+
+      margin-left: 10px;
+      margin-right: 10px - @scrollbar-width;
+      padding-left: 10px;
+
+      color: var(--hamburger-items-text-color);
+      cursor: pointer;
+      user-select: none; // prevent text from being selectable
+      overflow: hidden;
+
+      a {
+        width: 100%;
+        height: 34px;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: left;
+        align-items: center;
+
+        .entity-icon {
+          font-size: 16px;
+        }
+        .text {
+          .ellipsis-text-overflow();
+          margin-left: 5px;
+          font-weight: bold;
+        }
+      }
+
+      a, a:hover, a:active {
+        text-decoration: none;
+      }
+      a {
+        color: var(--hamburger-items-text-color);
+        outline: 0; // dotted border around active link
+      }
+      &:hover {
+        background: var(--hamburger-bg-hover);
+      }
+      &.active {
+        background: var(--hamburger-active-bg);
+        &:hover {
+          background: var(--hamburger-active-bg-hover);
+        }
+        color: @hamburger-active-fg;
+      }
+
+      &.sep {
+        height: 1px;
+        border-bottom: var(--hamburger-items-separator);
+        margin: 4px 0;
+
+        &:hover {
+          background: var(--hamburger-bg);
+        }
+      }
+    }
+  }
+}

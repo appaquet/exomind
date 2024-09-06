@@ -1,0 +1,31 @@
+@import (reference) "../../../style/mixins.less";
+
+.entity-component.email {
+  min-width: 500px;
+  min-height: 500px;
+  position: relative;
+
+  .object-body {
+    padding-top: @entity-component-padding-between;
+    padding-bottom: @entity-component-header-height; // make sure we have plenty of space bellow for scroll
+    padding-left: @entity-component-padding-side;
+    padding-right: @entity-component-padding-side;
+    height: 100%;
+
+    overflow: scroll;
+    .styled-scrollbar(var(--entity-component-bg), var(--entity-component-bg-selected));
+
+    // always want email to be on white background to respect their style
+    background: @entity-component-bg; 
+    color: @body-fg;
+
+    blockquote {
+      font-size: 1em;
+    }
+
+    pre {
+      background: none;
+      border: none;
+    }
+  }
+}

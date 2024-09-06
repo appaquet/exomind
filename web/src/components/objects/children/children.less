@@ -1,0 +1,24 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-component.children {
+  .entity-list {
+    height: 100%;
+  }
+
+  > .empty {
+    .center-element();
+
+    i.fa {
+      font-size: 15em;
+      color: var(--entity-component-bg-selected);
+    }
+
+    .text {
+      text-align: center;
+      padding-top: 20px;
+      font-size: 1.1em;
+      color: var(--entity-component-bg-selected);
+    }
+  }
+}

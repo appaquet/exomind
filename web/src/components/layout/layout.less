@@ -1,0 +1,58 @@
+@import "../../style/style.less";
+
+html {
+  height: 100%;
+}
+
+body {
+  font-family: Segoe UI, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  overflow: hidden;
+  overflow-y: auto;
+  height: 100%;
+
+  background-color: var(--body-bg);
+  color: var(--body-fg);
+}
+
+input,
+button,
+textarea {
+  background: var(--body-bg);
+  color: var(--body-fg);
+}
+
+#body {
+  height: 100%;
+
+  #layout {
+    height: 100%;
+
+    #content {
+      padding-top: @navbar-height + 10px;
+      height: 100%;
+    }
+
+    &.hamburger-open {
+      #content {
+        margin-left: @hamburger-width;
+      }
+    }
+
+    &.fullscreen {
+      #content {
+        padding-top: 0;
+        margin-left: 0;
+        overflow-x: hidden;
+      }
+    }
+
+    #hamburger {
+      position: absolute;
+      left: 0;
+      width: @hamburger-width;
+      height: 100%;
+    }
+  }
+}

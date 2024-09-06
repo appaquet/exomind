@@ -1,0 +1,268 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.entity-list {
+  .item {
+    @item-min-height: 60px;
+
+    user-select: none;
+    cursor: default;
+    background: var(--entity-component-bg);
+
+    // Height is given to the swipe container so that it can swipes the whole height
+    // when swiped (done)
+    .swipe-container {
+      min-height: @item-min-height;
+      border-bottom: var(--entity-component-list-separator-border);
+      padding: 5px 5px;
+      position: relative; // for date and actions absolute position
+    }
+
+    .item-container {
+      display: flex;
+      flex-direction: row;
+      min-height: @item-min-height;
+
+      &.with-picture {
+        .picture {
+          .flex-center();
+
+          .bubble {
+            .flex-center();
+
+            width: 40px;
+            height: 40px;
+
+            border: 1px solid transparent;
+            border-radius: 40px;
+
+            .entity-icon {
+              &.emoji {
+                font-size: 24px;
+              }
+
+              &.fa {
+                color: @object-color-fg;
+                font-size: 17px;
+              }
+            }
+          }
+        }
+      }
+
+      &.no-picture {
+        .picture {
+          display: none;
+        }
+      }
+
+      .date {
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        text-align: right;
+        padding-left: 10px;
+
+        background: var(--entity-component-bg);
+        opacity: 0.95;
+        font-size: 11px;
+        height: 20px;
+        color: var(--entity-component-item-fg);
+        z-index: 1; // make sure times appear on top of titles
+      }
+
+      .indicators {
+        position: absolute;
+        top: 20px;
+        right: 10px;
+        text-align: right;
+        padding-left: 10px;
+        z-index: 1; // make sure indicators appear on top of titles
+        color: var(--entity-component-item-indicators-fg);
+        background: var(--entity-component-bg);
+        font-size: 12px;
+
+        & > span {
+          margin-left: 5px;
+          &.pinned {
+            .icon-font-awesome("thumb-tack");
+          }
+          &.snoozed {
+            .icon-font-awesome("clock-o");
+          }
+        }
+      }
+
+      .content {
+        margin: 0 @entity-component-padding-side;
+        overflow: hidden;
+        padding-right: 5px;
+        margin-left: 10px;
+
+        flex-grow: 1; // make content cell in flex take the rest of the space
+
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: @item-min-height;
+        color: var(--entity-component-item-fg);
+
+        .title1,
+        .title2,
+        .text,
+        .parents {
+          // add some space between lines
+          margin: 4px 0;
+        }
+
+        .title1,
+        .title2 {
+          .ellipsis-text-overflow();
+          .icon {
+            margin-right: 3px;
+          }
+        }
+
+        .title1 {
+          .name,
+          .handle,
+          .subject {
+            display: inline-block;
+            margin-right: 3px;
+            height: 15px;
+          }
+
+          .handle {
+            color: var(--entity-component-item-fg);
+          }
+        }
+
+        .text {
+          .ellipsis-text-overflow();
+          max-height: 60px;
+          font-size: 12px;
+        }
+
+        .hierarchy-pills {
+          // limit to 1 line
+          white-space: nowrap;
+          overflow: hidden;
+
+          padding-top: 3px;
+          .pill {
+            font-size: 13px;
+          }
+        }
+      }
+
+      &.email.unread,
+      &.email-thread.unread {
+        .title1,
+        .title2 {
+          font-weight: bold;
+        }
+      }
+
+      &.collection,
+      &.note,
+      &.task,
+      &.default {
+        .content {
+          .title1 {
+            font-weight: bold;
+          }
+        }
+      }
+
+      // Make sure that the input box to edit task name has sufficient space
+      &.task {
+        .title1 {
+          max-height: 30px;
+          input {
+            width: 80%;
+          }
+        }
+      }
+    }
+
+    // Background for hover and selected states
+    &.hover {
+      background: var(--entity-component-bg-hover);
+      .item-actions {
+        background: var(--entity-component-bg-hover);
+      }
+      .date,
+      .indicators {
+        // hide date & indicators since it may overflow from actions
+        display: none;
+      }
+    }
+
+    &.selected {
+      background: var(--entity-component-bg-selected);
+      .item-actions,
+      .date,
+      .indicators {
+        background: var(--entity-component-bg-selected);
+      }
+    }
+
+    // When item is marked as done, we animate until it's removed
+    .swipe-container {
+      .transition(~"margin-left 0.1s ease-in");
+    }
+    &.done {
+      background: @entity-component-bg-done;
+      .swipe-container {
+        margin-left: 100%;
+        background: var(--entity-component-bg);
+      }
+      .item-actions,
+      .date,
+      .indicators {
+        display: none;
+      }
+    }
+
+    // Item actions
+    .item-actions {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      padding-right: 10px;
+      padding-left: 15px;
+      opacity: 0.95;
+      .flex-center-vertical();
+
+      ul {
+        .make-list();
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+
+        li {
+          .make-list-item();
+
+          color: var(--entity-component-item-actions-icon-fg);
+          &:hover {
+            color: var(--entity-component-item-actions-icon-fg);
+            cursor: pointer;
+          }
+          .action-icon {
+            margin: 5px;
+            font-size: 15px;
+          }
+        }
+      }
+    }
+
+    // EntityList and time selector popup
+    .collection-selector,
+    .time-selector {
+      right: 15px;
+      top: 50%;
+      .translate(0, 15px);
+    }
+  }
+}

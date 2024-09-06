@@ -1,0 +1,9 @@
+---
+id: peH738jRyQYohXpEyCArXHQVibCGBjwU1CjZuUnNZygSaf
+name: exomind
+version: 0.1.15
+public_key: peH738jRyQYohXpEyCArXHQVibCGBjwU1CjZuUnNZygSaf
+schemas:
+  - file: exomind.fd
+module:
+  file: app.wasm

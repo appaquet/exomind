@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package exocore;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    // Indicates that the value of this field is to be indexed and queryable.
+    // For full-text indexation, see `text`.
+    bool indexed = 1373;
+
+    // Indicates that sorting by this field is possible.
+    bool sorted = 1374;
+
+    // Indicates that the text of this field is to be full-text searchable.
+    bool text = 1375;
+
+    // Value used by `Projection.field_group_ids` to select the fields to be returned
+    // when projection on querying entities with `EntityQuery` is done.
+    repeated uint32 field_group = 1376;
+}
+
+extend google.protobuf.MessageOptions {
+    // Short name that can be used to refer to this trait in a query.
+    // Ex: type:<some_type_name>
+    repeated string short_name = 1377;
+}

@@ -1,0 +1,48 @@
+platform :ios, '17.0'
+use_frameworks!
+
+target 'Exomind' do
+  pod 'SwiftyJSON', '~> 5.0.1'
+  pod 'FontAwesome.swift', :git => 'https://github.com/thii/FontAwesome.swift.git', :inhibit_warnings => true
+  pod 'UIColor_Hex_Swift', '~> 4.2.0', :inhibit_warnings => true
+  pod 'CLTokenInputView', :inhibit_warnings => true
+  pod 'KeychainSwift', '~> 19.0'
+  pod 'SnapKit', '~> 5.6.0', :inhibit_warnings => true
+  pod 'SwiftProtobuf', '~> 1.10'
+  pod 'ReachabilitySwift'
+  pod 'AppCenter'
+  pod 'Introspect'
+
+  # pod 'Exocore', '0.1.25'
+  # pod 'Exocore', :path => '../../exocore'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.26/exocore-ios.tar.gz'
+end
+
+target 'ExomindActionExt' do
+  pod 'KeychainSwift', '~> 19.0'
+  pod 'SwiftProtobuf', '~> 1.10'
+
+  # pod 'Exocore', '0.1.25'
+  # pod 'Exocore' , :path => '../../exocore'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.26/exocore-ios.tar.gz'
+end
+
+target 'ExomindTests' do
+  pod 'SwiftyJSON', '~> 5.0.1'
+  pod 'SwiftProtobuf', '~> 1.10'
+
+  # pod 'Exocore', '0.1.25'
+  # pod 'Exocore', :path => '../../exocore'
+  pod 'Exocore', :http => 'https://github.com/appaquet/exocore/releases/download/v0.1.26/exocore-ios.tar.gz'
+end
+
+
+# Prevent warning where pod minimum deployment target isn't matching the project's one
+# See https://stackoverflow.com/questions/54704207/the-ios-simulator-deployment-targets-is-set-to-7-0-but-the-range-of-supported-d
+post_install do |pi|
+    pi.pods_project.targets.each do |t|
+      t.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
+      end
+    end
+end

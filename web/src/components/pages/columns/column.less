@@ -1,0 +1,29 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/font-awesome.less";
+
+.column {
+  border: var(--entity-component-border);
+  background: var(--entity-component-bg);
+  min-width: @entity-component-min-width;
+  height: 100%;
+  overflow: hidden;
+
+  .shadow-z-1();
+
+  display: flex;
+  flex-direction: column;
+
+  > .header {
+    flex-shrink: 0; // prevent header from having less than its height
+  }
+
+  > .content {
+    flex-grow: 1;
+    overflow: hidden;
+  }
+
+  > .empty {
+    padding: @entity-component-padding-between * 2 @entity-component-padding-side;
+    font-weight: bold;
+  }
+}

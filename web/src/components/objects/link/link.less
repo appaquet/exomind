@@ -1,0 +1,22 @@
+@import (reference) "../../../style/mixins.less";
+@import (reference) "../../../style/variables.less";
+
+.entity-component.link {
+  .object-body {
+    .open {
+      .center-horizontal-element();
+      margin-top: 20px;
+
+      a {
+        display: inline-block;
+        padding: 5px 10px;
+        background: @exomind-primary;
+        color: white;
+        font-weight: bold;
+      }
+      a:hover, a:active {
+        text-decoration: none;
+      }
+    }
+  }
+}
