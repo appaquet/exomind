@@ -1,6 +1,9 @@
-
 # Project specific
 local_conf
+test_node
+3rd
+app.wasm
+exomind.zip
 
 # Rust
 **/target/**
@@ -10,7 +13,7 @@ lcov.info
 heaptrack.*
 massif.out.*
 
-# Node 
+# Node
 **/node_modules/**
 
 # OS Stuff

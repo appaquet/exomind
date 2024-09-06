@@ -58,34 +58,3 @@ log = "0.4.22"
 exocore-core = { version = "0.1.26", path = "./core", features = [
   "tests-utils",
 ] }
-
-[workspace]
-exclude = ["3rd"]
-members = [
-  "core",
-  "protos",
-  "transport",
-  "store",
-  "chain",
-  "apps/host",
-  "apps/macros",
-  "apps/sdk",
-  "apps/example",
-  "discovery",
-  "exo",
-  "clients/web",
-  "clients/android",
-  "clients/c",
-]
-
-[profile.production]
-inherits = "release"
-codegen-units = 1
-lto = "thin"
-
-[profile.release]
-debug = true
-
-[patch.crates-io]
-# Unmaintained... Will have to get rid of libp2p anyway
-if-watch = { path = "./3rd/if-watch" }

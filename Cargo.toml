@@ -1,0 +1,47 @@
+[package]
+authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
+description = "Exomind, a personal knowledge management tool"
+edition = "2021"
+license = "Apache-2.0"
+name = "exomind-combined"
+repository = "https://github.com/appaquet/exomind"
+version = "0.2.0"
+
+[workspace]
+exclude = ["exocore/3rd"]
+
+members = [
+    "exocore",
+    "exocore/core",
+    "exocore/protos",
+    "exocore/transport",
+    "exocore/store",
+    "exocore/chain",
+    "exocore/apps/host",
+    "exocore/apps/macros",
+    "exocore/apps/sdk",
+    "exocore/apps/example",
+    "exocore/discovery",
+    "exocore/exo",
+    "exocore/clients/web",
+    "exocore/clients/android",
+    "exocore/clients/c",
+
+    "exomind",
+    "exomind/app",
+    "exomind/protos",
+    "exomind/integrations/gmail",
+    "exomind/exm",
+]
+
+[profile.production]
+inherits = "release"
+codegen-units = 1
+lto = "thin"
+
+[profile.release]
+debug = true
+
+[patch.crates-io]
+# Unmaintained... Will have to get rid of libp2p anyway
+if-watch = { path = "./exocore/3rd/if-watch" }

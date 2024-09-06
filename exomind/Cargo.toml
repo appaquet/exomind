@@ -11,25 +11,4 @@ repository = "https://github.com/appaquet/exomind"
 version = "0.1.15"
 
 [dependencies]
-exomind-protos = {path = "./protos", version = "0.1.15"}
-
-[workspace]
-exclude = [
-  "3rd",
-]
-members = [
-  "app",
-  "protos",
-  "integrations/gmail",
-  "exm",
-]
-
-[profile.production]
-inherits = "release"
-codegen-units = 1
-lto = "thin"
-
-# [patch.crates-io]
-# exocore = {path = "../exocore"}
-# exocore = { git = "https://github.com/appaquet/exocore.git", tag = "v0.1.25" }
-# exocore = {git = "https://github.com/appaquet/exocore.git"}
+exomind-protos = { path = "./protos", version = "0.1.15" }

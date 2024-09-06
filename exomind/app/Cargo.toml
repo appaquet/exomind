@@ -14,7 +14,7 @@ crate-type = ['cdylib']
 
 [dependencies]
 anyhow = "1.0.86"
-exocore = { version = "0.1.25", default-features = false, features = ["apps-sdk"] }
+exocore = { version = "0.1.26", path = "../../exocore", default-features = false, features = ["apps-sdk"] }
 exomind-protos = {version = "0.1.15", path = "../protos"}
 futures = "0.3.30"
 log = "0.4.22"
