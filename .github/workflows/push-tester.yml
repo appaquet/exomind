@@ -387,14 +387,14 @@ jobs:
           yarn install --frozen-lockfile
           yarn build_ios
           ls -la dist
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Build
         run: |
           cd $GITHUB_WORKSPACE/exomind/ios
           pod install
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
 
   exomind_app_package:
     runs-on: ubuntu-latest
