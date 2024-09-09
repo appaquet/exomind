@@ -61,17 +61,7 @@ pub struct InMessage {
 }
 /// Nested message and enum types in `InMessage`.
 pub mod in_message {
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum InMessageType {
         Invalid = 0,
@@ -116,17 +106,7 @@ pub struct OutMessage {
 }
 /// Nested message and enum types in `OutMessage`.
 pub mod out_message {
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum OutMessageType {
         Invalid = 0,

@@ -176,7 +176,7 @@ jobs:
 
       - name: Generate sample WASM fixtures
         run: |
-          ./apps/tools/build_fixtures.sh
+          ./exocore/apps/tools/build_fixtures.sh
 
       - name: Tests
         uses: actions-rs/cargo@v1.0.3
@@ -213,31 +213,31 @@ jobs:
 
       - name: Build client & server
         run: |
-          cd $GITHUB_WORKSPACE
+          cd $GITHUB_WORKSPACE/exocore
           yarn build_dev
           ./tools/install.sh --debug
 
       - name: Install example project
         run: |
-          cd $GITHUB_WORKSPACE/examples/web
+          cd $GITHUB_WORKSPACE/exocore/examples/web
           npm install
           npx playwright install --with-deps chromium
 
       - name: Run end-to-end tests
         run: |
-          cd $GITHUB_WORKSPACE/examples/web/tests
+          cd $GITHUB_WORKSPACE/exocore/examples/web/tests
           exo -d node daemon &
 
           sleep 5
 
-          cd $GITHUB_WORKSPACE/examples/web
+          cd $GITHUB_WORKSPACE/exocore/examples/web
           DEBUG=pw:api npm exec playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
-          path: examples/web/playwright-report
+          path: exocore/examples/web/playwright-report
           retention-days: 7
 
   ios_client_build:
@@ -260,16 +260,16 @@ jobs:
 
       - name: Build client & pod
         run: |
-          cd $GITHUB_WORKSPACE/clients/ios
+          cd $GITHUB_WORKSPACE/exocore/clients/ios
           ./tools/generate.sh
           ./tools/build.sh
 
-          cd $GITHUB_WORKSPACE/
+          cd $GITHUB_WORKSPACE/exocore/
           pod lib lint --verbose --allow-warnings
 
       - name: Build example project
         run: |
-          cd $GITHUB_WORKSPACE/examples/ios
+          cd $GITHUB_WORKSPACE/exocore/examples/ios
           pod install
           xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 

@@ -97,7 +97,10 @@ pub struct EntityQuery {
     #[prost(bool, tag = "13")]
     pub programmatic: bool,
     /// Main search predicate on individual traits of the entity.
-    #[prost(oneof = "entity_query::Predicate", tags = "1, 2, 3, 4, 10, 11, 14, 15, 99")]
+    #[prost(
+        oneof = "entity_query::Predicate",
+        tags = "1, 2, 3, 4, 10, 11, 14, 15, 99"
+    )]
     pub predicate: ::core::option::Option<entity_query::Predicate>,
 }
 /// Nested message and enum types in `EntityQuery`.
@@ -218,17 +221,7 @@ pub mod boolean_predicate {
             Boolean(super::super::BooleanPredicate),
         }
     }
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum Occur {
         Should = 0,
@@ -300,17 +293,7 @@ pub struct TraitFieldPredicate {
 }
 /// Nested message and enum types in `TraitFieldPredicate`.
 pub mod trait_field_predicate {
-    #[derive(
-        Clone,
-        Copy,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash,
-        PartialOrd,
-        Ord,
-        ::prost::Enumeration
-    )]
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
     #[repr(i32)]
     pub enum Operator {
         Equal = 0,

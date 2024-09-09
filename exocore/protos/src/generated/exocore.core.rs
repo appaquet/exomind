@@ -236,8 +236,9 @@ pub struct CellNodeConfig {
 }
 /// Nested message and enum types in `CellNodeConfig`.
 pub mod cell_node_config {
-    #[derive(Serialize, Deserialize)]
     #[derive(
+        Serialize,
+        Deserialize,
         Clone,
         Copy,
         Debug,
@@ -246,7 +247,7 @@ pub mod cell_node_config {
         Hash,
         PartialOrd,
         Ord,
-        ::prost::Enumeration
+        ::prost::Enumeration,
     )]
     #[repr(i32)]
     pub enum Role {

@@ -37,10 +37,8 @@ pub struct TestMessage {
     #[prost(string, tag = "21")]
     pub grouped2: ::prost::alloc::string::String,
     #[prost(map = "string, string", tag = "22")]
-    pub map1: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        ::prost::alloc::string::String,
-    >,
+    pub map1:
+        ::std::collections::HashMap<::prost::alloc::string::String, ::prost::alloc::string::String>,
     #[prost(oneof = "test_message::Fields", tags = "4, 5")]
     pub fields: ::core::option::Option<test_message::Fields>,
 }
