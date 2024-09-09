@@ -5,6 +5,7 @@ cd "$CUR_DIR"
 
 EXOCORE_IOS_ROOT="$CUR_DIR/../"
 EXOCORE_ROOT="$EXOCORE_IOS_ROOT/../../"
+REPO_ROOT="$EXOCORE_ROOT/../"
 EXOCORE_C_ROOT="$EXOCORE_ROOT/clients/c"
 
 MODE=${1:-debug}
@@ -29,12 +30,12 @@ pushd $EXOCORE_C_ROOT
 SIM_TARGETS="aarch64-apple-ios-sim,x86_64-apple-ios"
 cargo lipo $CARGO_ARGS --targets $SIM_TARGETS 
 mkdir -p $EXOCORE_IOS_LIB_DIR/libs/sim
-cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/sim
+cp $REPO_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/sim
 
 IOS_TARGETS="aarch64-apple-ios"
 cargo lipo $CARGO_ARGS --targets $IOS_TARGETS 
 mkdir -p $EXOCORE_IOS_LIB_DIR/libs/ios
-cp $EXOCORE_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/ios
+cp $REPO_ROOT/target/universal/$MODE/libexocore.a $EXOCORE_IOS_LIB_DIR/libs/ios
 popd
 
 # Build framework
