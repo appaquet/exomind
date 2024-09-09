@@ -13,6 +13,8 @@ extern crate anyhow;
 #[macro_use]
 extern crate serde_derive;
 
+use std::{path::Path, time::Duration};
+
 use cli::{LoginOptions, LogoutOptions};
 use config::Config;
 use exocore::{
@@ -22,7 +24,6 @@ use exocore::{
 };
 use exomind::ExomindClient;
 use gmail::{GmailAccount, GmailClient};
-use std::{path::Path, time::Duration};
 use sync::AccountSynchronizer;
 
 pub async fn handle<C: AsRef<Path>>(

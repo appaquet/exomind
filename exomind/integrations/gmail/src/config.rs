@@ -1,6 +1,7 @@
+use std::path::{Path, PathBuf};
+
 use duration_string::DurationString;
 use exocore::core::utils::path::child_to_abs_path;
-use std::path::{Path, PathBuf};
 
 #[derive(Clone, Deserialize)]
 pub struct Config {

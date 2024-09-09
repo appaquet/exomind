@@ -1,4 +1,5 @@
-// create a structure of modules so that generated files can reference exocore's generated code
+// create a structure of modules so that generated files can reference exocore's
+// generated code
 pub(crate) use exocore::protos as exocore_proto;
 pub(crate) mod generated {
     pub(crate) use super::exocore_proto as exocore;
@@ -10,8 +11,9 @@ pub(crate) mod generated {
     }
 }
 pub mod base {
-    pub use super::generated::exomind::v1::base::*;
     use exocore::protos::message::NamedMessage;
+
+    pub use super::generated::exomind::v1::base::*;
 
     impl NamedMessage for Collection {
         fn full_name() -> &'static str {

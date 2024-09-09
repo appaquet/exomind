@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use crate::{gmail::GmailAccount, parsing::FlaggedEmail, sync::SynchronizedThread};
 use exocore::{
     core::time::{ConsistentTimestamp, DateTime, Utc},
     protos::{
@@ -17,6 +16,8 @@ use exocore::{
     },
 };
 use exomind_protos::base::{Account, AccountType, CollectionChild, Email, EmailThread, Unread};
+
+use crate::{gmail::GmailAccount, parsing::FlaggedEmail, sync::SynchronizedThread};
 
 #[derive(Clone)]
 pub struct ExomindClient {

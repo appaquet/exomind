@@ -132,13 +132,14 @@ pub struct EntityIndexConfig {
     pub chain_index_depth_leeway: ::core::option::Option<u64>,
     /// Specifies the interval at which new blocks in the chain get indexed.
     /// New blocks may not necessarily get immediately indexed if they don't
-    /// fall in the interval of `chain_index_min_depth` and `chain_index_depth_leeway`.
+    /// fall in the interval of `chain_index_min_depth` and
+    /// `chain_index_depth_leeway`.
     ///
     /// Indexation can also be prevented if user queries were recently executed
     /// (see `chain_index_deferred_query_secs`)
     ///
-    /// If '0' is specified, deferred indexation is disabled and blocks are indexed
-    /// when the chain layer emits events.
+    /// If '0' is specified, deferred indexation is disabled and blocks are
+    /// indexed when the chain layer emits events.
     #[prost(message, optional, tag = "6")]
     #[serde(default)]
     pub chain_index_deferred_interval_secs: ::core::option::Option<u64>,
@@ -153,7 +154,8 @@ pub struct EntityIndexConfig {
     #[prost(message, optional, tag = "8")]
     #[serde(default)]
     pub chain_index_deferred_max_secs: ::core::option::Option<u64>,
-    /// Configuration for the in-memory traits index that are in the pending store
+    /// Configuration for the in-memory traits index that are in the pending
+    /// store
     #[prost(message, optional, tag = "3")]
     #[serde(default)]
     pub pending_index: ::core::option::Option<MutationIndexConfig>,
@@ -191,10 +193,10 @@ pub struct MutationIndexConfig {
 pub struct EntityGarbageCollectorConfig {
     /// How often the garbage collection process will run in seconds.
     ///
-    /// Since garbage collection doesn't happen on the whole index, but only on entities
-    /// that got flagged during search, it is better to run more often than
-    /// less. `GarbageCollectorConfig::queue_size` can be tweaked to control
-    /// rate of collection.
+    /// Since garbage collection doesn't happen on the whole index, but only on
+    /// entities that got flagged during search, it is better to run more
+    /// often than less. `GarbageCollectorConfig::queue_size` can be tweaked
+    /// to control rate of collection.
     #[prost(message, optional, tag = "1")]
     #[serde(default)]
     pub run_interval_secs: ::core::option::Option<u32>,
@@ -257,10 +259,12 @@ pub mod cell_node_config {
         AppHostRole = 3,
     }
     impl Role {
-        /// String value of the enum field names used in the ProtoBuf definition.
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
         ///
-        /// The values are not transformed in any way and thus are considered stable
-        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
         pub fn as_str_name(&self) -> &'static str {
             match self {
                 Role::InvalidRole => "INVALID_ROLE",

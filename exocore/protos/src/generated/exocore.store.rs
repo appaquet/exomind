@@ -51,7 +51,8 @@ impl TraitDetails {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    /// (if the ProtoBuf definition does not change) and safe for programmatic
+    /// use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
             TraitDetails::Full => "TRAIT_DETAILS_FULL",
@@ -82,18 +83,19 @@ pub struct EntityQuery {
     /// Optional watch token if this query is to be used for watching.
     #[prost(uint64, tag = "8")]
     pub watch_token: u64,
-    /// If specified, if results from server matches this hash, results will be empty with the
-    /// `skipped_hash` field set to `true`.
+    /// If specified, if results from server matches this hash, results will be
+    /// empty with the `skipped_hash` field set to `true`.
     #[prost(uint64, tag = "9")]
     pub result_hash: u64,
-    /// Include deleted mutations matches. This can be used to return recently modified entities that
-    /// also include deletions. Deleted traits will be included in the results but will have a
-    /// `deletion_date` field with the date of the deletion.
+    /// Include deleted mutations matches. This can be used to return recently
+    /// modified entities that also include deletions. Deleted traits will
+    /// be included in the results but will have a `deletion_date` field
+    /// with the date of the deletion.
     #[prost(bool, tag = "12")]
     pub include_deleted: bool,
     /// Indicates that the query comes from an automated / programmatic logic.
-    /// This is used since chain indexation may be deferred until no user queries
-    /// got received for a while.
+    /// This is used since chain indexation may be deferred until no user
+    /// queries got received for a while.
     #[prost(bool, tag = "13")]
     pub programmatic: bool,
     /// Main search predicate on individual traits of the entity.
@@ -132,8 +134,10 @@ pub mod entity_query {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Projection {
-    /// If specified, a prefix match will be done against traits' Protobuf full name (`some.package.Name`).
-    /// If ends with a dollar sign "$", an exact match is required (ex: `some.package.Name$` will only match this message)
+    /// If specified, a prefix match will be done against traits' Protobuf full
+    /// name (`some.package.Name`). If ends with a dollar sign "$", an exact
+    /// match is required (ex: `some.package.Name$` will only match this
+    /// message)
     #[prost(string, repeated, tag = "1")]
     pub package: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
     /// Skips the trait if the projection matches.
@@ -142,7 +146,8 @@ pub struct Projection {
     /// If specified, only return these fields.
     #[prost(uint32, repeated, tag = "4")]
     pub field_ids: ::prost::alloc::vec::Vec<u32>,
-    /// If specified, only return fields annotated with `options.proto`.`field_group_id` matching ids.
+    /// If specified, only return fields annotated with
+    /// `options.proto`.`field_group_id` matching ids.
     #[prost(uint32, repeated, tag = "5")]
     pub field_group_ids: ::prost::alloc::vec::Vec<u32>,
 }
@@ -165,7 +170,8 @@ pub struct IdsPredicate {
     pub ids: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 /// Query entities by mutations' operation ids.
-/// Used to return entities on which mutations with these operation ids were applied and indexed.
+/// Used to return entities on which mutations with these operation ids were
+/// applied and indexed.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct OperationsPredicate {
@@ -229,10 +235,12 @@ pub mod boolean_predicate {
         MustNot = 2,
     }
     impl Occur {
-        /// String value of the enum field names used in the ProtoBuf definition.
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
         ///
-        /// The values are not transformed in any way and thus are considered stable
-        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
         pub fn as_str_name(&self) -> &'static str {
             match self {
                 Occur::Should => "SHOULD",
@@ -251,7 +259,8 @@ pub mod boolean_predicate {
         }
     }
 }
-/// Query entities that have a specified trait and optionally matching a trait query.
+/// Query entities that have a specified trait and optionally matching a trait
+/// query.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct TraitPredicate {
@@ -303,10 +312,12 @@ pub mod trait_field_predicate {
         Lte = 4,
     }
     impl Operator {
-        /// String value of the enum field names used in the ProtoBuf definition.
+        /// String value of the enum field names used in the ProtoBuf
+        /// definition.
         ///
-        /// The values are not transformed in any way and thus are considered stable
-        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        /// The values are not transformed in any way and thus are considered
+        /// stable (if the ProtoBuf definition does not change) and safe
+        /// for programmatic use.
         pub fn as_str_name(&self) -> &'static str {
             match self {
                 Operator::Equal => "EQUAL",
@@ -456,10 +467,12 @@ pub struct EntityResults {
     #[prost(message, repeated, tag = "1")]
     pub entities: ::prost::alloc::vec::Vec<EntityResult>,
     /// If query specified a `result_hash`, this is set to `true` if the results
-    /// had the same hash has the specified and that `entities` were set to empty.
+    /// had the same hash has the specified and that `entities` were set to
+    /// empty.
     #[prost(bool, tag = "2")]
     pub skipped_hash: bool,
-    /// Estimated number of entities matching, based on number of matching mutations.
+    /// Estimated number of entities matching, based on number of matching
+    /// mutations.
     #[prost(uint32, tag = "3")]
     pub estimated_count: u32,
     /// Paging token of the current results.
@@ -468,33 +481,37 @@ pub struct EntityResults {
     /// Paging token of the next page of results.
     #[prost(message, optional, tag = "5")]
     pub next_page: ::core::option::Option<Paging>,
-    /// Hash of the results. Can be used to prevent receiving same results if they haven't
-    /// changed by using the `result_hash` field on the query.
+    /// Hash of the results. Can be used to prevent receiving same results if
+    /// they haven't changed by using the `result_hash` field on the query.
     #[prost(uint64, tag = "6")]
     pub hash: u64,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct EntityResult {
-    /// The entity with its traits. Projection could have been done on the entity, which will
-    /// be indicated in its traits' details field.
+    /// The entity with its traits. Projection could have been done on the
+    /// entity, which will be indicated in its traits' details field.
     #[prost(message, optional, tag = "1")]
     pub entity: ::core::option::Option<Entity>,
-    /// Indicates where the entity was taken from in terms of storage. If all of the entities'
-    /// traits were coming from the chain (i.e. committed), the source will be `CHAIN`. Otherwise,
-    /// as soon as one entity mutation is coming from pending store (i.e. not committed yet), this
+    /// Indicates where the entity was taken from in terms of storage. If all of
+    /// the entities' traits were coming from the chain (i.e. committed),
+    /// the source will be `CHAIN`. Otherwise, as soon as one entity
+    /// mutation is coming from pending store (i.e. not committed yet), this
     /// field will be `PENDING`.
     ///
-    /// This can be used to know if an entity can be considered stable once mutations were executed on it.
-    /// Once it's committed, a majority of nodes agreed on it and will not result in further changes happening
+    /// This can be used to know if an entity can be considered stable once
+    /// mutations were executed on it. Once it's committed, a majority of
+    /// nodes agreed on it and will not result in further changes happening
     /// before the latest consistent timestamp.
     #[prost(enumeration = "EntityResultSource", tag = "2")]
     pub source: i32,
-    /// Value to be used to order results. `EntityResults` already contains ordered results,
-    /// but it may be useful to compare ordering queries (ex.: to merge different pages)
+    /// Value to be used to order results. `EntityResults` already contains
+    /// ordered results, but it may be useful to compare ordering queries
+    /// (ex.: to merge different pages)
     #[prost(message, optional, tag = "3")]
     pub ordering_value: ::core::option::Option<OrderingValue>,
-    /// Hash of the entity result. Can be used to compare if the entity has changed since last results.
+    /// Hash of the entity result. Can be used to compare if the entity has
+    /// changed since last results.
     #[prost(uint64, tag = "4")]
     pub hash: u64,
 }
@@ -509,7 +526,8 @@ impl EntityResultSource {
     /// String value of the enum field names used in the ProtoBuf definition.
     ///
     /// The values are not transformed in any way and thus are considered stable
-    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    /// (if the ProtoBuf definition does not change) and safe for programmatic
+    /// use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
             EntityResultSource::Unknown => "UNKNOWN",
@@ -539,7 +557,8 @@ pub struct MutationRequest {
     /// Waits for mutation to be indexed and returns the mutated entities.
     #[prost(bool, tag = "3")]
     pub return_entities: bool,
-    /// If an entity ID is generated for the mutated entities, reuse the same ID for all mutations.
+    /// If an entity ID is generated for the mutated entities, reuse the same ID
+    /// for all mutations.
     #[prost(bool, tag = "4")]
     pub common_entity_id: bool,
 }
@@ -596,10 +615,11 @@ pub struct DeleteTraitMutation {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteEntityMutation {}
-/// Deletes mutations of an entity that have an operation id specified in the given list.
-/// This mutation is used for index management purpose only since the mutations are not
-/// actually deleted from the chain. Since the chain indices are built in a semi-versioned
-/// way, this actually delete the mutations from the indices.
+/// Deletes mutations of an entity that have an operation id specified in the
+/// given list. This mutation is used for index management purpose only since
+/// the mutations are not actually deleted from the chain. Since the chain
+/// indices are built in a semi-versioned way, this actually delete the
+/// mutations from the indices.
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct DeleteOperationsMutation {

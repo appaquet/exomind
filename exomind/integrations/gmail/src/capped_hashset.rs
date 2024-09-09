@@ -1,4 +1,8 @@
-use std::{borrow::Borrow, collections::HashSet, collections::LinkedList, hash::Hash};
+use std::{
+    borrow::Borrow,
+    collections::{HashSet, LinkedList},
+    hash::Hash,
+};
 
 pub struct CappedHashSet<K: Hash + Eq + Clone> {
     set: HashSet<K>,

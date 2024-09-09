@@ -3,18 +3,12 @@ set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 EXOMIND_ROOT="$CUR_DIR/.."
-
-if [[ "$EXOCORE_REPO" == "" ]]; then
-  if [[ -d "$EXOMIND_ROOT/../exocore" ]]; then
-    EXOCORE_REPO="$EXOMIND_ROOT/../exocore"
-  fi
-fi
+REPO_ROOT="$EXOMIND_ROOT/.."
+EXOCORE_ROOT="$REPO_ROOT/exocore"
 
 # Update exocore protos to latest
-if [[ -d "$EXOCORE_REPO" ]]; then
-  rm -rf $EXOMIND_ROOT/protos/protobuf/exocore
-  cp -r $EXOCORE_REPO/protos/protobuf/exocore $EXOMIND_ROOT/protos/protobuf/
-fi
+rm -rf $EXOMIND_ROOT/protos/protobuf/exocore
+cp -r $EXOCORE_REPO/protos/protobuf/exocore $EXOMIND_ROOT/protos/protobuf/
 
 # Generate exomind app file descriptor
 protoc \

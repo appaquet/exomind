@@ -48,7 +48,6 @@ A cell consists of:
 
 * [Rust](https://www.rust-lang.org/learn/get-started)
   * Install using [rustup](https://www.rust-lang.org/learn/get-started)
-  * Install `clippy` and `rustfmt`: `rustup component add clippy rustfmt`
   
 * [Cap'n Proto](https://capnproto.org/install.html)
   * On MacOS: `brew install capnp`

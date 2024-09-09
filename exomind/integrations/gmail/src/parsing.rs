@@ -271,8 +271,9 @@ fn parse_contacts(value: &str) -> anyhow::Result<Vec<Contact>> {
 mod tests {
     use std::io::Read;
 
-    use super::*;
     use exocore::core::tests_utils::find_test_fixture;
+
+    use super::*;
 
     #[test]
     fn parse_html_simple() -> anyhow::Result<()> {

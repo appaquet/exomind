@@ -1,14 +1,18 @@
-use crate::config::Config;
-use exomind_protos::base::{Account, AccountScope, AccountType};
-use google_gmail1::api::{ModifyMessageRequest, ModifyThreadRequest};
-use google_gmail1::oauth2::{self, InstalledFlowAuthenticator, InstalledFlowReturnMethod};
-use hyper::client::HttpConnector;
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use std::{
     collections::HashSet,
     path::PathBuf,
     time::{Duration, Instant},
 };
+
+use exomind_protos::base::{Account, AccountScope, AccountType};
+use google_gmail1::{
+    api::{ModifyMessageRequest, ModifyThreadRequest},
+    oauth2::{self, InstalledFlowAuthenticator, InstalledFlowReturnMethod},
+};
+use hyper::client::HttpConnector;
+use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+
+use crate::config::Config;
 
 const CLIENT_REFRESH_INTERVAL: Duration = Duration::from_secs(5 * 60);
 const FULL_ACCESS_SCOPE: &str = "https://mail.google.com/";

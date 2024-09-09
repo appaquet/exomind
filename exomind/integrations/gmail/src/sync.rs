@@ -3,12 +3,6 @@ use std::{
     io::Write,
 };
 
-use crate::{
-    capped_hashset::CappedHashSet,
-    exomind::{email_trait_id, thread_entity_id, ExomindClient, ExomindHistoryAction},
-    gmail::{GmailAccount, GmailClient, GmailHistoryAction, HistoryId},
-    parsing::{self, FlaggedEmail},
-};
 use exocore::{
     core::time::{ConsistentTimestamp, Utc},
     protos::{
@@ -21,6 +15,13 @@ use exocore::{
     },
 };
 use exomind_protos::base::{CollectionChild, Email, EmailThread, Unread};
+
+use crate::{
+    capped_hashset::CappedHashSet,
+    exomind::{email_trait_id, thread_entity_id, ExomindClient, ExomindHistoryAction},
+    gmail::{GmailAccount, GmailClient, GmailHistoryAction, HistoryId},
+    parsing::{self, FlaggedEmail},
+};
 
 pub struct AccountSynchronizer {
     pub account: GmailAccount,
@@ -187,7 +188,8 @@ impl AccountSynchronizer {
 
     pub async fn synchronize_exomind_history(&mut self) -> anyhow::Result<()> {
         let Some(last_operation_id) = self.last_exomind_operation else {
-            // never fetched through history, we fetch last exomind history action for next sync via history
+            // never fetched through history, we fetch last exomind history action for next
+            // sync via history
             if let Some(last_action) = self.latest_exomind_history_action().await? {
                 self.last_exomind_operation = Some(last_action.operation_id());
             }
