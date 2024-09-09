@@ -152,7 +152,7 @@ jobs:
           files: lcov.info
           fail_ci_if_error: false
 
-  apps_sdk_runtime_tests:
+  exocore_apps_sdk_runtime_tests:
     runs-on: ubuntu-latest
 
     timeout-minutes: 60
@@ -183,7 +183,7 @@ jobs:
           command: test
           args: --workspace --all-features
 
-  web_client_test:
+  exocore_web_client_test:
     runs-on: ubuntu-latest
 
     timeout-minutes: 60
@@ -239,7 +239,7 @@ jobs:
           path: exocore/examples/web/playwright-report
           retention-days: 7
 
-  ios_client_build:
+  exocore_ios_client_build:
     runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
       - uses: actions/checkout@v4
