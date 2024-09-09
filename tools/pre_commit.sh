@@ -2,26 +2,28 @@
 set -ex
 CUR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-export EXOCORE_ROOT="$CUR_DIR/../"
+export REPO_ROOT="$CUR_DIR/../"
+export EXOCORE_ROOT="$REPO_ROOT/exocore"
+export EXOMIND_ROOT="$REPO_ROOT/exomind"
+
+cd $REPO_ROOT
 
 echo "Formatting..."
-$CUR_DIR/format.sh
+./tools/format.sh
 
 echo "Cargo checking code, tests and benches"
-cd $EXOCORE_ROOT
+cd $REPO_ROOT
 cargo check --workspace --tests --benches --all-features
 
 echo "Running tests..."
-cd $EXOCORE_ROOT
+cd $REPO_ROOT
 cargo test --workspace --all-features
 
 echo "Running clippy..."
-$CUR_DIR/clippy.sh
+$REPO_ROOT/tools/clippy.sh
 
-echo "Validating web compilation for exocore-client-web"
-cd $EXOCORE_ROOT/clients/web
-cargo clippy --target "wasm32-unknown-unknown"
+echo "Pre-checking exocore..."
+$EXOCORE_ROOT/tools/pre_commit.sh
 
-echo "Validating exo compilation"
-cd $EXOCORE_ROOT/exo
-cargo check
+echo "Pre-checking exomind..."
+$EXOMIND_ROOT/tools/pre_commit.sh
