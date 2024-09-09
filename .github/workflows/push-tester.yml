@@ -82,6 +82,47 @@ jobs:
           command: check
           args: -p exo --target ${{ matrix.pair.target }}
 
+  # Make sure that `exm` compiles on some targets that we don't run tests on.
+  exm_build_check:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+          - target: aarch64-apple-darwin
+            os: macos-14
+            cross: false
+
+    runs-on: ${{ matrix.pair.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: ${{ matrix.pair.target }}
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --locked --git https://github.com/cross-rs/cross
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions-rs/cargo@v1.0.3
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: check
+          args: -p exm --target ${{ matrix.pair.target }}
+
   rust_tests:
     strategy:
       fail-fast: true
@@ -277,3 +318,106 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: gaurav-nelson/github-action-markdown-link-check@1.0.15
+
+  exomind_web_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: 18.x
+
+      # TOOD: should depend on exocore
+      - name: Build & test
+        run: |
+          cd exomind/web
+          yarn install --frozen-lockfile
+          yarn build
+          yarn test
+          yarn lint
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
+
+  exomind_electron_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: 18.x
+
+      - name: Build
+        run: |
+          cd exomind/web
+          yarn install --frozen-lockfile
+          yarn electron
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
+
+  exomind_ios_build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies
+        run: |
+          HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
+
+      - uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Build
+        run: |
+          cd $GITHUB_WORKSPACE/exomind/web
+          yarn install --frozen-lockfile
+          yarn build_ios
+
+          cd $GITHUB_WORKSPACE/exomind/ios
+          pod install
+          xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
+
+  exomind_app_package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-wasi
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download exo
+        run: |
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.25/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          echo `pwd` >> $GITHUB_PATH
+
+      - name: Build & package app
+        run: |
+          cd $GITHUB_WORKSPACE/exomind/
+          ./app/tools/build.sh
