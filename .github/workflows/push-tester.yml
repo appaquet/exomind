@@ -394,6 +394,8 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/exomind/ios
           pod install
+          ls -la Exomind/
+          ls -la Exomind/js/
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
   exomind_app_package:
