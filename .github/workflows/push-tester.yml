@@ -328,7 +328,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4.0.3
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       # TOOD: should depend on exocore
       - name: Build & test
@@ -350,7 +350,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4.0.3
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - name: Build
         run: |
@@ -368,7 +368,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4.0.3
         with:
-          node-version: 18.x
+          node-version: 20.x
 
       - name: Install dependencies
         run: |
@@ -376,17 +376,20 @@ jobs:
 
       - uses: actions/cache@v4
         with:
-          path: ios/Pods
+          path: exomind/ios/Pods
           key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-pods-
 
-      - name: Build
+      - name: Build web dependency
         run: |
           cd $GITHUB_WORKSPACE/exomind/web
           yarn install --frozen-lockfile
           yarn build_ios
+          ls -la dist
 
+      - name: Build
+        run: |
           cd $GITHUB_WORKSPACE/exomind/ios
           pod install
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
