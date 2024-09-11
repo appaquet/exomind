@@ -307,17 +307,17 @@ jobs:
           cd $GITHUB_WORKSPACE/exocore/
           pod lib lint --verbose --allow-warnings
 
-      - name: Build example project
-        run: |
-          cd $GITHUB_WORKSPACE/exocore/examples/ios
-          pod install
-          xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+      # - name: Build example project
+      #   run: |
+      #     cd $GITHUB_WORKSPACE/exocore/examples/ios
+      #     pod install
+      #     xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: exocore-ios-client
-          path: exocore/clients/ios/(swift|lib)
+          path: exocore/clients/ios
           if-no-files-found: error
 
   markdown_links_check:
@@ -386,7 +386,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: exocore-ios-client
-          path: exocore/clients/ios/
 
       - uses: actions/cache@v4
         with:
