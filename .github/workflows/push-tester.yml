@@ -224,6 +224,7 @@ jobs:
           command: test
           args: --workspace --all-features
 
+  # TODO: Split build and test
   exocore_web_client_test:
     runs-on: ubuntu-latest
 
@@ -307,6 +308,7 @@ jobs:
           cd $GITHUB_WORKSPACE/exocore/
           pod lib lint --verbose --allow-warnings
 
+      # TOD: Move to another task
       # - name: Build example project
       #   run: |
       #     cd $GITHUB_WORKSPACE/exocore/examples/ios
@@ -386,6 +388,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: exocore-ios-client
+          path: exocore/clients/ios/
 
       - uses: actions/cache@v4
         with:
@@ -399,7 +402,6 @@ jobs:
           cd $GITHUB_WORKSPACE/exomind/web
           yarn install --frozen-lockfile
           yarn build_ios
-          ls -la dist
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
@@ -407,8 +409,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/exomind/ios
           pod install
-          ls -la Exomind/
-          ls -la Exomind/js/
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
   exomind_app_package:
