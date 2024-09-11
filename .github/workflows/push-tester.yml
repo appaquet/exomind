@@ -313,6 +313,13 @@ jobs:
           pod install
           xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exocore-ios-client
+          path: exocore/clients/ios/(swift|lib)
+          if-no-files-found: error
+
   markdown_links_check:
     runs-on: ubuntu-latest
     steps:
@@ -373,6 +380,12 @@ jobs:
       - name: Install dependencies
         run: |
           HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
+
+      - name: Download all artifacts
+          uses: actions/download-artifact@v4
+          with:
+            name: exocore-ios-client
+            path: exocore/clients/ios/
 
       - uses: actions/cache@v4
         with:

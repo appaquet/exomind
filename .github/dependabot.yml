@@ -5,32 +5,32 @@ updates:
   schedule:
     interval: daily
     time: "20:00"
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 30
 
 - package-ecosystem: npm
   directory: "/exomind/web"
   schedule:
     interval: daily
     time: "20:00"
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 30
 
 - package-ecosystem: npm
   directory: "/exocore"
   schedule:
     interval: daily
     time: "20:00"
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 30
 
 - package-ecosystem: npm
   directory: "/exocore/examples/web"
   schedule:
     interval: daily
     time: "20:00"
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 30
 
 - package-ecosystem: cargo
   directory: "/"
   schedule:
     interval: daily
     time: "20:00"
-  open-pull-requests-limit: 10
+  open-pull-requests-limit: 30
