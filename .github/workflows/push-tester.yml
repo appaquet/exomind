@@ -369,6 +369,7 @@ jobs:
 
   exomind_ios_build:
     runs-on: macos-14
+    needs: [exocore_ios_client_build]
     steps:
       - uses: actions/checkout@v4
 
