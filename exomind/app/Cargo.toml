@@ -13,7 +13,7 @@ version = "0.1.15"
 crate-type = ['cdylib']
 
 [dependencies]
-anyhow = "1.0.86"
+anyhow = "1.0.88"
 exocore = { version = "0.1.26", path = "../../exocore", default-features = false, features = [
     "apps-sdk",
 ] }
