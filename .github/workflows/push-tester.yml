@@ -280,7 +280,8 @@ jobs:
       - name: Unarchive exocore web client
         run: |
           cd $GITHUB_WORKSPACE
-          tar -xzf exocore-web.tar.gz -C exocore/
+          # Striping first directory as yarn package wraps into a `package` directory
+          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
       - name: Build exo
         run: |
@@ -370,7 +371,7 @@ jobs:
       - name: Unarchive exocore ios client
         run: |
           cd $GITHUB_WORKSPACE
-          tar -xzf exocore-ios.tar.gz -C exocore/
+          tar -xzvf exocore-ios.tar.gz -C exocore/
 
       - name: Build example project
         run: |
@@ -401,7 +402,7 @@ jobs:
       - name: Unarchive exocore ios client
         run: |
           cd $GITHUB_WORKSPACE
-          tar -xzf exocore-ios.tar.gz -C exocore/
+          tar -xzvf exocore-ios.tar.gz -C exocore/
 
       - uses: actions/cache@v4
         with:
@@ -444,7 +445,8 @@ jobs:
       - name: Unarchive exocore web client
         run: |
           cd $GITHUB_WORKSPACE
-          tar -xzf exocore-web.tar.gz -C exocore/
+          # Striping first directory as yarn package wraps into a `package` directory
+          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
       # TOOD: should depend on exocore
       - name: Build & test
@@ -477,7 +479,8 @@ jobs:
       - name: Unarchive exocore web client
         run: |
           cd $GITHUB_WORKSPACE
-          tar -xzf exocore-web.tar.gz -C exocore/
+          # Striping first directory as yarn package wraps into a `package` directory
+          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
       - name: Build
         run: |
