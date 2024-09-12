@@ -246,15 +246,16 @@ jobs:
 
       - name: Build client
         run: |
+          cd $GITHUB_WORKSPACE/exocore
           yarn install
           yarn build
           yarn pack
-          mv exocore-v*.tgz exocore-web.tar.gz
+          mv exocore-v*.tgz ../exocore-web.tar.gz
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: client-web-artifact
+          name: exocore-web-client
           path: exocore-web.tar.gz
           if-no-files-found: error
 
