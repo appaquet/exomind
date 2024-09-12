@@ -261,6 +261,7 @@ jobs:
 
   exocore_web_client_e2e_test:
     runs-on: ubuntu-latest
+    needs: [exocore_web_client_build]
 
     timeout-minutes: 60
 
