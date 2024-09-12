@@ -356,8 +356,8 @@ jobs:
           if-no-files-found: error
 
   exocore_ios_example_build:
-    needs: [exocore_ios_client_build]
     runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+    needs: [exocore_ios_client_build]
     steps:
       - uses: actions/checkout@v4
 
@@ -425,6 +425,7 @@ jobs:
 
   exomind_web_build:
     runs-on: ubuntu-latest
+    needs: [exocore_web_client_build]
 
     steps:
       - uses: actions/checkout@v4
@@ -457,6 +458,7 @@ jobs:
 
   exomind_electron_build:
     runs-on: ubuntu-latest
+    needs: [exocore_web_client_build]
 
     steps:
       - uses: actions/checkout@v4
