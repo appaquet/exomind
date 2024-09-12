@@ -41,88 +41,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
 
-  # Make sure that `exo` compiles on some targets that we don't run tests on.
-  exo_build_check:
-    strategy:
-      fail-fast: true
-      matrix:
-        pair:
-          - target: armv7-unknown-linux-gnueabihf
-            os: ubuntu-latest
-            cross: true
-          - target: aarch64-apple-darwin
-            os: macos-14
-            cross: false
-
-    runs-on: ${{ matrix.pair.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          target: ${{ matrix.pair.target }}
-          profile: minimal
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install master version of cross # TODO: Remove me once new cross is released
-        run: |
-          cargo install cross --locked --git https://github.com/cross-rs/cross
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions-rs/cargo@v1.0.3
-        with:
-          use-cross: ${{ matrix.pair.cross }}
-          command: check
-          args: -p exo --target ${{ matrix.pair.target }}
-
-  # Make sure that `exm` compiles on some targets that we don't run tests on.
-  exm_build_check:
-    strategy:
-      fail-fast: true
-      matrix:
-        pair:
-          - target: armv7-unknown-linux-gnueabihf
-            os: ubuntu-latest
-            cross: true
-          - target: aarch64-apple-darwin
-            os: macos-14
-            cross: false
-
-    runs-on: ${{ matrix.pair.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          target: ${{ matrix.pair.target }}
-          profile: minimal
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install master version of cross # TODO: Remove me once new cross is released
-        run: |
-          cargo install cross --locked --git https://github.com/cross-rs/cross
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions-rs/cargo@v1.0.3
-        with:
-          use-cross: ${{ matrix.pair.cross }}
-          command: check
-          args: -p exm --target ${{ matrix.pair.target }}
-
   rust_tests:
     strategy:
       fail-fast: true
@@ -193,6 +111,86 @@ jobs:
           files: lcov.info
           fail_ci_if_error: false
 
+  exo_build_check:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+          - target: aarch64-apple-darwin
+            os: macos-14
+            cross: false
+
+    runs-on: ${{ matrix.pair.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: ${{ matrix.pair.target }}
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --locked --git https://github.com/cross-rs/cross
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions-rs/cargo@v1.0.3
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: check
+          args: -p exo --target ${{ matrix.pair.target }}
+
+  exm_build_check:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+          - target: aarch64-apple-darwin
+            os: macos-14
+            cross: false
+
+    runs-on: ${{ matrix.pair.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: ${{ matrix.pair.target }}
+          profile: minimal
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --locked --git https://github.com/cross-rs/cross
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions-rs/cargo@v1.0.3
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: check
+          args: -p exm --target ${{ matrix.pair.target }}
+
   exocore_apps_sdk_runtime_tests:
     runs-on: ubuntu-latest
 
@@ -224,8 +222,43 @@ jobs:
           command: test
           args: --workspace --all-features
 
-  # TODO: Split build and test
-  exocore_web_client_test:
+  exocore_web_client_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -yq libssl-dev openssl protobuf-compiler
+
+          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
+          mv wasm-pack*/wasm-pack .
+          echo `pwd` >> $GITHUB_PATH
+
+          sudo npm install -g yarn
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          profile: minimal
+          target: wasm32-unknown-unknown
+
+      - name: Build client
+        run: |
+          yarn install
+          yarn build
+          yarn pack
+          mv exocore-v*.tgz exocore-web.tar.gz
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-web-artifact
+          path: exocore-web.tar.gz
+          if-no-files-found: error
+
+  exocore_web_client_e2e_test:
     runs-on: ubuntu-latest
 
     timeout-minutes: 60
@@ -326,7 +359,7 @@ jobs:
           path: exocore-ios.tar.gz
           if-no-files-found: error
 
-  exocore_example_ios_test:
+  exocore_ios_example_build:
     needs: [exocore_ios_client_build]
     runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
     steps:
@@ -347,53 +380,6 @@ jobs:
           cd $GITHUB_WORKSPACE/exocore/examples/ios
           pod install
           xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
-
-  markdown_links_check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.15
-
-  exomind_web_build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4.0.3
-        with:
-          node-version: 20.x
-
-      # TOOD: should depend on exocore
-      - name: Build & test
-        run: |
-          cd exomind/web
-          yarn install --frozen-lockfile
-          yarn build
-          yarn test
-          yarn lint
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
-
-  exomind_electron_build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4.0.3
-        with:
-          node-version: 20.x
-
-      - name: Build
-        run: |
-          cd exomind/web
-          yarn install --frozen-lockfile
-          yarn electron
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
 
   exomind_ios_build:
     runs-on: macos-14
@@ -441,6 +427,47 @@ jobs:
           pod install
           xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
+  exomind_web_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: 20.x
+
+      # TOOD: should depend on exocore
+      - name: Build & test
+        run: |
+          cd exomind/web
+          yarn install --frozen-lockfile
+          yarn build
+          yarn test
+          yarn lint
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
+
+  exomind_electron_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.3
+        with:
+          node-version: 20.x
+
+      - name: Build
+        run: |
+          cd exomind/web
+          yarn install --frozen-lockfile
+          yarn electron
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
+
   exomind_app_package:
     runs-on: ubuntu-latest
 
@@ -469,3 +496,9 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/exomind/
           ./app/tools/build.sh
+
+  markdown_links_check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gaurav-nelson/github-action-markdown-link-check@1.0.15
