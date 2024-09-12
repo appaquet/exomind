@@ -269,27 +269,22 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          sudo apt update
-          sudo apt install -yq libssl-dev openssl protobuf-compiler
-
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
-          mv wasm-pack*/wasm-pack .
-          echo `pwd` >> $GITHUB_PATH
-
           sudo npm install -g yarn
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - name: Download exocore web client
+        uses: actions/download-artifact@v4
         with:
-          toolchain: stable
-          profile: minimal
-          target: wasm32-unknown-unknown
+          name: exocore-web-client
 
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Build client & server
+      - name: Unarchive exocore web client
         run: |
+          cd $GITHUB_WORKSPACE
+          tar -xzf exocore-web.tar.gz -C exocore/
+
+      - name: Build exo
+        run: |
+          # TODO: Should probably be fetched instead...
           cd $GITHUB_WORKSPACE/exocore
-          yarn build_dev
           ./tools/install.sh --debug
 
       - name: Install example project
@@ -439,6 +434,16 @@ jobs:
         with:
           node-version: 20.x
 
+      - name: Download exocore web client
+        uses: actions/download-artifact@v4
+        with:
+          name: exocore-web-client
+
+      - name: Unarchive exocore web client
+        run: |
+          cd $GITHUB_WORKSPACE
+          tar -xzf exocore-web.tar.gz -C exocore/
+
       # TOOD: should depend on exocore
       - name: Build & test
         run: |
@@ -460,6 +465,16 @@ jobs:
         uses: actions/setup-node@v4.0.3
         with:
           node-version: 20.x
+
+      - name: Download exocore web client
+        uses: actions/download-artifact@v4
+        with:
+          name: exocore-web-client
+
+      - name: Unarchive exocore web client
+        run: |
+          cd $GITHUB_WORKSPACE
+          tar -xzf exocore-web.tar.gz -C exocore/
 
       - name: Build
         run: |
