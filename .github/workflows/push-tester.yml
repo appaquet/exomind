@@ -381,7 +381,7 @@ jobs:
 
   exomind_ios_build:
     runs-on: macos-14
-    needs: [exocore_ios_client_build]
+    needs: [exocore_ios_client_build, exocore_web_client_build]
     steps:
       - uses: actions/checkout@v4
 
@@ -404,12 +404,16 @@ jobs:
           cd $GITHUB_WORKSPACE
           tar -xzvf exocore-ios.tar.gz -C exocore/
 
-      - uses: actions/cache@v4
+      - name: Download exocore web client
+        uses: actions/download-artifact@v4
         with:
-          path: exomind/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+          name: exocore-web-client
+
+      - name: Unarchive exocore web client
+        run: |
+          cd $GITHUB_WORKSPACE
+          # Striping first directory as yarn package wraps into a `package` directory
+          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
       - name: Build web dependency
         run: |
@@ -418,6 +422,13 @@ jobs:
           yarn build_ios
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
+
+      - uses: actions/cache@v4
+        with:
+          path: exomind/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       - name: Build
         run: |
