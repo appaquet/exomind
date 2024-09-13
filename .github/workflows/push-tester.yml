@@ -292,7 +292,7 @@ jobs:
       - name: Install example project
         run: |
           cd $GITHUB_WORKSPACE/exocore/examples/web
-          npm install
+          yarn install
           npx playwright install --with-deps chromium
 
       - name: Run end-to-end tests
