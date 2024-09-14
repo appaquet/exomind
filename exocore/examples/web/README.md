@@ -12,9 +12,7 @@
 
 * Launch example server which will watch files and rebuild automatically:
 
-  `npm install && npm run start`
-
-  Note: `npm` is used here instead of `yarn` because we depend on `exocore` via its path and that `yarn` has the bad habit of copying all files in the `exocore` directory, including its massive target directory, because it bypasses ignored files. See [this issue](https://github.com/yarnpkg/yarn/issues/2822).
+  `yarn install && yarn run start`
 
 * Open browser to [http://127.0.0.1:8080](http://127.0.0.1:8080)
   * Copy the displayed discovery PIN.

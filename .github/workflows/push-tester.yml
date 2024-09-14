@@ -8,6 +8,9 @@ on:
       - "v0.*"
       - "v1.*"
 
+# TODO: build exo
+# TODO: build debug mode by default, but release if branch is master or v*
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -150,6 +153,72 @@ jobs:
           use-cross: ${{ matrix.pair.cross }}
           command: check
           args: -p exo --target ${{ matrix.pair.target }}
+
+  exo_build:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            bin: exo
+            cross: true
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            bin: exo
+            cross: true
+          - target: aarch64-apple-darwin
+            os: macos-14
+            bin: exo
+            cross: false
+
+    runs-on: ${{ matrix.pair.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: stable
+          target: ${{ matrix.pair.target }}
+          profile: minimal
+
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --locked --git https://github.com/cross-rs/cross
+
+      - name: Set Debug or Release Mode
+        id: set_mode
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "BUILD_PROFILE=release" >> $GITHUB_ENV
+          else
+            echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+
+      - uses: actions-rs/cargo@v1.0.3
+        with:
+          use-cross: ${{ matrix.pair.cross }}
+          command: build
+          args: -p exo --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.pair.target }}
+
+      - name: Create binary
+        run: |
+          mkdir archive
+          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/${{ matrix.pair.bin }} archive
+          cd archive/
+          tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.pair.target }}-artifact
+          path: exo.${{ matrix.pair.target }}.tar.gz
+          if-no-files-found: error
 
   exm_build_check:
     strategy:
