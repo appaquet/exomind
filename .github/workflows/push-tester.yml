@@ -199,7 +199,7 @@ jobs:
             echo "BUILD_ARG=--release" >> $GITHUB_ENV
           else
             echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
-            echo "BUILD_ARG=\"--profile production\"" >> $GITHUB_ENV
+            echo "BUILD_ARG=--debug" >> $GITHUB_ENV
           fi
 
       - uses: actions-rs/cargo@v1.0.3
