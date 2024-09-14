@@ -63,7 +63,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Tests
-        run: cargo test --all-features
+        run: cargo test --all-features --workspace
 
   rust_tests_coverage:
     runs-on: ubuntu-latest
@@ -136,9 +136,9 @@ jobs:
       - name: Cargo build
         run: |
           if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
-            cargo build -p exo --release --target ${{ matrix.pair.target }}
+            cross build -p exo --release --target ${{ matrix.pair.target }}
           else
-            cargo build -p exo --target ${{ matrix.pair.target }}
+            cross build -p exo --target ${{ matrix.pair.target }}
           fi
 
       - name: Create binary
