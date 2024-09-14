@@ -195,16 +195,16 @@ jobs:
       - name: Set Debug or Release Mode
         run: |
           if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "BUILD_PROFILE=release" >> $GITHUB_ENV
+            echo "BUILD_PROFILE=release BUILD_ARG=--release" >> $GITHUB_ENV
           else
-            echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+            echo "BUILD_PROFILE=debug BUILD_ARG=\"--profile production\"" >> $GITHUB_ENV
           fi
 
       - uses: actions-rs/cargo@v1.0.3
         with:
           use-cross: ${{ matrix.pair.cross }}
           command: build
-          args: -p exo --profile ${{ env.BUILD_PROFILE }} --target ${{ matrix.pair.target }}
+          args: -p exo ${{ env.BUILD_ARG }} --target ${{ matrix.pair.target }}
 
       - name: Create binary
         run: |
