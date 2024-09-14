@@ -41,75 +41,58 @@ jobs:
         with:
           args: --all-features
 
-  # rust_tests:
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       pair:
-  #         - target: x86_64-unknown-linux-gnu
-  #           os: ubuntu-latest
-  #         - target: x86_64-apple-darwin
-  #           os: macos-14
+  rust_tests:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-14
 
-  #   runs-on: ${{ matrix.pair.os }}
+    runs-on: ${{ matrix.pair.os }}
 
-  #   timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
 
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         profile: minimal
+      - uses: Swatinem/rust-cache@v2
 
-  #     - uses: Swatinem/rust-cache@v2
+      - name: Tests
+        run: cargo test --all-features
 
-  #     - name: Install Protoc
-  #       uses: arduino/setup-protoc@v3
-  #       with:
-  #         repo-token: ${{ secrets.GITHUB_TOKEN }}
+  rust_tests_coverage:
+    runs-on: ubuntu-latest
 
-  #     - name: Tests
-  #       uses: actions-rs/cargo@v1.0.3
-  #       with:
-  #         command: test
-  #         args: --workspace --all-features
+    timeout-minutes: 60
 
-  # rust_tests_coverage:
-  #   runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  #   timeout-minutes: 60
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: llvm-tools-preview
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+      - name: Install cargo-llvm-cov
+        run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
 
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         profile: minimal
-  #         components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
 
-  #     - name: Install cargo-llvm-cov
-  #       run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
+      - name: Test coverage
+        run: |
+          ./tools/coverage.sh lcov
 
-  #     - uses: Swatinem/rust-cache@v2
-
-  #     - name: Install Protoc
-  #       uses: arduino/setup-protoc@v3
-  #       with:
-  #         repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  #     - name: Test coverage
-  #       run: |
-  #         ./tools/coverage.sh lcov
-
-  #     - name: Upload coverage to Codecov
-  #       uses: codecov/codecov-action@v4
-  #       with:
-  #         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-  #         files: lcov.info
-  #         fail_ci_if_error: false
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: lcov.info
+          fail_ci_if_error: false
 
   # exo_build_check:
   #   strategy:
@@ -598,7 +581,7 @@ jobs:
 
   #     - name: Download exo
   #       run: |
-  #         wget https://github.com/appaquet/exocore/releases/download/v0.1.25/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+  #         wget https://github.com/appaquet/exocore/releases/download/v0.1.25/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx
   #         echo `pwd` >> $GITHUB_PATH
 
   #     - name: Build & package app
