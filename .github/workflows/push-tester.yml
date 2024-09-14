@@ -28,18 +28,13 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check formatting
         run: cargo fmt --all -- --check
 
       - name: Clippy & check
         uses: clechasseur/rs-clippy-check@v3
         with:
-          args: --all-features
+          args: --all-features --workspace
 
   rust_tests:
     strategy:
@@ -67,8 +62,6 @@ jobs:
 
   rust_tests_coverage:
     runs-on: ubuntu-latest
-
-    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -212,76 +205,25 @@ jobs:
           path: exm.${{ matrix.pair.target }}
           if-no-files-found: error
 
-  # exm_build_check:
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       pair:
-  #         - target: armv7-unknown-linux-gnueabihf
-  #           os: ubuntu-latest
-  #           cross: true
-  #         - target: aarch64-apple-darwin
-  #           os: macos-14
-  #           cross: false
+  exocore_apps_sdk_runtime_tests:
+    runs-on: ubuntu-latest
 
-  #   runs-on: ${{ matrix.pair.os }}
+    steps:
+      - uses: actions/checkout@v4
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-wasi
 
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         target: ${{ matrix.pair.target }}
-  #         profile: minimal
+      - uses: Swatinem/rust-cache@v2
 
-  #     - uses: Swatinem/rust-cache@v2
+      - name: Generate sample WASM fixtures
+        run: |
+          ./exocore/apps/tools/build_fixtures.sh
 
-  #     - name: Install master version of cross # TODO: Remove me once new cross is released
-  #       run: |
-  #         cargo install cross --locked --git https://github.com/cross-rs/cross
-
-  #     - name: Install Protoc
-  #       uses: arduino/setup-protoc@v3
-  #       with:
-  #         repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  #     - uses: actions-rs/cargo@v1.0.3
-  #       with:
-  #         use-cross: ${{ matrix.pair.cross }}
-  #         command: check
-  #         args: -p exm --target ${{ matrix.pair.target }}
-
-  # exocore_apps_sdk_runtime_tests:
-  #   runs-on: ubuntu-latest
-
-  #   timeout-minutes: 60
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         profile: minimal
-  #         target: wasm32-wasi
-
-  #     - uses: Swatinem/rust-cache@v2
-
-  #     - name: Install Protoc
-  #       uses: arduino/setup-protoc@v3
-  #       with:
-  #         repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  #     - name: Generate sample WASM fixtures
-  #       run: |
-  #         ./exocore/apps/tools/build_fixtures.sh
-
-  #     - name: Tests
-  #       uses: actions-rs/cargo@v1.0.3
-  #       with:
-  #         command: test
-  #         args: --workspace --all-features
+      - name: Tests
+        run: cargo test --workspace --all-features
 
   # exocore_web_client_build:
   #   runs-on: ubuntu-latest
