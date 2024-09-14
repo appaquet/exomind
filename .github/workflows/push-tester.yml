@@ -71,10 +71,10 @@ jobs:
           toolchain: stable
           components: llvm-tools-preview
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install cargo-llvm-cov
         run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
-
-      - uses: Swatinem/rust-cache@v2
 
       - name: Test coverage
         run: |
@@ -111,6 +111,8 @@ jobs:
         with:
           toolchain: stable
           targets: ${{ matrix.pair.target }}
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Install master version of cross # TODO: Remove me once new cross is released
         run: |
@@ -171,6 +173,8 @@ jobs:
           toolchain: stable
           targets: ${{ matrix.pair.target }}
 
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install master version of cross # TODO: Remove me once new cross is released
         run: |
           cargo install cross --locked --git https://github.com/cross-rs/cross
@@ -225,95 +229,96 @@ jobs:
       - name: Tests
         run: cargo test --workspace --all-features
 
-  # exocore_web_client_build:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
+  exocore_web_client_build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Install build dependencies
-  #       run: |
-  #         sudo apt update
-  #         sudo apt install -yq libssl-dev openssl protobuf-compiler
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
 
-  #         curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
-  #         mv wasm-pack*/wasm-pack .
-  #         echo `pwd` >> $GITHUB_PATH
+      - uses: Swatinem/rust-cache@v2
 
-  #         sudo npm install -g yarn
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt install -yq libssl-dev openssl protobuf-compiler
 
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         profile: minimal
-  #         target: wasm32-unknown-unknown
+          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
+          mv wasm-pack*/wasm-pack .
+          echo `pwd` >> $GITHUB_PATH
 
-  #     - name: Build client
-  #       run: |
-  #         cd $GITHUB_WORKSPACE/exocore
-  #         yarn install
-  #         yarn build
-  #         yarn pack
-  #         mv exocore-v*.tgz ../exocore-web.tar.gz
+          sudo npm install -g yarn
 
-  #     - name: Upload build artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: exocore-web-client
-  #         path: exocore-web.tar.gz
-  #         if-no-files-found: error
+      - name: Build client
+        run: |
+          cd $GITHUB_WORKSPACE/exocore
+          yarn install
+          yarn build
+          yarn pack
+          mv exocore-v*.tgz ../exocore-web.tar.gz
 
-  # exocore_web_client_e2e_test:
-  #   runs-on: ubuntu-latest
-  #   needs: [exocore_web_client_build]
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: exocore-web-client
+          path: exocore-web.tar.gz
+          if-no-files-found: error
 
-  #   timeout-minutes: 60
+  exocore_web_client_e2e_test:
+    runs-on: ubuntu-latest
+    needs: [exocore_web_client_build]
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    timeout-minutes: 60
 
-  #     - name: Install build dependencies
-  #       run: |
-  #         sudo npm install -g yarn
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Download exocore web client
-  #       uses: actions/download-artifact@v4
-  #       with:
-  #         name: exocore-web-client
+      - name: Install build dependencies
+        run: |
+          sudo npm install -g yarn
 
-  #     - name: Unarchive exocore web client
-  #       run: |
-  #         cd $GITHUB_WORKSPACE
-  #         # Striping first directory as yarn package wraps into a `package` directory
-  #         tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+      - name: Download exocore web client
+        uses: actions/download-artifact@v4
+        with:
+          name: exocore-web-client
 
-  #     - name: Build exo
-  #       run: |
-  #         # TODO: Should probably be fetched instead...
-  #         cd $GITHUB_WORKSPACE/exocore
-  #         ./tools/install.sh --debug
+      - name: Unarchive exocore web client
+        run: |
+          cd $GITHUB_WORKSPACE
+          # Striping first directory as yarn package wraps into a `package` directory
+          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-  #     - name: Install example project
-  #       run: |
-  #         cd $GITHUB_WORKSPACE/exocore/examples/web
-  #         yarn install
-  #         npx playwright install --with-deps chromium
+      - name: Build exo
+        run: |
+          # TODO: Should probably be fetched instead...
+          cd $GITHUB_WORKSPACE/exocore
+          ./tools/install.sh --debug
 
-  #     - name: Run end-to-end tests
-  #       run: |
-  #         cd $GITHUB_WORKSPACE/exocore/examples/web/tests
-  #         exo -d node daemon &
+      - name: Install example project
+        run: |
+          cd $GITHUB_WORKSPACE/exocore/examples/web
+          yarn install
+          npx playwright install --with-deps chromium
 
-  #         sleep 5
+      - name: Run end-to-end tests
+        run: |
+          cd $GITHUB_WORKSPACE/exocore/examples/web/tests
+          exo -d node daemon &
 
-  #         cd $GITHUB_WORKSPACE/exocore/examples/web
-  #         DEBUG=pw:api npm exec playwright test
+          sleep 5
 
-  #     - uses: actions/upload-artifact@v4
-  #       if: always()
-  #       with:
-  #         name: playwright-report
-  #         path: exocore/examples/web/playwright-report
-  #         retention-days: 7
+          cd $GITHUB_WORKSPACE/exocore/examples/web
+          DEBUG=pw:api npm exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: exocore/examples/web/playwright-report
+          retention-days: 7
 
   # exocore_ios_client_build:
   #   runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
