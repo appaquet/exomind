@@ -90,6 +90,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
           fail_ci_if_error: false
 
@@ -100,15 +101,12 @@ jobs:
         pair:
           - target: armv7-unknown-linux-gnueabihf
             os: ubuntu-latest
-            bin: exo
             cross: true
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            bin: exo
             cross: true
           - target: aarch64-apple-darwin
             os: macos-14
-            bin: exo
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
@@ -146,18 +144,13 @@ jobs:
             $TOOL build -p exo --target ${{ matrix.pair.target }}
           fi
 
-      - name: Create binary
-        run: |
-          mkdir archive
-          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/${{ matrix.pair.bin }} archive
-          cd archive/
-          tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
+          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/exo exo.${{ matrix.pair.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.pair.target }}-artifact
-          path: exo.${{ matrix.pair.target }}.tar.gz
+          name: exo-${{ matrix.pair.target }}
+          path: exo.${{ matrix.pair.target }}
           if-no-files-found: error
 
   exm_build:
@@ -167,15 +160,12 @@ jobs:
         pair:
           - target: armv7-unknown-linux-gnueabihf
             os: ubuntu-latest
-            bin: exm
             cross: true
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
-            bin: exm
             cross: true
           - target: aarch64-apple-darwin
             os: macos-14
-            bin: exm
             cross: false
 
     runs-on: ${{ matrix.pair.os }}
@@ -213,18 +203,13 @@ jobs:
             $TOOL build -p exm --target ${{ matrix.pair.target }}
           fi
 
-      - name: Create binary
-        run: |
-          mkdir archive
-          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/${{ matrix.pair.bin }} archive
-          cd archive/
-          tar -czf ../exm.${{ matrix.pair.target }}.tar.gz *
+          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/exm exm.${{ matrix.pair.target }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.pair.target }}-artifact
-          path: exm.${{ matrix.pair.target }}.tar.gz
+          name: exm-${{ matrix.pair.target }}
+          path: exm.${{ matrix.pair.target }}
           if-no-files-found: error
 
   # exm_build_check:
