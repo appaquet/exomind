@@ -193,12 +193,12 @@ jobs:
           cargo install cross --locked --git https://github.com/cross-rs/cross
 
       - name: Set Debug or Release Mode
-        id: set_mode
         run: |
           if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
             echo "BUILD_PROFILE=release" >> $GITHUB_ENV
           else
             echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+          fi
 
       - uses: actions-rs/cargo@v1.0.3
         with:
