@@ -135,10 +135,15 @@ jobs:
 
       - name: Cargo build
         run: |
+          TOOL="cargo"
+          if [[ "${{ matrix.pair.cross }}" == "true" ]]; then
+            TOOL="cross"
+          fi
+
           if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
-            cross build -p exo --release --target ${{ matrix.pair.target }}
+            $TOOL build -p exo --release --target ${{ matrix.pair.target }}
           else
-            cross build -p exo --target ${{ matrix.pair.target }}
+            $TOOL build -p exo --target ${{ matrix.pair.target }}
           fi
 
       - name: Create binary
