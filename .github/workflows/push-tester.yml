@@ -90,125 +90,70 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
           files: lcov.info
           fail_ci_if_error: false
 
-  # exo_build_check:
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       pair:
-  #         - target: armv7-unknown-linux-gnueabihf
-  #           os: ubuntu-latest
-  #           cross: true
-  #         - target: aarch64-apple-darwin
-  #           os: macos-14
-  #           cross: false
+  exo_build:
+    strategy:
+      fail-fast: true
+      matrix:
+        pair:
+          - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            bin: exo
+            cross: true
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            bin: exo
+            cross: true
+          - target: aarch64-apple-darwin
+            os: macos-14
+            bin: exo
+            cross: false
 
-  #   runs-on: ${{ matrix.pair.os }}
+    runs-on: ${{ matrix.pair.os }}
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         target: ${{ matrix.pair.target }}
-  #         profile: minimal
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: ${{ matrix.pair.target }}
 
-  #     - uses: Swatinem/rust-cache@v2
+      - name: Install master version of cross # TODO: Remove me once new cross is released
+        run: |
+          cargo install cross --locked --git https://github.com/cross-rs/cross
 
-  #     - name: Install master version of cross # TODO: Remove me once new cross is released
-  #       run: |
-  #         cargo install cross --locked --git https://github.com/cross-rs/cross
+      - name: Set Debug or Release Mode
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "BUILD_PROFILE=release" >> $GITHUB_ENV
+          else
+            echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+          fi
 
-  #     - name: Install Protoc
-  #       uses: arduino/setup-protoc@v3
-  #       with:
-  #         repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cargo build
+        run: |
+          if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
+            cargo build -p exo --release --target ${{ matrix.pair.target }}
+          else
+            cargo build -p exo --target ${{ matrix.pair.target }}
+          fi
 
-  #     - uses: actions-rs/cargo@v1.0.3
-  #       with:
-  #         use-cross: ${{ matrix.pair.cross }}
-  #         command: check
-  #         args: -p exo --target ${{ matrix.pair.target }}
+      - name: Create binary
+        run: |
+          mkdir archive
+          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/${{ matrix.pair.bin }} archive
+          cd archive/
+          tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
 
-  # exo_build:
-  #   strategy:
-  #     fail-fast: true
-  #     matrix:
-  #       pair:
-  #         - target: armv7-unknown-linux-gnueabihf
-  #           os: ubuntu-latest
-  #           bin: exo
-  #           cross: true
-  #         - target: x86_64-unknown-linux-gnu
-  #           os: ubuntu-latest
-  #           bin: exo
-  #           cross: true
-  #         - target: aarch64-apple-darwin
-  #           os: macos-14
-  #           bin: exo
-  #           cross: false
-
-  #   runs-on: ${{ matrix.pair.os }}
-
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - uses: actions-rs/toolchain@v1.0.7
-  #       with:
-  #         toolchain: stable
-  #         target: ${{ matrix.pair.target }}
-  #         profile: minimal
-
-  #     - name: Install Protoc
-  #       uses: arduino/setup-protoc@v3
-  #       with:
-  #         repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-  #     - name: Install master version of cross # TODO: Remove me once new cross is released
-  #       run: |
-  #         cargo install cross --locked --git https://github.com/cross-rs/cross
-
-  #     - name: Set Debug or Release Mode
-  #       run: |
-  #         if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
-  #           echo "BUILD_PROFILE=release" >> $GITHUB_ENV
-  #         else
-  #           echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
-  #         fi
-
-  #     - name: Cargo Build (Release)
-  #       if: env.BUILD_PROFILE == 'release'
-  #       uses: actions-rs/cargo@v1.0.3
-  #       with:
-  #         use-cross: ${{ matrix.pair.cross }}
-  #         command: build
-  #         args: -p exo --release --target ${{ matrix.pair.target }}
-
-  #     - name: Cargo Build (Debug)
-  #       if: env.BUILD_PROFILE == 'debug'
-  #       uses: actions-rs/cargo@v1.0.3
-  #       with:
-  #         use-cross: ${{ matrix.pair.cross }}
-  #         command: build
-  #         args: -p exo --target ${{ matrix.pair.target }}
-
-  #     - name: Create binary
-  #       run: |
-  #         mkdir archive
-  #         cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/${{ matrix.pair.bin }} archive
-  #         cd archive/
-  #         tar -czf ../exo.${{ matrix.pair.target }}.tar.gz *
-
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{ matrix.pair.target }}-artifact
-  #         path: exo.${{ matrix.pair.target }}.tar.gz
-  #         if-no-files-found: error
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.pair.target }}-artifact
+          path: exo.${{ matrix.pair.target }}.tar.gz
+          if-no-files-found: error
 
   # exm_build_check:
   #   strategy:
