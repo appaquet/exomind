@@ -8,6 +8,10 @@ on:
       - "v0.*"
       - "v1.*"
 
+# TODO: build exo
+# TODO: build debug mode by default, but release if branch is master or v*
+# TODO: switch to - uses: dtolnay/rust-toolchain@stable https://github.com/libp2p/rust-libp2p/blob/master/.github/workflows/ci.yml#L222
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -17,29 +21,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
+          components: clippy
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Check formatting
-        uses: actions-rs/cargo@v1.0.3
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Clippy & check
-        uses: actions-rs/clippy-check@v1.0.7
+        uses: clechasseur/rs-clippy-check@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+          args: --all-features --workspace
 
   rust_tests:
     strategy:
@@ -53,52 +48,33 @@ jobs:
 
     runs-on: ${{ matrix.pair.os }}
 
-    timeout-minutes: 60
-
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Tests
-        uses: actions-rs/cargo@v1.0.3
-        with:
-          command: test
-          args: --workspace --all-features
+        run: cargo test --all-features --workspace
 
   rust_tests_coverage:
     runs-on: ubuntu-latest
 
-    timeout-minutes: 60
-
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
           components: llvm-tools-preview
-
-      - name: Install cargo-llvm-cov
-        run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install cargo-llvm-cov
+        run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
 
       - name: Test coverage
         run: |
@@ -111,12 +87,15 @@ jobs:
           files: lcov.info
           fail_ci_if_error: false
 
-  exo_build_check:
+  exo_build:
     strategy:
       fail-fast: true
       matrix:
         pair:
           - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+          - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             cross: true
           - target: aarch64-apple-darwin
@@ -128,11 +107,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          target: ${{ matrix.pair.target }}
-          profile: minimal
+          targets: ${{ matrix.pair.target }}
 
       - uses: Swatinem/rust-cache@v2
 
@@ -140,23 +118,45 @@ jobs:
         run: |
           cargo install cross --locked --git https://github.com/cross-rs/cross
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set Debug or Release Mode
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "BUILD_PROFILE=release" >> $GITHUB_ENV
+          else
+            echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+          fi
 
-      - uses: actions-rs/cargo@v1.0.3
-        with:
-          use-cross: ${{ matrix.pair.cross }}
-          command: check
-          args: -p exo --target ${{ matrix.pair.target }}
+      - name: Cargo build
+        run: |
+          TOOL="cargo"
+          if [[ "${{ matrix.pair.cross }}" == "true" ]]; then
+            TOOL="cross"
+          fi
 
-  exm_build_check:
+          if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
+            $TOOL build -p exo --release --target ${{ matrix.pair.target }}
+          else
+            $TOOL build -p exo --target ${{ matrix.pair.target }}
+          fi
+
+          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/exo exo.${{ matrix.pair.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: exo-${{ matrix.pair.target }}
+          path: exo.${{ matrix.pair.target }}
+          if-no-files-found: error
+
+  exm_build:
     strategy:
       fail-fast: true
       matrix:
         pair:
           - target: armv7-unknown-linux-gnueabihf
+            os: ubuntu-latest
+            cross: true
+          - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             cross: true
           - target: aarch64-apple-darwin
@@ -168,11 +168,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          target: ${{ matrix.pair.target }}
-          profile: minimal
+          targets: ${{ matrix.pair.target }}
 
       - uses: Swatinem/rust-cache@v2
 
@@ -180,69 +179,78 @@ jobs:
         run: |
           cargo install cross --locked --git https://github.com/cross-rs/cross
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set Debug or Release Mode
+        run: |
+          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "BUILD_PROFILE=release" >> $GITHUB_ENV
+          else
+            echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+          fi
 
-      - uses: actions-rs/cargo@v1.0.3
+      - name: Cargo build
+        run: |
+          TOOL="cargo"
+          if [[ "${{ matrix.pair.cross }}" == "true" ]]; then
+            TOOL="cross"
+          fi
+
+          if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
+            $TOOL build -p exm --release --target ${{ matrix.pair.target }}
+          else
+            $TOOL build -p exm --target ${{ matrix.pair.target }}
+          fi
+
+          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/exm exm.${{ matrix.pair.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          use-cross: ${{ matrix.pair.cross }}
-          command: check
-          args: -p exm --target ${{ matrix.pair.target }}
+          name: exm-${{ matrix.pair.target }}
+          path: exm.${{ matrix.pair.target }}
+          if-no-files-found: error
 
   exocore_apps_sdk_runtime_tests:
     runs-on: ubuntu-latest
 
-    timeout-minutes: 60
-
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
-          target: wasm32-wasi
+          targets: wasm32-wasi
 
       - uses: Swatinem/rust-cache@v2
-
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate sample WASM fixtures
         run: |
           ./exocore/apps/tools/build_fixtures.sh
 
       - name: Tests
-        uses: actions-rs/cargo@v1.0.3
-        with:
-          command: test
-          args: --workspace --all-features
+        run: cargo test --workspace --all-features
 
   exocore_web_client_build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
       - name: Install build dependencies
         run: |
           sudo apt update
-          sudo apt install -yq libssl-dev openssl protobuf-compiler
+          sudo apt install -yq libssl-dev openssl
 
           curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
           mv wasm-pack*/wasm-pack .
           echo `pwd` >> $GITHUB_PATH
 
           sudo npm install -g yarn
-
-      - uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: stable
-          profile: minimal
-          target: wasm32-unknown-unknown
 
       - name: Build client
         run: |
@@ -317,10 +325,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
 
       - uses: Swatinem/rust-cache@v2
 
@@ -335,7 +342,12 @@ jobs:
           # TODO: Should use release on tags
           cd $GITHUB_WORKSPACE/exocore/clients/ios
           ./tools/generate.sh
-          ./tools/build.sh
+
+          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+            ./tools/build.sh release
+          else
+            ./tools/build.sh
+          fi
 
           cd $GITHUB_WORKSPACE/exocore/
           pod lib lint --verbose --allow-warnings
@@ -389,10 +401,6 @@ jobs:
         uses: actions/setup-node@v4.0.3
         with:
           node-version: 20.x
-
-      - name: Install dependencies
-        run: |
-          HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
 
       - name: Download exocore ios client
         uses: actions/download-artifact@v4
@@ -507,22 +515,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions-rs/toolchain@v1.0.7
+      - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
-          target: wasm32-wasi
+          targets: wasm32-wasi
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Download exo
         run: |
-          wget https://github.com/appaquet/exocore/releases/download/v0.1.25/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx 
+          wget https://github.com/appaquet/exocore/releases/download/v0.1.25/exo.x86_64-unknown-linux-gnu.tar.gz -O - | tar -zx
           echo `pwd` >> $GITHUB_PATH
 
       - name: Build & package app
