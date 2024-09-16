@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exomind"
 version = "0.1.15"
 
 [dependencies]
-exocore = { version = "0.1.25", default-features = false, features = ["protos"] }
+exocore = { version = "0.1.26", default-features = false, features = ["protos"] }
 prost = "0.11.9"
 prost-types = "0.11.9"
 
