@@ -254,12 +254,12 @@ jobs:
           cd $GITHUB_WORKSPACE/assets/
 
           BUILD_PARAMS=""
-          # if [[ "{{ github.event.inputs.publish }}" == "true" ]]; then 
-          #   BUILD_PARAMS="--push"
-          # fi
-          # if [[ "{{ github.event.inputs.publish }}" == "true" ]]; then 
-          #   BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exocore:latest"
-          # fi
+          if [[ "{{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="--push"
+          fi
+          if [[ "{{ github.event.inputs.publish }}" == "true" ]]; then 
+            BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exocore:latest"
+          fi
 
           export DOCKER_CLI_EXPERIMENTAL=enabled
           docker buildx build \
