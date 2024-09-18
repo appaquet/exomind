@@ -539,12 +539,6 @@ jobs:
           # Striping first directory as yarn package wraps into a `package` directory
           tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      # - name: Install dependencies
-      #   run: |
-      #     if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-      #       sudo snap install snapcraft --classic
-      #     fi
-
       - name: Build
         run: |
           cd exomind/web
@@ -564,13 +558,12 @@ jobs:
             exit 1
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: "--openssl-legacy-provider"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: exomind-electron
+          name: exomind-electron-${{ matrix.os }}
           path: exomind/web/pkg/*
           if-no-files-found: error
 
@@ -602,7 +595,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: exomind-app-package
-          path: exomind-app.zip
+          path: exomind/exomind-app.zip
           if-no-files-found: error
 
   markdown_links_check:
