@@ -228,9 +228,10 @@ jobs:
       - name: Download release files
         run: |
           set -x
-          ls -lash
-          mv exo.x86_64-unknown-linux-gnu exo-amd64
-          mv exo.armv7-unknown-linux-gnueabihf exo-arm
+
+          mkdir assets/
+          mv exo.x86_64-unknown-linux-gnu assets/exo-amd64
+          mv exo.armv7-unknown-linux-gnueabihf assets/exo-arm
 
       - name: Setup Docker
         run: |
