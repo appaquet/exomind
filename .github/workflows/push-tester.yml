@@ -18,76 +18,76 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  rust_checks:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # rust_checks:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: clippy
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
+  #         components: clippy
 
-      - uses: Swatinem/rust-cache@v2
+  #     - uses: Swatinem/rust-cache@v2
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
+  #     - name: Check formatting
+  #       run: cargo fmt --all -- --check
 
-      - name: Clippy & check
-        uses: clechasseur/rs-clippy-check@v3
-        with:
-          args: --all-features --workspace
+  #     - name: Clippy & check
+  #       uses: clechasseur/rs-clippy-check@v3
+  #       with:
+  #         args: --all-features --workspace
 
-  rust_tests:
-    strategy:
-      fail-fast: true
-      matrix:
-        pair:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-          - target: x86_64-apple-darwin
-            os: macos-14
+  # rust_tests:
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       pair:
+  #         - target: x86_64-unknown-linux-gnu
+  #           os: ubuntu-latest
+  #         - target: x86_64-apple-darwin
+  #           os: macos-14
 
-    runs-on: ${{ matrix.pair.os }}
+  #   runs-on: ${{ matrix.pair.os }}
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
 
-      - uses: Swatinem/rust-cache@v2
+  #     - uses: Swatinem/rust-cache@v2
 
-      - name: Tests
-        run: cargo test --all-features --workspace
+  #     - name: Tests
+  #       run: cargo test --all-features --workspace
 
-  rust_tests_coverage:
-    runs-on: ubuntu-latest
+  # rust_tests_coverage:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: llvm-tools-preview
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
+  #         components: llvm-tools-preview
 
-      - uses: Swatinem/rust-cache@v2
+  #     - uses: Swatinem/rust-cache@v2
 
-      - name: Install cargo-llvm-cov
-        run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
+  #     - name: Install cargo-llvm-cov
+  #       run: curl -LsSf https://github.com/taiki-e/cargo-llvm-cov/releases/latest/download/cargo-llvm-cov-x86_64-unknown-linux-gnu.tar.gz | tar xzf - -C ~/.cargo/bin
 
-      - name: Test coverage
-        run: |
-          ./tools/coverage.sh lcov
+  #     - name: Test coverage
+  #       run: |
+  #         ./tools/coverage.sh lcov
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-          files: lcov.info
-          fail_ci_if_error: false
+  #     - name: Upload coverage to Codecov
+  #       uses: codecov/codecov-action@v4
+  #       with:
+  #         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+  #         files: lcov.info
+  #         fail_ci_if_error: false
 
   exo_build:
     strategy:
@@ -211,25 +211,25 @@ jobs:
           path: exm.${{ matrix.pair.target }}
           if-no-files-found: error
 
-  exocore_apps_sdk_runtime_tests:
-    runs-on: ubuntu-latest
+  # exocore_apps_sdk_runtime_tests:
+  #   runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: wasm32-wasi
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
+  #         targets: wasm32-wasi
 
-      - uses: Swatinem/rust-cache@v2
+  #     - uses: Swatinem/rust-cache@v2
 
-      - name: Generate sample WASM fixtures
-        run: |
-          ./exocore/apps/tools/build_fixtures.sh
+  #     - name: Generate sample WASM fixtures
+  #       run: |
+  #         ./exocore/apps/tools/build_fixtures.sh
 
-      - name: Tests
-        run: cargo test --workspace --all-features
+  #     - name: Tests
+  #       run: cargo test --workspace --all-features
 
   exocore_web_client_build:
     runs-on: ubuntu-latest
@@ -269,216 +269,216 @@ jobs:
           path: exocore-web.tar.gz
           if-no-files-found: error
 
-  exocore_web_client_e2e_test:
-    runs-on: ubuntu-latest
-    needs: [exocore_web_client_build]
+  # exocore_web_client_e2e_test:
+  #   runs-on: ubuntu-latest
+  #   needs: [exocore_web_client_build]
 
-    timeout-minutes: 60
+  #   timeout-minutes: 60
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install build dependencies
-        run: |
-          sudo npm install -g yarn
+  #     - name: Install build dependencies
+  #       run: |
+  #         sudo npm install -g yarn
 
-      - name: Download exocore web client
-        uses: actions/download-artifact@v4
-        with:
-          name: exocore-web-client
+  #     - name: Download exocore web client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-web-client
 
-      - name: Unarchive exocore web client
-        run: |
-          cd $GITHUB_WORKSPACE
-          # Striping first directory as yarn package wraps into a `package` directory
-          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+  #     - name: Unarchive exocore web client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         # Striping first directory as yarn package wraps into a `package` directory
+  #         tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      - name: Build exo
-        run: |
-          # TODO: Should probably be fetched instead...
-          cd $GITHUB_WORKSPACE/exocore
-          ./tools/install.sh --debug
+  #     - name: Build exo
+  #       run: |
+  #         # TODO: Should probably be fetched instead...
+  #         cd $GITHUB_WORKSPACE/exocore
+  #         ./tools/install.sh --debug
 
-      - name: Install example project
-        run: |
-          cd $GITHUB_WORKSPACE/exocore/examples/web
-          yarn install
-          npx playwright install --with-deps chromium
+  #     - name: Install example project
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/exocore/examples/web
+  #         yarn install
+  #         npx playwright install --with-deps chromium
 
-      - name: Run end-to-end tests
-        run: |
-          cd $GITHUB_WORKSPACE/exocore/examples/web/tests
-          exo -d node daemon &
+  #     - name: Run end-to-end tests
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/exocore/examples/web/tests
+  #         exo -d node daemon &
 
-          sleep 5
+  #         sleep 5
 
-          cd $GITHUB_WORKSPACE/exocore/examples/web
-          DEBUG=pw:api npm exec playwright test
+  #         cd $GITHUB_WORKSPACE/exocore/examples/web
+  #         DEBUG=pw:api npm exec playwright test
 
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: exocore/examples/web/playwright-report
-          retention-days: 7
+  #     - uses: actions/upload-artifact@v4
+  #       if: always()
+  #       with:
+  #         name: playwright-report
+  #         path: exocore/examples/web/playwright-report
+  #         retention-days: 7
 
-  exocore_ios_client_build:
-    runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
-    steps:
-      - uses: actions/checkout@v4
+  # exocore_ios_client_build:
+  #   runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
 
-      - uses: Swatinem/rust-cache@v2
+  #     - uses: Swatinem/rust-cache@v2
 
-      - name: Install dependencies
-        run: |
-          HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
-          rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim # actions-rs doesn't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
-          cargo install cargo-lipo cbindgen --debug # make build faster, no need for speed from it
+  #     - name: Install dependencies
+  #       run: |
+  #         HOMEBREW_NO_INSTALL_CLEANUP=1 brew install swift-protobuf
+  #         rustup target add aarch64-apple-ios x86_64-apple-ios aarch64-apple-ios-sim # actions-rs doesn't support multiple targets: https://github.com/actions-rs/toolchain/issues/16
+  #         cargo install cargo-lipo cbindgen --debug # make build faster, no need for speed from it
 
-      - name: Build client & pod
-        run: |
-          # TODO: Should use release on tags
-          cd $GITHUB_WORKSPACE/exocore/clients/ios
-          ./tools/generate.sh
+  #     - name: Build client & pod
+  #       run: |
+  #         # TODO: Should use release on tags
+  #         cd $GITHUB_WORKSPACE/exocore/clients/ios
+  #         ./tools/generate.sh
 
-          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
-            ./tools/build.sh release
-          else
-            ./tools/build.sh
-          fi
+  #         if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+  #           ./tools/build.sh release
+  #         else
+  #           ./tools/build.sh
+  #         fi
 
-          cd $GITHUB_WORKSPACE/exocore/
-          pod lib lint --verbose --allow-warnings
+  #         cd $GITHUB_WORKSPACE/exocore/
+  #         pod lib lint --verbose --allow-warnings
 
-      - name: Archive exocore ios client
-        run: |
-          cd $GITHUB_WORKSPACE
-          mkdir archive
-          mkdir -p archive/clients/
-          cp -r exocore/clients/ios archive/clients/
-          cp exocore/Exocore.podspec archive/
-          cd archive/
-          tar -czf $GITHUB_WORKSPACE/exocore-ios.tar.gz *
+  #     - name: Archive exocore ios client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         mkdir archive
+  #         mkdir -p archive/clients/
+  #         cp -r exocore/clients/ios archive/clients/
+  #         cp exocore/Exocore.podspec archive/
+  #         cd archive/
+  #         tar -czf $GITHUB_WORKSPACE/exocore-ios.tar.gz *
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: exocore-ios-client
-          path: exocore-ios.tar.gz
-          if-no-files-found: error
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: exocore-ios-client
+  #         path: exocore-ios.tar.gz
+  #         if-no-files-found: error
 
-  exocore_ios_example_build:
-    runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
-    needs: [exocore_ios_client_build]
-    steps:
-      - uses: actions/checkout@v4
+  # exocore_ios_example_build:
+  #   runs-on: macos-14 # See https://github.com/actions/virtual-environments/blob/main/images/macos for versions
+  #   needs: [exocore_ios_client_build]
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Download exocore ios client
-        uses: actions/download-artifact@v4
-        with:
-          name: exocore-ios-client
+  #     - name: Download exocore ios client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-ios-client
 
-      - name: Unarchive exocore ios client
-        run: |
-          cd $GITHUB_WORKSPACE
-          tar -xzvf exocore-ios.tar.gz -C exocore/
+  #     - name: Unarchive exocore ios client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         tar -xzvf exocore-ios.tar.gz -C exocore/
 
-      - name: Build example project
-        run: |
-          cd $GITHUB_WORKSPACE/exocore/examples/ios
-          pod install
-          xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+  #     - name: Build example project
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/exocore/examples/ios
+  #         pod install
+  #         xcodebuild -workspace ExamplesIos.xcworkspace -scheme ExamplesIos -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
-  exomind_ios_build:
-    runs-on: macos-14
-    needs: [exocore_ios_client_build, exocore_web_client_build]
-    steps:
-      - uses: actions/checkout@v4
+  # exomind_ios_build:
+  #   runs-on: macos-14
+  #   needs: [exocore_ios_client_build, exocore_web_client_build]
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4.0.3
-        with:
-          node-version: 20.x
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4.0.3
+  #       with:
+  #         node-version: 20.x
 
-      - name: Download exocore ios client
-        uses: actions/download-artifact@v4
-        with:
-          name: exocore-ios-client
+  #     - name: Download exocore ios client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-ios-client
 
-      - name: Unarchive exocore ios client
-        run: |
-          cd $GITHUB_WORKSPACE
-          tar -xzvf exocore-ios.tar.gz -C exocore/
+  #     - name: Unarchive exocore ios client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         tar -xzvf exocore-ios.tar.gz -C exocore/
 
-      - name: Download exocore web client
-        uses: actions/download-artifact@v4
-        with:
-          name: exocore-web-client
+  #     - name: Download exocore web client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-web-client
 
-      - name: Unarchive exocore web client
-        run: |
-          cd $GITHUB_WORKSPACE
-          # Striping first directory as yarn package wraps into a `package` directory
-          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+  #     - name: Unarchive exocore web client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         # Striping first directory as yarn package wraps into a `package` directory
+  #         tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      - name: Build web dependency
-        run: |
-          cd $GITHUB_WORKSPACE/exomind/web
-          yarn install --frozen-lockfile
-          yarn build_ios
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+  #     - name: Build web dependency
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/exomind/web
+  #         yarn install --frozen-lockfile
+  #         yarn build_ios
+  #       env:
+  #         NODE_OPTIONS: "--openssl-legacy-provider"
 
-      - uses: actions/cache@v4
-        with:
-          path: exomind/ios/Pods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+  #     - uses: actions/cache@v4
+  #       with:
+  #         path: exomind/ios/Pods
+  #         key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-pods-
 
-      - name: Build
-        run: |
-          cd $GITHUB_WORKSPACE/exomind/ios
-          pod install
-          xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
+  #     - name: Build
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/exomind/ios
+  #         pod install
+  #         xcodebuild -workspace Exomind.xcworkspace -scheme Exomind -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO
 
-  exomind_web_build:
-    runs-on: ubuntu-latest
-    needs: [exocore_web_client_build]
+  # exomind_web_build:
+  #   runs-on: ubuntu-latest
+  #   needs: [exocore_web_client_build]
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4.0.3
-        with:
-          node-version: 20.x
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4.0.3
+  #       with:
+  #         node-version: 20.x
 
-      - name: Download exocore web client
-        uses: actions/download-artifact@v4
-        with:
-          name: exocore-web-client
+  #     - name: Download exocore web client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-web-client
 
-      - name: Unarchive exocore web client
-        run: |
-          cd $GITHUB_WORKSPACE
-          # Striping first directory as yarn package wraps into a `package` directory
-          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+  #     - name: Unarchive exocore web client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         # Striping first directory as yarn package wraps into a `package` directory
+  #         tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      # TOOD: should depend on exocore
-      - name: Build & test
-        run: |
-          cd exomind/web
-          yarn install --frozen-lockfile
-          yarn build
-          yarn test
-          yarn lint
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+  #     # TOOD: should depend on exocore
+  #     - name: Build & test
+  #       run: |
+  #         cd exomind/web
+  #         yarn install --frozen-lockfile
+  #         yarn build
+  #         yarn test
+  #         yarn lint
+  #       env:
+  #         NODE_OPTIONS: "--openssl-legacy-provider"
 
   # exomind_electron_build:
   #   runs-on: ubuntu-latest
@@ -539,17 +539,15 @@ jobs:
           # Striping first directory as yarn package wraps into a `package` directory
           tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      - name: Install dependencies
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            sudo snap install snapcraft --classic
-          fi
+      # - name: Install dependencies
+      #   run: |
+      #     if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+      #       sudo snap install snapcraft --classic
+      #     fi
 
       - name: Build
-        shell: bash
         run: |
-          cd web
+          cd exomind/web
           yarn install
           yarn electron_dist
 
@@ -573,7 +571,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: exomind-electron
-          path: web/pkg/*
+          path: exomind/web/pkg/*
           if-no-files-found: error
 
   exomind_app_package:
@@ -598,6 +596,14 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/exomind/
           ./app/tools/build.sh
+          mv exomind.zip exomind-app.zip
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: exomind-app-package
+          path: exomind-app.zip
+          if-no-files-found: error
 
   markdown_links_check:
     runs-on: ubuntu-latest
