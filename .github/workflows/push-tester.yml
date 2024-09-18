@@ -8,9 +8,11 @@ on:
       - "v0.*"
       - "v1.*"
 
-# TODO: build exo
-# TODO: build debug mode by default, but release if branch is master or v*
-# TODO: switch to - uses: dtolnay/rust-toolchain@stable https://github.com/libp2p/rust-libp2p/blob/master/.github/workflows/ci.yml#L222
+# TODO: upload electron
+# TODO: docker
+# TODO: exomind app package
+# TODO: ios release vs debug
+# TODO: ios upload archive
 
 env:
   CARGO_TERM_COLOR: always
@@ -478,9 +480,44 @@ jobs:
         env:
           NODE_OPTIONS: "--openssl-legacy-provider"
 
-  exomind_electron_build:
-    runs-on: ubuntu-latest
-    needs: [exocore_web_client_build]
+  # exomind_electron_build:
+  #   runs-on: ubuntu-latest
+  #   needs: [exocore_web_client_build]
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4.0.3
+  #       with:
+  #         node-version: 20.x
+
+  #     - name: Download exocore web client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-web-client
+
+  #     - name: Unarchive exocore web client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         # Striping first directory as yarn package wraps into a `package` directory
+  #         tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+
+  #     - name: Build
+  #       run: |
+  #         cd exomind/web
+  #         yarn install --frozen-lockfile
+  #         yarn electron
+  #       env:
+  #         NODE_OPTIONS: "--openssl-legacy-provider"
+
+  exomind_electron_app:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v4
@@ -501,13 +538,42 @@ jobs:
           # Striping first directory as yarn package wraps into a `package` directory
           tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      - name: Build
+      - name: Install dependencies
+        shell: bash
         run: |
-          cd exomind/web
-          yarn install --frozen-lockfile
-          yarn electron
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            sudo snap install snapcraft --classic
+          fi
+
+      - name: Build
+        shell: bash
+        run: |
+          cd web
+          yarn install
+          yarn electron_dist
+
+          mkdir pkg
+          if [ "${{ matrix.os }}" == "macos-14" ]; then
+            mv dist/Exomind-*-arm64.dmg pkg/exomind-electron-macos-aarch64.dmg
+            mv dist/Exomind-*.dmg pkg/exomind-electron-macos-x86_64.dmg
+          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            cp dist/exomind-*_amd64.snap pkg/exomind-electron-linux.snap
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cp dist/Exomind*.exe pkg/exomind-electron-win.exe
+          else
+            echo "${{ matrix.os }} not supported"
+            exit 1
+          fi
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: "--openssl-legacy-provider"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: exomind-electron
+          path: web/pkg/*
+          if-no-files-found: error
 
   exomind_app_package:
     runs-on: ubuntu-latest
