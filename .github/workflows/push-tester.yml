@@ -148,66 +148,125 @@ jobs:
           path: exo.${{ matrix.pair.target }}
           if-no-files-found: error
 
-  exm_build:
-    strategy:
-      fail-fast: true
-      matrix:
-        pair:
-          - target: armv7-unknown-linux-gnueabihf
-            os: ubuntu-latest
-            cross: true
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            cross: true
-          - target: aarch64-apple-darwin
-            os: macos-14
-            cross: false
+  # exm_build:
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       pair:
+  #         - target: armv7-unknown-linux-gnueabihf
+  #           os: ubuntu-latest
+  #           cross: true
+  #         - target: x86_64-unknown-linux-gnu
+  #           os: ubuntu-latest
+  #           cross: true
+  #         - target: aarch64-apple-darwin
+  #           os: macos-14
+  #           cross: false
 
-    runs-on: ${{ matrix.pair.os }}
+  #   runs-on: ${{ matrix.pair.os }}
 
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
+  #         targets: ${{ matrix.pair.target }}
+
+  #     - uses: Swatinem/rust-cache@v2
+
+  #     - name: Install master version of cross # TODO: Remove me once new cross is released
+  #       run: |
+  #         cargo install cross --locked --git https://github.com/cross-rs/cross
+
+  #     - name: Set Debug or Release Mode
+  #       run: |
+  #         if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
+  #           echo "BUILD_PROFILE=release" >> $GITHUB_ENV
+  #         else
+  #           echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
+  #         fi
+
+  #     - name: Cargo build
+  #       run: |
+  #         TOOL="cargo"
+  #         if [[ "${{ matrix.pair.cross }}" == "true" ]]; then
+  #           TOOL="cross"
+  #         fi
+
+  #         if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
+  #           $TOOL build -p exm --release --target ${{ matrix.pair.target }}
+  #         else
+  #           $TOOL build -p exm --target ${{ matrix.pair.target }}
+  #         fi
+
+  #         cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/exm exm.${{ matrix.pair.target }}
+
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: exm-${{ matrix.pair.target }}
+  #         path: exm.${{ matrix.pair.target }}
+  #         if-no-files-found: error
+
+  exocore_docker_build:
+    runs-on: ubuntu-latest
+    needs: [exo_build]
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
+      - name: Download exo
+        uses: actions/download-artifact@v4
         with:
-          toolchain: stable
-          targets: ${{ matrix.pair.target }}
+          name: exo-x86_64-unknown-linux-gnu
 
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install master version of cross # TODO: Remove me once new cross is released
-        run: |
-          cargo install cross --locked --git https://github.com/cross-rs/cross
-
-      - name: Set Debug or Release Mode
-        run: |
-          if [[ "${GITHUB_REF}" == "refs/heads/master" || "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "BUILD_PROFILE=release" >> $GITHUB_ENV
-          else
-            echo "BUILD_PROFILE=debug" >> $GITHUB_ENV
-          fi
-
-      - name: Cargo build
-        run: |
-          TOOL="cargo"
-          if [[ "${{ matrix.pair.cross }}" == "true" ]]; then
-            TOOL="cross"
-          fi
-
-          if [[ "${{ env.BUILD_PROFILE }}" == "release" ]]; then
-            $TOOL build -p exm --release --target ${{ matrix.pair.target }}
-          else
-            $TOOL build -p exm --target ${{ matrix.pair.target }}
-          fi
-
-          cp target/${{ matrix.pair.target }}/${{ env.BUILD_PROFILE }}/exm exm.${{ matrix.pair.target }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Download exo
+        uses: actions/download-artifact@v4
         with:
-          name: exm-${{ matrix.pair.target }}
-          path: exm.${{ matrix.pair.target }}
-          if-no-files-found: error
+          name: exo-armv7-unknown-linux-gnueabihf
+
+      - name: Download release files
+        run: |
+          set -x
+          mv exo-x86_64-unknown-linux-gnu exo-amd64
+          mv exo-armv7-unknown-linux-gnueabihf exo-arm
+
+      - name: Setup Docker
+        run: |
+          set -x
+
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+          # Allows build in arm for qemu
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+          # Create builder
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx create --use --name exocore-builder
+
+      - name: Build & publish Docker
+        run: |
+          set -x
+          TAG="$(git rev-parse --short HEAD)"
+
+          cd $GITHUB_WORKSPACE/assets/
+
+          BUILD_PARAMS=""
+          # if [[ "{{ github.event.inputs.publish }}" == "true" ]]; then 
+          #   BUILD_PARAMS="--push"
+          # fi
+
+          # if [[ "{{ github.event.inputs.publish }}" == "true" ]]; then 
+          #   BUILD_PARAMS="$BUILD_PARAMS --tag appaquet/exocore:latest"
+          # fi
+
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx build \
+            --tag appaquet/exocore:$TAG \
+            --platform linux/amd64,linux/arm \
+            --file $GITHUB_WORKSPACE/exo/Dockerfile.buildx \
+            $BUILD_PARAMS \
+            .
 
   # exocore_apps_sdk_runtime_tests:
   #   runs-on: ubuntu-latest
