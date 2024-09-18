@@ -98,9 +98,9 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             cross: true
-          - target: aarch64-apple-darwin
-            os: macos-14
-            cross: false
+          # - target: aarch64-apple-darwin
+          #   os: macos-14
+          #   cross: false
 
     runs-on: ${{ matrix.pair.os }}
 
@@ -228,8 +228,9 @@ jobs:
       - name: Download release files
         run: |
           set -x
-          mv exo-x86_64-unknown-linux-gnu exo-amd64
-          mv exo-armv7-unknown-linux-gnueabihf exo-arm
+          ls -lash
+          mv exo.x86_64-unknown-linux-gnu exo-amd64
+          mv exo.armv7-unknown-linux-gnueabihf exo-arm
 
       - name: Setup Docker
         run: |
@@ -288,43 +289,43 @@ jobs:
   #     - name: Tests
   #       run: cargo test --workspace --all-features
 
-  exocore_web_client_build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # exocore_web_client_build:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
+  #     - uses: dtolnay/rust-toolchain@master
+  #       with:
+  #         toolchain: stable
+  #         targets: wasm32-unknown-unknown
 
-      - uses: Swatinem/rust-cache@v2
+  #     - uses: Swatinem/rust-cache@v2
 
-      - name: Install build dependencies
-        run: |
-          sudo apt update
-          sudo apt install -yq libssl-dev openssl
+  #     - name: Install build dependencies
+  #       run: |
+  #         sudo apt update
+  #         sudo apt install -yq libssl-dev openssl
 
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
-          mv wasm-pack*/wasm-pack .
-          echo `pwd` >> $GITHUB_PATH
+  #         curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
+  #         mv wasm-pack*/wasm-pack .
+  #         echo `pwd` >> $GITHUB_PATH
 
-          sudo npm install -g yarn
+  #         sudo npm install -g yarn
 
-      - name: Build client
-        run: |
-          cd $GITHUB_WORKSPACE/exocore
-          yarn install
-          yarn build
-          yarn pack
-          mv exocore-v*.tgz ../exocore-web.tar.gz
+  #     - name: Build client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE/exocore
+  #         yarn install
+  #         yarn build
+  #         yarn pack
+  #         mv exocore-v*.tgz ../exocore-web.tar.gz
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: exocore-web-client
-          path: exocore-web.tar.gz
-          if-no-files-found: error
+  #     - name: Upload build artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: exocore-web-client
+  #         path: exocore-web.tar.gz
+  #         if-no-files-found: error
 
   # exocore_web_client_e2e_test:
   #   runs-on: ubuntu-latest
@@ -537,61 +538,61 @@ jobs:
   #       env:
   #         NODE_OPTIONS: "--openssl-legacy-provider"
 
-  exomind_electron_app:
-    runs-on: ${{ matrix.os }}
-    needs: [exocore_web_client_build]
+  # exomind_electron_app:
+  #   runs-on: ${{ matrix.os }}
+  #   needs: [exocore_web_client_build]
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-14, ubuntu-latest]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [macos-14, ubuntu-latest]
 
-    steps:
-      - uses: actions/checkout@v4
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4.0.3
-        with:
-          node-version: 20.x
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4.0.3
+  #       with:
+  #         node-version: 20.x
 
-      - name: Download exocore web client
-        uses: actions/download-artifact@v4
-        with:
-          name: exocore-web-client
+  #     - name: Download exocore web client
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: exocore-web-client
 
-      - name: Unarchive exocore web client
-        run: |
-          cd $GITHUB_WORKSPACE
-          # Striping first directory as yarn package wraps into a `package` directory
-          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+  #     - name: Unarchive exocore web client
+  #       run: |
+  #         cd $GITHUB_WORKSPACE
+  #         # Striping first directory as yarn package wraps into a `package` directory
+  #         tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      - name: Build
-        run: |
-          cd exomind/web
-          yarn install
-          yarn electron_dist
+  #     - name: Build
+  #       run: |
+  #         cd exomind/web
+  #         yarn install
+  #         yarn electron_dist
 
-          mkdir pkg
-          if [ "${{ matrix.os }}" == "macos-14" ]; then
-            mv dist/Exomind-*-arm64.dmg pkg/exomind-electron-macos-aarch64.dmg
-            mv dist/Exomind-*.dmg pkg/exomind-electron-macos-x86_64.dmg
-          elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            cp dist/exomind-*_amd64.snap pkg/exomind-electron-linux.snap
-          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-            cp dist/Exomind*.exe pkg/exomind-electron-win.exe
-          else
-            echo "${{ matrix.os }} not supported"
-            exit 1
-          fi
-        env:
-          NODE_OPTIONS: "--openssl-legacy-provider"
+  #         mkdir pkg
+  #         if [ "${{ matrix.os }}" == "macos-14" ]; then
+  #           mv dist/Exomind-*-arm64.dmg pkg/exomind-electron-macos-aarch64.dmg
+  #           mv dist/Exomind-*.dmg pkg/exomind-electron-macos-x86_64.dmg
+  #         elif [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+  #           cp dist/exomind-*_amd64.snap pkg/exomind-electron-linux.snap
+  #         elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+  #           cp dist/Exomind*.exe pkg/exomind-electron-win.exe
+  #         else
+  #           echo "${{ matrix.os }} not supported"
+  #           exit 1
+  #         fi
+  #       env:
+  #         NODE_OPTIONS: "--openssl-legacy-provider"
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: exomind-electron-${{ matrix.os }}
-          path: exomind/web/pkg/*
-          if-no-files-found: error
+  #     - name: Upload build artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: exomind-electron-${{ matrix.os }}
+  #         path: exomind/web/pkg/*
+  #         if-no-files-found: error
 
   # exomind_app_package:
   #   runs-on: ubuntu-latest
