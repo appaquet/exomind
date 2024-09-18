@@ -513,6 +513,7 @@ jobs:
 
   exomind_electron_app:
     runs-on: ${{ matrix.os }}
+    needs: [exocore_web_client_build]
 
     strategy:
       fail-fast: false
