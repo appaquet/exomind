@@ -2,6 +2,7 @@ use libp2p_identity::{
     ed25519 as libp2p_ed25519, secp256k1 as libp2p_secp256k1, Keypair as libp2p_Keypair,
     PublicKey as libp2p_PublicKey,
 };
+use petname::Generator;
 use rand::SeedableRng;
 
 const ENCODE_KEYPAIR_CODE: u8 = b'a';
@@ -212,7 +213,9 @@ impl PublicKey {
             bytes[bytes_len - 7],
             bytes[bytes_len - 8],
         ]));
-        petname::Petnames::default().generate(&mut rng, 3, "-")
+        petname::Petnames::small()
+            .generate(&mut rng, 3, "-")
+            .expect("a petname to be generated")
     }
 }
 
