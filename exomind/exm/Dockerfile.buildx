@@ -1,4 +1,4 @@
-FROM debian:bookworkm-slim
+FROM debian:bookworm-slim
 
 ARG TARGETPLATFORM
 ARG TARGETARCH
