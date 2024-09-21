@@ -13,8 +13,8 @@ version = "0.1.27"
 exocore = { version = "0.1.27", path = "../../exocore", default-features = false, features = [
     "protos",
 ] }
-prost = "0.12.6"
-prost-types = "0.12.6"
+prost = "0.13"
+prost-types = "0.13"
 
 [build-dependencies]
-prost-build = "0.12.6"
+prost-build = "0.13"

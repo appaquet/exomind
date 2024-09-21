@@ -255,16 +255,18 @@ export function getEntityParentRelation(entity: EntityTraits, parentId: string):
 
 export function getEntityParentWeight(entity: EntityTraits, parentId: string): number {
     const child = getEntityParentRelation(entity, parentId);
-    const weight = child.message.weight;
+    return weightToNumber(child.message.weight);
+}
 
+export function isPinnedInParent(entity: EntityTraits, parentId: string): boolean {
+    const child = getEntityParentRelation(entity, parentId);
+    return weightToNumber(child.message.weight) >= PINNED_WEIGHT;
+}
+
+function weightToNumber(weight: number | Long): number {
     if (Long.isLong(weight)) {
         return weight.toNumber();
     } else {
         return weight as number;
     }
-}
-
-export function isPinnedInParent(entity: EntityTraits, parentId: string): boolean {
-    const child = getEntityParentRelation(entity, parentId);
-    return child.message.weight >= PINNED_WEIGHT;
 }

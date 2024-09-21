@@ -8,16 +8,16 @@
   "repository": "https://github.com/appaquet/exomind",
   "main": "index.js",
   "scripts": {
-    "start": "webpack --config webpack.prod.js && cp src/server.js dist/ && cd dist && node server.js",
-    "start_dev": "webpack-dev-server --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js",
-    "build_dev": "webpack --config webpack.dev.js",
-    "build_ios": "webpack --config webpack.ios.js",
-    "electron_build": "electron-webpack",
-    "electron": "yarn electron_build && electron-builder --dir",
-    "electron_dist": "yarn electron_build && electron-builder --publish=never",
-    "test": "jest",
-    "lint": "tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'"
+    "start": "NODE_OPTIONS=--openssl-legacy-provider webpack --config webpack.prod.js && cp src/server.js dist/ && cd dist && node server.js",
+    "start_dev": "NODE_OPTIONS=--openssl-legacy-provider webpack-dev-server --config webpack.dev.js",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider webpack --config webpack.prod.js",
+    "build_dev": "NODE_OPTIONS=--openssl-legacy-provider webpack --config webpack.dev.js",
+    "build_ios": "NODE_OPTIONS=--openssl-legacy-provider webpack --config webpack.ios.js",
+    "electron_build": "NODE_OPTIONS=--openssl-legacy-provider electron-webpack",
+    "electron": "NODE_OPTIONS=--openssl-legacy-provider yarn electron_build && electron-builder --dir",
+    "electron_dist": "NODE_OPTIONS=--openssl-legacy-provider yarn electron_build && electron-builder --publish=never",
+    "test": "NODE_OPTIONS=--openssl-legacy-provider jest",
+    "lint": "NODE_OPTIONS=--openssl-legacy-provider tsc --noEmit && eslint 'src/**/*.ts' 'src/**/*.tsx'"
   },
   "electronWebpack": {
     "main": {

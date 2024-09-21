@@ -14,8 +14,8 @@ anyhow = "1.0.89"
 base64 = "0.22"
 capnp = { version = "0.20", features = ["sync_reader"] }
 chrono = "0.4.38"
-prost = "0.12.6"
-prost-types = "0.12.6"
+prost = "0.13"
+prost-types = "0.13"
 protobuf = "3.5.1"
 serde = "1.0.209"
 serde_derive = "1.0.209"
@@ -23,5 +23,5 @@ serde_json = "1.0.127"
 thiserror = "1.0.63"
 
 [build-dependencies]
-capnpc = "0.19"
-prost-build = "0.12.6"
+capnpc = "0.20"
+prost-build = "0.13"

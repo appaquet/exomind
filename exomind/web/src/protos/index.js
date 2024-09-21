@@ -1229,6 +1229,12 @@ export const exomind = $root.exomind = (() => {
                     if (object.name != null)
                         message.name = String(object.name);
                     switch (object.type) {
+                    default:
+                        if (typeof object.type === "number") {
+                            message.type = object.type;
+                            break;
+                        }
+                        break;
                     case "ACCOUNT_TYPE_INVALID":
                     case 0:
                         message.type = 0;
@@ -1245,6 +1251,10 @@ export const exomind = $root.exomind = (() => {
                         for (let i = 0; i < object.scopes.length; ++i)
                             switch (object.scopes[i]) {
                             default:
+                                if (typeof object.scopes[i] === "number") {
+                                    message.scopes[i] = object.scopes[i];
+                                    break;
+                                }
                             case "ACCOUNT_SCOPE_INVALID":
                             case 0:
                                 message.scopes[i] = 0;
@@ -1292,11 +1302,11 @@ export const exomind = $root.exomind = (() => {
                     if (message.name != null && message.hasOwnProperty("name"))
                         object.name = message.name;
                     if (message.type != null && message.hasOwnProperty("type"))
-                        object.type = options.enums === String ? $root.exomind.base.v1.AccountType[message.type] : message.type;
+                        object.type = options.enums === String ? $root.exomind.base.v1.AccountType[message.type] === undefined ? message.type : $root.exomind.base.v1.AccountType[message.type] : message.type;
                     if (message.scopes && message.scopes.length) {
                         object.scopes = [];
                         for (let j = 0; j < message.scopes.length; ++j)
-                            object.scopes[j] = options.enums === String ? $root.exomind.base.v1.AccountScope[message.scopes[j]] : message.scopes[j];
+                            object.scopes[j] = options.enums === String ? $root.exomind.base.v1.AccountScope[message.scopes[j]] === undefined ? message.scopes[j] : $root.exomind.base.v1.AccountScope[message.scopes[j]] : message.scopes[j];
                     }
                     let keys2;
                     if (message.data && (keys2 = Object.keys(message.data)).length) {

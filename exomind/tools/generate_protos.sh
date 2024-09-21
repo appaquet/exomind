@@ -8,12 +8,12 @@ EXOCORE_ROOT="$REPO_ROOT/exocore"
 
 # Update exocore protos to latest
 rm -rf $EXOMIND_ROOT/protos/protobuf/exocore
-cp -r $EXOCORE_REPO/protos/protobuf/exocore $EXOMIND_ROOT/protos/protobuf/
+cp -r $EXOCORE_ROOT/protos/protobuf/exocore $EXOMIND_ROOT/protos/protobuf/
 
 # Generate exomind app file descriptor
 protoc \
   -I"$EXOMIND_ROOT/protos/protobuf/" \
-  -I"$EXOCORE_REPO/protos/protobuf/" \
+  -I"$EXOCORE_ROOT/protos/protobuf/" \
   $EXOMIND_ROOT/protos/protobuf/exomind/*.proto \
   -o "$EXOMIND_ROOT/exomind.fd"
 
