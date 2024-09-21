@@ -8,7 +8,7 @@ exclude = ["browsers", "ios", "web", "tools", "examples"]
 license = "Apache-2.0"
 name = "exomind"
 repository = "https://github.com/appaquet/exomind"
-version = "0.1.15"
+version = "0.1.27"
 
 [dependencies]
-exomind-protos = { path = "./protos", version = "0.1.15" }
+exomind-protos = { path = "./protos", version = "0.1.27" }

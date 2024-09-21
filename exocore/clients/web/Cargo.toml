@@ -2,7 +2,7 @@
 authors = ["Andre-Philippe Paquet <appaquet@gmail.com>"]
 edition = "2021"
 name = "exocore-client-web"
-version = "0.1.26"
+version = "0.1.27"
 
 [lib]
 crate-type = ["cdylib"]
@@ -10,11 +10,11 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1.0.89"
 console_error_panic_hook = "0.1.7"
-exocore-core = {version = "0.1.26", path = "../../core", default-features = false, features=["web"]}
-exocore-discovery = {version = "0.1.26", path = "../../discovery", default-features = false}
-exocore-protos = {version = "0.1.26", path = "../../protos", default-features = false}
-exocore-store = {version = "0.1.26", path = "../../store", default-features = false, features = ["remote"]}
-exocore-transport = {version = "0.1.26", path = "../../transport", default-features = false, features = ["p2p-web"]}
+exocore-core = {version = "0.1.27", path = "../../core", default-features = false, features=["web"]}
+exocore-discovery = {version = "0.1.27", path = "../../discovery", default-features = false}
+exocore-protos = {version = "0.1.27", path = "../../protos", default-features = false}
+exocore-store = {version = "0.1.27", path = "../../store", default-features = false, features = ["remote"]}
+exocore-transport = {version = "0.1.27", path = "../../transport", default-features = false, features = ["p2p-web"]}
 futures = "0.3.30"
 js-sys = "0.3.70"
 log = "0.4.22"

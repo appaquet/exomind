@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-protos"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.26"
+version = "0.1.27"
 
 [dependencies]
 anyhow = "1.0.89"

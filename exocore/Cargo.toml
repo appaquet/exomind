@@ -13,7 +13,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.26"
+version = "0.1.27"
 
 [features]
 default = ["apps-sdk", "client", "logger", "web"]
@@ -45,16 +45,16 @@ transport-p2p-web = ["exocore-transport/p2p-web"]
 
 [dependencies]
 anyhow = { version = "1.0.89", optional = true }
-exocore-apps-sdk = { version = "0.1.26", path = "./apps/sdk", default-features = false, optional = true }
-exocore-chain = { version = "0.1.26", path = "./chain", default-features = false, optional = true }
-exocore-core = { version = "0.1.26", path = "./core", default-features = false, optional = true }
-exocore-discovery = { version = "0.1.26", path = "./discovery", default-features = false, optional = true }
-exocore-protos = { version = "0.1.26", path = "./protos", default-features = false, optional = true }
-exocore-store = { version = "0.1.26", path = "./store", default-features = false, optional = true }
-exocore-transport = { version = "0.1.26", path = "./transport", default-features = false, optional = true }
+exocore-apps-sdk = { version = "0.1.27", path = "./apps/sdk", default-features = false, optional = true }
+exocore-chain = { version = "0.1.27", path = "./chain", default-features = false, optional = true }
+exocore-core = { version = "0.1.27", path = "./core", default-features = false, optional = true }
+exocore-discovery = { version = "0.1.27", path = "./discovery", default-features = false, optional = true }
+exocore-protos = { version = "0.1.27", path = "./protos", default-features = false, optional = true }
+exocore-store = { version = "0.1.27", path = "./store", default-features = false, optional = true }
+exocore-transport = { version = "0.1.27", path = "./transport", default-features = false, optional = true }
 log = "0.4.22"
 
 [dev-dependencies]
-exocore-core = { version = "0.1.26", path = "./core", features = [
+exocore-core = { version = "0.1.27", path = "./core", features = [
   "tests-utils",
 ] }

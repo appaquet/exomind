@@ -5,7 +5,7 @@ edition = "2021"
 license = "Apache-2.0"
 name = "exomind-combined"
 repository = "https://github.com/appaquet/exomind"
-version = "0.2.0"
+version = "0.1.27"
 
 [workspace]
 exclude = ["exocore/3rd"]

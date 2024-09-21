@@ -1,7 +1,7 @@
 {
   "author": "Andre-Philippe Paquet <appaquet@gmail.com>",
   "name": "exocore",
-  "version": "0.1.26",
+  "version": "0.1.27",
   "repository": "https://github.com/appaquet/exocore",
   "license": "Apache-2.0",
   "scripts": {

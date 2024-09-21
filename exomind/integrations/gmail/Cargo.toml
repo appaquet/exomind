@@ -7,7 +7,7 @@ keywords = ["knowledge-management", "mobile", "decentralized", "gmail", "email"]
 license = "Apache-2.0"
 name = "exomind-gmail"
 repository = "https://github.com/appaquet/exomind"
-version = "0.1.15"
+version = "0.1.27"
 
 [dependencies]
 anyhow = "1.0.89"
@@ -15,8 +15,8 @@ base64 = "0.22.1"
 chardetng = "0.1.17"
 charset = "0.1.5"
 duration-string = { version = "0.4.0", features = ["serde"] }
-exocore = { version = "0.1.26", path = "../../../exocore", default-features = false, features = ["client", "logger"] }
-exomind-protos = {version = "0.1.15", path = "../../protos"}
+exocore = { version = "0.1.27", path = "../../../exocore", default-features = false, features = ["client", "logger"] }
+exomind-protos = {version = "0.1.27", path = "../../protos"}
 google-gmail1 = "5.0.5"
 hyper = "0.14.30"
 hyper-rustls = {version="0.24.2", features=["http2"]}
@@ -29,4 +29,4 @@ serde_yaml = "0.9.34"
 structopt = "0.3.26"
 
 [dev-dependencies]
-exocore = { version = "0.1.26", path = "../../../exocore", default-features = false, features = ["client", "logger", "tests-utils"] }
+exocore = { version = "0.1.27", path = "../../../exocore", default-features = false, features = ["client", "logger", "tests-utils"] }

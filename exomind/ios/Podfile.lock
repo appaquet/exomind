@@ -8,7 +8,7 @@ PODS:
   - AppCenter/Crashes (4.1.1):
     - AppCenter/Core
   - CLTokenInputView (2.3.0)
-  - Exocore (0.1.26):
+  - Exocore (0.1.27):
     - SwiftProtobuf (~> 1.10)
   - FontAwesome.swift (1.9.1)
   - Introspect (0.1.3)
@@ -59,7 +59,7 @@ CHECKOUT OPTIONS:
 SPEC CHECKSUMS:
   AppCenter: cd53e3ed3563cc720bcb806c9731a12389b40d44
   CLTokenInputView: 9dc1ffb7c9d2d81787e69a63c75bd97b0b2d1e76
-  Exocore: e2a49ef364ff05f8239486195230628cb25178ef
+  Exocore: 5624573f9be0cc6a42167e091a4d5c21e0a8deb4
   FontAwesome.swift: 6b52cb7be66eacd28cbfaa0ca7ffd0de4a186a1d
   Introspect: 2be020f30f084ada52bb4387fff83fa52c5c400e
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7

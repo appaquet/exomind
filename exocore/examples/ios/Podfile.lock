@@ -1,5 +1,5 @@
 PODS:
-  - Exocore (0.1.26):
+  - Exocore (0.1.27):
     - SwiftProtobuf (~> 1.10)
   - KeychainSwift (19.0.0)
   - SwiftProtobuf (1.14.0)
@@ -19,10 +19,10 @@ EXTERNAL SOURCES:
     :path: "../../Exocore.podspec"
 
 SPEC CHECKSUMS:
-  Exocore: b1c7884aefcc5b4b6000e4fa328d03ee4ac82972
+  Exocore: 5624573f9be0cc6a42167e091a4d5c21e0a8deb4
   KeychainSwift: a06190cf933ad46b1e0abc3d77d29c06331715c7
   SwiftProtobuf: ed465ed18402f998fd117f631da27e0168e6b59c
 
 PODFILE CHECKSUM: c2e4798fa30d55acafd3b80f14a0be9b9c51cc4b
 
-COCOAPODS: 1.12.1
+COCOAPODS: 1.15.2

@@ -7,7 +7,7 @@ keywords = ["networking", "mobile", "webassembly", "storage", "database"]
 license = "Apache-2.0"
 name = "exocore-chain"
 repository = "https://github.com/appaquet/exocore"
-version = "0.1.26"
+version = "0.1.27"
 
 [features]
 default = ["engine", "directory-chain", "memory-pending"]
@@ -20,9 +20,9 @@ tests-utils = ["engine", "tempfile", "directory-chain", "memory-pending", "exoco
 [dependencies]
 anyhow = "1.0.89"
 byteorder = "1.5.0"
-exocore-core = {version = "0.1.26", path = "../core"}
-exocore-protos = {version = "0.1.26", path = "../protos"}
-exocore-transport = {version = "0.1.26", path = "../transport", default-features = false}
+exocore-core = {version = "0.1.27", path = "../core"}
+exocore-protos = {version = "0.1.27", path = "../protos"}
+exocore-transport = {version = "0.1.27", path = "../transport", default-features = false}
 futures = "0.3.30"
 itertools = "0.13.0"
 log = "0.4.22"
@@ -38,8 +38,8 @@ memmap2 = { version = "0.9.5", optional = true }
 tempfile = { version = "3.12.0", optional = true }
 
 [dev-dependencies]
-exocore-core = {version = "0.1.26", path = "../core", features = ["tests-utils"]}
-exocore-transport = {version = "0.1.26", path = "../transport", features = ["tests-utils"]}
+exocore-core = {version = "0.1.27", path = "../core", features = ["tests-utils"]}
+exocore-transport = {version = "0.1.27", path = "../transport", features = ["tests-utils"]}
 tempfile = "3.12.0"
 tokio = { version = "1.40.0", features = ["macros"], default-features = false }
 
