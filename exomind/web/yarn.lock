@@ -4764,10 +4764,10 @@ electron-webpack@^2.8.2:
     webpack-merge "^4.2.2"
     yargs "^15.3.1"
 
-electron@^32.1.1:
-  version "32.1.1"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-32.1.1.tgz#37aedbfee39a855781d4849afeb773658fe2a5f9"
-  integrity sha512-NlWvG6kXOJbZbELmzP3oV7u50I3NHYbCeh+AkUQ9vGyP7b74cFMx9HdTzejODeztW1jhr3SjIBbUZzZ45zflfQ==
+electron@^32.1.2:
+  version "32.1.2"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-32.1.2.tgz#84d1efd95d41224e58a6a9bbd1db4ba80154fc02"
+  integrity sha512-CXe6doFzhmh1U7daOvUzmF6Cj8hssdYWMeEPRnRO6rB9/bbwMlWctcQ7P8NJXhLQ88/vYUJQrJvlJPh8qM0BRQ==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^20.9.0"
@@ -5439,7 +5439,7 @@ exit@^0.1.2:
   integrity sha512-Zk/eNKV2zbjpKzrsQ+n1G6poVbErQxJ0LBOJXaKZ1EViLzH+hrLu9cdXI4zw9dBQJslwBEpbQ2P1oS7nDxs6jQ==
 
 "exocore@file:../../exocore":
-  version "0.1.26"
+  version "0.1.27"
   dependencies:
     protobufjs "^7.4.0"
 
