@@ -12,4 +12,4 @@ anyhow = "1.0.89"
 exocore-core = {version = "0.1.27", path = "../../core", features = ["runtime", "logger"]}
 exocore-store = {version = "0.1.27", path = "../../store"}
 exocore-transport = {version = "0.1.27", path = "../../transport", features = ["p2p-full"]}
-thiserror = "1.0.63"
+thiserror = "1.0.64"
