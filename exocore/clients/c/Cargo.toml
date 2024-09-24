@@ -16,7 +16,7 @@ exocore-store = {version = "0.1.27", path = "../../store", default-features = fa
 exocore-transport = {version = "0.1.27", path = "../../transport", features = ["p2p-full"]}
 weak-table = "0.3.2"
 futures = "0.3.30"
-libc = "0.2.158"
+libc = "0.2.159"
 log = "0.4.22"
 log4rs = "1.3.0"
 serde_json = "1.0.127"
