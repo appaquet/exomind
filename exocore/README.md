@@ -1,24 +1,18 @@
 # Exocore
 
-[![codecov](https://codecov.io/gh/appaquet/exocore/branch/master/graph/badge.svg?token=OKZAHfPlaP)](https://codecov.io/gh/appaquet/exocore)
-[![Build](https://github.com/appaquet/exocore/actions/workflows/push-tester.yml/badge.svg)](https://github.com/appaquet/exocore/actions/workflows/push-tester.yml)
+**Warning: Exocore/exomind a personal project. I daily drive it, but it may not be stable for your use case.**
 
-**Warning: Exocore is at a very early development stage, hence incomplete, unstable, and probably totally unsafe. Use at your own risk.**
+Exocore is a distributed applications framework with private and encrypted data storage. It allows users to own their personal cloud, which is extensible via WebAssembly applications and accessible through Web, Mobile, and Backend SDKs. It is designed to be resilient to failures and will eventually support offline usage (e.g., on mobile).
 
-Exocore is a distributed applications framework with private and encrypted data storage. Think of it as an infrastructure that allows
-a user to own his own personal cloud that is extensible via WebAssembly applications and accessible via Web/Mobile/Backend SDKs. It is
-designed to be resilient to failures and will eventually allow offline usage (ex: on mobile).
+Exocore is primarily built for [Exomind](../exomind/README.md), a personal knowledge management tool developed in parallel. Exocore serves as the application framework for Exomind.
 
-Exocore is primarily built for [Exomind](https://github.com/appaquet/exomind), a personal knowledge management tool built in parallel
-to this project. Exocore is the application framework for Exomind.
-
-The primary concept in Exocore is a Cell, which is a unique container for a user's applications and data.
+The primary concept in Exocore is a Cell, a unique container for a user's applications and data.
 
 A cell consists of:
 
-* Chain nodes manage replication and storage by using a blockchain data structure.
-* Store nodes manage indexation, querying, and mutation of the data (collocated with chain node).
-* Application host nodes run applications written in WebAssembly (collocated with store nodes)
+* **Chain nodes**: Manage replication and storage using a blockchain data structure.
+* **Store nodes**: Handle indexation, querying, and mutation of data (collocated with chain nodes).
+* **Application host nodes**: Run applications written in WebAssembly (collocated with store nodes).
 
 ## Roadmap
 

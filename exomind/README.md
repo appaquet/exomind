@@ -1,15 +1,10 @@
 # Exomind
 
-![Build](https://github.com/appaquet/exomind/workflows/Push%20tester/badge.svg)
-![iOS app](https://build.appcenter.ms/v0.1/apps/76ac2c48-f34c-4ac4-bcc4-41bae61f8177/branches/app-build/badge)
+**Warning: Exocore/exomind a personal project. I daily drive it, but it may not be stable for your use case.**
 
-**Warning: Exomind is at a very early development stage, hence incomplete, unstable and probably totally unsafe. Use at your own risk.**
+Exomind is a personal knowledge management tool that serves as a unified inbox for your emails, notes, tasks, and bookmarks, allowing them to be organized into collections.
 
-Exomind is a personal knowledge management tool. It is a unified inbox in which your emails, your notes, your tasks and your bookmarks can live
-and be organized in collections.
-
-It is built on top of [Exocore](../exocore), a distributed application framework, and is meant to be hosted in a
-decentralized fashion on user's selected servers (ex: Raspberry Pi, VPS, etc.).
+Built on top of [Exocore](../exocore), a distributed application framework, Exomind is designed to be hosted in a decentralized manner on user-selected servers (e.g., Raspberry Pi, VPS, etc.).
 
 ## Roadmap
 
@@ -34,7 +29,8 @@ Exomind closely follows [Exocore's roadmap](../exocore#roadmap) since Exocore is
 
 ## Apps
 
-<img src="https://user-images.githubusercontent.com/129552/107126442-fb39c500-687d-11eb-8e61-39d66a3edf3d.gif" height="350" />   <img src="https://user-images.githubusercontent.com/129552/107126280-e6a8fd00-687c-11eb-9a00-5e2405bfcc59.gif" height="350" />
+<img src="https://user-images.githubusercontent.com/129552/107126442-fb39c500-687d-11eb-8e61-39d66a3edf3d.gif" height="350" />
+<img src="https://user-images.githubusercontent.com/129552/107126280-e6a8fd00-687c-11eb-9a00-5e2405bfcc59.gif" height="350" />
 
 ## Dependencies
 

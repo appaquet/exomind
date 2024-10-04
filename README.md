@@ -11,7 +11,14 @@ It allows you to manage your emails, notes, tasks, and bookmarks, organizing the
 It is built on top of [Exocore](./exocore/), a distributed application framework, and is meant to be
 hosted in a decentralized fashion on user's selected servers (ex: Raspberry Pi, VPS, etc.).
 
+## Quick Start
+
+To get started with Exomind, follow the quick start guides in the following order:
+
+1. **Exocore Quick Start**: Set up the underlying Exocore framework by following the instructions in [Exocore's README](./exocore/README.md).
+2. **Exomind Quick Start**: Once Exocore is set up, follow the instructions in [Exomind's README](./exomind/README.md) to install and run Exomind.
+
 ## Usage
 
-* See [exocore's README](./exocore/README.md)
-* See [exomind's README](./exomind/README.md)
+* See [Exocore's README](./exocore/README.md)
+* See [Exomind's README](./exomind/README.md)
