@@ -48,7 +48,7 @@ exocore-transport = {version = "0.1.27", path = "../transport", default-features
 byteorder = {version = "1.5.0", optional = true}
 crc = {version = "3.2.1", optional = true}
 extsort = {version = "0.4.2", optional = true}
-lru = {version = "0.12.4", optional = true}
+lru = {version = "0.12.5", optional = true}
 serde = {version = "1.0.209", optional = true}
 serde_derive = {version = "1.0.209", optional = true}
 serde_json = {version = "1.0.127", optional = true}
