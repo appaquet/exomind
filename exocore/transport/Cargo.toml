@@ -23,7 +23,7 @@ byteorder = "1.5.0"
 bytes = "1.7.2"
 exocore-core = {version = "0.1.27", path = "../core"}
 exocore-protos = {version = "0.1.27", path = "../protos"}
-futures = "0.3.30"
+futures = "0.3.31"
 hyper = {version = "0.14.30", features = ["full"], optional = true}
 libp2p = {version = "0.53.2", optional = true, default-features = false, features = ["noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
 libp2p-identity = { version = "0.2.9", features = ["secp256k1", "ed25519"], default-features = false }

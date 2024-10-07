@@ -15,7 +15,7 @@ exocore-discovery = {version = "0.1.27", path = "../../discovery", default-featu
 exocore-protos = {version = "0.1.27", path = "../../protos", default-features = false}
 exocore-store = {version = "0.1.27", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.27", path = "../../transport", default-features = false, features = ["p2p-web"]}
-futures = "0.3.30"
+futures = "0.3.31"
 js-sys = "0.3.70"
 log = "0.4.22"
 thiserror = "1.0.64"

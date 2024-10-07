@@ -17,7 +17,7 @@ anyhow = "1.0.89"
 exocore-core = {version = "0.1.27", path = "../../core"}
 exocore-protos = {version = "0.1.27", path = "../../protos"}
 exocore-store = {version = "0.1.27", path = "../../store"}
-futures = "0.3.30"
+futures = "0.3.31"
 log = "0.4.22"
 reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tls"] }
 thiserror = "1.0.64"
