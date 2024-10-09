@@ -55,7 +55,7 @@ uuid = { version = "1.4.1", features = ["v4", "wasm-bindgen"] }
 wasm-timer = "0.2.5"
 
 # web
-web-sys = { version = "0.3.70", features = ["Storage"], optional = true }
+web-sys = { version = "0.3.71", features = ["Storage"], optional = true }
 
 [target."cfg(target_arch = \"wasm32\")".dependencies]
 getrandom = "0.2.15"
