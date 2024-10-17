@@ -4778,10 +4778,10 @@ electron-webpack@^2.8.2:
     webpack-merge "^4.2.2"
     yargs "^15.3.1"
 
-electron@^31.1.0:
-  version "31.4.0"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-31.4.0.tgz#fd55fd882117b09fd68b2d182c8fda2dbb7ef454"
-  integrity sha512-YTwKoAA+nrJMlI1TTHnIXLYWoQLKnhbkz0qxZcI7Hadcy0UaFMFs9xzwvH2MnrRpVJy7RKo49kVGuvSdRl8zMA==
+electron@^33.0.1:
+  version "33.0.1"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-33.0.1.tgz#6e990077eb27d0d3dc9a0c424271a2f10c202263"
+  integrity sha512-PipPnWH4gvf7o+P8jlKQZGgPfb5eHcLgTrnKkFzb98MXhyPjVJYCR7YWqcawZ8IfyJCut8vMxLuBFLT1Ag8TSQ==
   dependencies:
     "@electron/get" "^2.0.0"
     "@types/node" "^20.9.0"
