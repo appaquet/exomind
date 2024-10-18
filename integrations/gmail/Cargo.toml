@@ -15,7 +15,7 @@ base64 = "0.22.1"
 chardetng = "0.1.17"
 charset = "0.1.5"
 duration-string = { version = "0.4.0", features = ["serde"] }
-exocore = { version = "0.1.25", default-features = false, features = ["client", "logger"] }
+exocore = { version = "0.1.26", default-features = false, features = ["client", "logger"] }
 exomind-protos = {version = "0.1.15", path = "../../protos"}
 google-gmail1 = "5.0.5"
 hyper = "0.14.30"
@@ -29,4 +29,4 @@ serde_yaml = "0.9.34"
 structopt = "0.3.26"
 
 [dev-dependencies]
-exocore = { version = "0.1.25", default-features = false, features = ["client", "logger", "tests-utils"] }
+exocore = { version = "0.1.26", default-features = false, features = ["client", "logger", "tests-utils"] }
