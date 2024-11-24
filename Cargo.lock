@@ -1668,7 +1668,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
  "url 2.5.4",
  "zip",
@@ -1709,7 +1709,7 @@ dependencies = [
  "futures",
  "log",
  "reqwest",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "wasmtime",
  "wasmtime-wasi",
 ]
@@ -1723,7 +1723,7 @@ dependencies = [
  "log",
  "quote",
  "syn 2.0.89",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
 ]
 
 [[package]]
@@ -1739,7 +1739,7 @@ dependencies = [
  "lazy_static",
  "log",
  "quote",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
 ]
 
@@ -1760,7 +1760,7 @@ dependencies = [
  "memmap2 0.9.5",
  "serde",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
 ]
 
@@ -1772,7 +1772,7 @@ dependencies = [
  "exocore-core",
  "exocore-store",
  "exocore-transport",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
 ]
 
 [[package]]
@@ -1807,7 +1807,7 @@ dependencies = [
  "js-sys",
  "log",
  "rand 0.7.3",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",
@@ -1842,7 +1842,7 @@ dependencies = [
  "serde_yaml",
  "shadow-rs",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
  "url 2.5.4",
  "uuid",
@@ -1867,7 +1867,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
  "wasm-timer",
 ]
@@ -1888,7 +1888,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
 ]
 
 [[package]]
@@ -1916,7 +1916,7 @@ dependencies = [
  "smallvec",
  "tantivy",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
 ]
 
@@ -1936,7 +1936,7 @@ dependencies = [
  "libp2p-mplex",
  "log",
  "pin-project",
- "thiserror 1.0.69",
+ "thiserror 2.0.3",
  "tokio",
  "url 2.5.4",
 ]
