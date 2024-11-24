@@ -378,9 +378,10 @@ jobs:
           sudo apt update
           sudo apt install -yq libssl-dev openssl
 
-          curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.10.0/wasm-pack-v0.10.0-x86_64-unknown-linux-musl.tar.gz | tar zxf -
-          mv wasm-pack*/wasm-pack .
-          echo `pwd` >> $GITHUB_PATH
+          # curl -L https://github.com/rustwasm/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar zxf -
+          # mv wasm-pack*/wasm-pack .
+          # echo `pwd` >> $GITHUB_PATH
+          cargo install wasm-pack
 
           sudo npm install -g yarn
 
@@ -471,7 +472,6 @@ jobs:
 
       - name: Build client & pod
         run: |
-          # TODO: Should use release on tags
           cd $GITHUB_WORKSPACE/exocore/clients/ios
           ./tools/generate.sh
 
@@ -599,7 +599,6 @@ jobs:
           # Striping first directory as yarn package wraps into a `package` directory
           tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      # TOOD: should depend on exocore
       - name: Build & test
         run: |
           cd exomind/web
