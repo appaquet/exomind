@@ -99,7 +99,7 @@
     "exocore": "file:../../exocore",
     "font-awesome": "^4.4.0",
     "htmlparser2": "=7.2.0",
-    "less": "^4.2.0",
+    "less": "^4.2.1",
     "linkify-html": "^4.1.4",
     "linkifyjs": "^4.1.4",
     "lodash": "^4.17.21",
