@@ -22,7 +22,7 @@ thiserror = "2.0.3"
 wasm-bindgen = { version = "0.2.96", features = ["serde-serialize"] }# serde for serialization from JsValue
 wasm-bindgen-futures = "0.4.45"
 wasm-logger = "0.2.0"
-web-sys = { version = "0.3.72", features = ["Storage", "Window"] }
+web-sys = { version = "0.3.73", features = ["Storage", "Window"] }
 
 # Needed to force rand 0.7 to load with wasm support
 rand07 = {package = "rand", version = "0.7", features = ["wasm-bindgen"]}
