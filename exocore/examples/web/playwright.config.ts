@@ -9,7 +9,7 @@ const config: PlaywrightTestConfig = {
   testDir: './tests',
 
   /* Maximum time one test can run for. */
-  timeout: 300 * 1000,
+  timeout: 60 * 1000,
 
   expect: {
     /**
@@ -42,6 +42,8 @@ const config: PlaywrightTestConfig = {
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    screenshot: 'only-on-failure',
   },
 
   /* Configure projects for major browsers */
@@ -62,6 +64,8 @@ const config: PlaywrightTestConfig = {
   webServer: {
     command: 'npm run start',
     port: 8080,
+    stdout: "pipe",
+    stderr: "pipe",
   },
 };
 

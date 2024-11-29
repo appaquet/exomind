@@ -264,7 +264,7 @@ jobs:
             BUILD_PARAMS="--push --tag appaquet/exocore:latest"
           elif "${GITHUB_REF}" == refs/tags/* ]]; then
             GIT_TAG="${GITHUB_REF/refs\/tags\//}"
-            BUILD_PARAMS="--push --tag appaquet/exocore:GIT_TAG --tag appaquet/exocore:latest"
+            BUILD_PARAMS="--push --tag appaquet/exocore:$GIT_TAG --tag appaquet/exocore:latest"
           fi
 
           export DOCKER_CLI_EXPERIMENTAL=enabled
@@ -281,12 +281,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download exm
+      - name: Download x86_64 exm
         uses: actions/download-artifact@v4
         with:
           name: exm-x86_64-unknown-linux-gnu
 
-      - name: Download exm
+      - name: Download arm exm
         uses: actions/download-artifact@v4
         with:
           name: exm-armv7-unknown-linux-gnueabihf
@@ -330,7 +330,7 @@ jobs:
             BUILD_PARAMS="--push --tag appaquet/exomind:latest"
           elif "${GITHUB_REF}" == refs/tags/* ]]; then
             GIT_TAG="${GITHUB_REF/refs\/tags\//}"
-            BUILD_PARAMS="--push --tag appaquet/exomind:GIT_TAG --tag appaquet/exomind:latest"
+            BUILD_PARAMS="--push --tag appaquet/exomind:$GIT_TAG --tag appaquet/exomind:latest"
           fi
 
           export DOCKER_CLI_EXPERIMENTAL=enabled
@@ -338,6 +338,73 @@ jobs:
             --tag appaquet/exomind:$TAG \
             --platform linux/amd64,linux/arm \
             --file $GITHUB_WORKSPACE/exomind/exm/Dockerfile.buildx \
+            $BUILD_PARAMS \
+            .
+
+  exomind_web_docker_build:
+    runs-on: ubuntu-latest
+    needs: [exocore_web_client_build]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        if: ${{ github.actor != 'dependabot[bot]' }} # dependabot doesn't have access to secrets
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.0.4
+        with:
+          node-version: 20.x
+
+      - name: Download exocore web client
+        uses: actions/download-artifact@v4
+        with:
+          name: exocore-web-client
+
+      - name: Unarchive exocore web client
+        run: |
+          cd $GITHUB_WORKSPACE
+          # Striping first directory as yarn package wraps into a `package` directory
+          tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
+
+      - name: Build & test
+        run: |
+          cd exomind/web
+          yarn install --frozen-lockfile
+          yarn build
+        env:
+          NODE_OPTIONS: "--openssl-legacy-provider"
+
+      - name: Setup Docker builder
+        run: |
+          set -x
+
+          # Create builder
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx create --use --name exomind-builder
+
+      - name: Build & publish Docker
+        run: |
+          set -x
+          TAG="$(git rev-parse --short HEAD)"
+
+          BUILD_PARAMS=""
+          if [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            BUILD_PARAMS="--push --tag appaquet/exomind-web:latest"
+          elif "${GITHUB_REF}" == refs/tags/* ]]; then
+            GIT_TAG="${GITHUB_REF/refs\/tags\//}"
+            BUILD_PARAMS="--push --tag appaquet/exomind-web:$GIT_TAG --tag appaquet/exomind-web:latest"
+          fi
+
+          cd $GITHUB_WORKSPACE/exomind/web
+
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          docker buildx build \
+            --tag appaquet/exomind-web:$TAG \
+            --platform linux/amd64 \
             $BUILD_PARAMS \
             .
 
@@ -402,21 +469,27 @@ jobs:
 
   exocore_web_client_e2e_test:
     runs-on: ubuntu-latest
-    needs: [exocore_web_client_build]
+    needs: [exocore_web_client_build, exo_build]
 
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build dependencies
-        run: |
-          sudo npm install -g yarn
+      - name: Setup Node
+        uses: actions/setup-node@v4.1.0
+        with:
+          node-version: 20.x
 
       - name: Download exocore web client
         uses: actions/download-artifact@v4
         with:
           name: exocore-web-client
+
+      - name: Download exo
+        uses: actions/download-artifact@v4
+        with:
+          name: exo-x86_64-unknown-linux-gnu
 
       - name: Unarchive exocore web client
         run: |
@@ -424,16 +497,19 @@ jobs:
           # Striping first directory as yarn package wraps into a `package` directory
           tar --strip-components=1 -xvzf exocore-web.tar.gz -C exocore/
 
-      - name: Build exo
+      - name: Add exo to path
         run: |
-          # TODO: Should probably be fetched instead...
-          cd $GITHUB_WORKSPACE/exocore
-          ./tools/install.sh --debug
+          cd $GITHUB_WORKSPACE
+          ls -lash
+
+          mv exo.x86_64-unknown-linux-gnu exo
+          chmod +x exo
+          echo `pwd` >> $GITHUB_PATH
 
       - name: Install example project
         run: |
           cd $GITHUB_WORKSPACE/exocore/examples/web
-          yarn install
+          yarn install --frozen-lockfile
           npx playwright install --with-deps chromium
 
       - name: Run end-to-end tests
@@ -444,7 +520,7 @@ jobs:
           sleep 5
 
           cd $GITHUB_WORKSPACE/exocore/examples/web
-          DEBUG=pw:api npm exec playwright test
+          DEBUG=pw:api yarn exec playwright test
 
       - uses: actions/upload-artifact@v4
         if: always()

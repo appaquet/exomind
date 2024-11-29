@@ -1,21 +1,20 @@
----
 keypair: ae5fcQvhYcAbHiCHRU12RgrdYRQkxzYe29ANQwedpVZjXsDs9QLNSm141KaB7i73WJ3R2BVFSRSprrfcGhhai2gJ2i
 public_key: pe8Fij7YgKsgoBmp9JBVd196XH1SgWMZVddhmKqBFwBVS6
 name: server
 id: 12D3KooWH55trgG34b4gBheip6NLutc7Vmj9PFa7bJ8MDAQq5SA2
 listen_addresses:
   p2p:
-    - /ip4/0.0.0.0/tcp/3359
-    - /ip4/0.0.0.0/tcp/3459/ws
+  - /ip4/0.0.0.0/tcp/3359
+  - /ip4/0.0.0.0/tcp/3459/ws
   http:
-    - "http://0.0.0.0:8059"
+  - http://0.0.0.0:8059
 addresses:
   p2p:
-    - /ip4/127.0.0.1/tcp/3359
-    - /ip4/127.0.0.1/tcp/3459/ws
+  - /ip4/127.0.0.1/tcp/3359
+  - /ip4/127.0.0.1/tcp/3459/ws
   http:
-    - "http://127.0.0.1:8059"
+  - http://127.0.0.1:8059
 cells:
-  - id: 12D3KooWBBNHgEMK4Zy4H1xtnsMLzh3RCr9PVVyNGCTfibowbtr1
-store: ~
-chain: ~
+- id: 12D3KooWBBNHgEMK4Zy4H1xtnsMLzh3RCr9PVVyNGCTfibowbtr1
+store: null
+chain: null
