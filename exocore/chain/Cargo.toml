@@ -28,7 +28,7 @@ itertools = "0.13.0"
 log = "0.4.22"
 serde = { version = "1.0.209", features = ["derive"] }
 thiserror = "2.0.3"
-bytes = "1.7.2"
+bytes = "1.9.0"
 
 # For directory chain
 extindex = { version = "0.8.0", optional = true }
