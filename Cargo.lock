@@ -1668,7 +1668,7 @@ dependencies = [
  "serde_derive",
  "serde_json",
  "tempfile",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
  "url 2.5.4",
  "zip",
@@ -1709,7 +1709,7 @@ dependencies = [
  "futures",
  "log",
  "reqwest",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "wasmtime",
  "wasmtime-wasi",
 ]
@@ -1723,7 +1723,7 @@ dependencies = [
  "log",
  "quote",
  "syn 2.0.90",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
 ]
 
 [[package]]
@@ -1739,7 +1739,7 @@ dependencies = [
  "lazy_static",
  "log",
  "quote",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
 ]
 
@@ -1760,7 +1760,7 @@ dependencies = [
  "memmap2 0.9.5",
  "serde",
  "tempfile",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
 ]
 
@@ -1772,7 +1772,7 @@ dependencies = [
  "exocore-core",
  "exocore-store",
  "exocore-transport",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
 ]
 
 [[package]]
@@ -1807,7 +1807,7 @@ dependencies = [
  "js-sys",
  "log",
  "rand 0.7.3",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-logger",
@@ -1842,7 +1842,7 @@ dependencies = [
  "serde_yaml",
  "shadow-rs",
  "tempfile",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
  "url 2.5.4",
  "uuid",
@@ -1867,7 +1867,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
  "wasm-timer",
 ]
@@ -1888,7 +1888,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "serde_json",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
 ]
 
 [[package]]
@@ -1916,7 +1916,7 @@ dependencies = [
  "smallvec",
  "tantivy",
  "tempfile",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
 ]
 
@@ -1936,7 +1936,7 @@ dependencies = [
  "libp2p-mplex",
  "log",
  "pin-project",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
  "url 2.5.4",
 ]
@@ -4824,7 +4824,7 @@ dependencies = [
  "rustc-hash 2.0.0",
  "rustls 0.23.18",
  "socket2",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tokio",
  "tracing",
 ]
@@ -4843,7 +4843,7 @@ dependencies = [
  "rustls 0.23.18",
  "rustls-pki-types",
  "slab",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "tinyvec",
  "tracing",
  "web-time",
@@ -6045,11 +6045,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.3"
+version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c006c85c7651b3cf2ada4584faa36773bd07bac24acfb39f3c431b36d7e667aa"
+checksum = "2f49a1853cf82743e3b7950f77e0f4d622ca36cf4317cba00c767838bac8d490"
 dependencies = [
- "thiserror-impl 2.0.3",
+ "thiserror-impl 2.0.4",
 ]
 
 [[package]]
@@ -6065,9 +6065,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.3"
+version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f077553d607adc1caf65430528a576c757a71ed73944b66ebb58ef2bbd243568"
+checksum = "8381894bb3efe0c4acac3ded651301ceee58a15d47c2e34885ed1908ad667061"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7656,7 +7656,7 @@ dependencies = [
  "flate2",
  "indexmap 2.6.0",
  "memchr",
- "thiserror 2.0.3",
+ "thiserror 2.0.4",
  "zopfli",
 ]
 
