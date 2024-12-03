@@ -8,7 +8,7 @@ version = "0.1.27"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.89"
+anyhow = "1.0.94"
 exocore-core = {version = "0.1.27", path = "../../core", features = ["runtime", "logger"]}
 exocore-store = {version = "0.1.27", path = "../../store"}
 exocore-transport = {version = "0.1.27", path = "../../transport", features = ["p2p-full"]}
