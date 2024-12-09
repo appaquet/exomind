@@ -32,7 +32,7 @@ anyhow = "1.0.94"
 bs58 = "0.5.1"
 byteorder = "1.5.0"
 bytes = "1.9.0"
-chrono = "0.4.38"
+chrono = "0.4.39"
 exocore-protos = {version = "0.1.27", path = "../protos"}
 futures = { version = "0.3.31", features = ["async-await"] }
 libp2p = { version = "0.53.2", features = ["noise", "secp256k1"], default-features = false }
