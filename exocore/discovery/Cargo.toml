@@ -24,7 +24,7 @@ reqwest = { version = "0.12.8", default-features = false, features = ["json", "r
 serde = "1.0.209"
 serde_derive = "1.0.209"
 serde_json = "1.0.127"
-thiserror = "2.0.4"
+thiserror = "2.0.6"
 wasm-timer = "0.2.5"
 
 # For server

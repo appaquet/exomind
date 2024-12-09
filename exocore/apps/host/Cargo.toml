@@ -20,7 +20,7 @@ exocore-store = {version = "0.1.27", path = "../../store"}
 futures = "0.3.31"
 log = "0.4.22"
 reqwest = { version = "0.12.8", default-features = false, features = ["rustls-tls"] }
-thiserror = "2.0.4"
+thiserror = "2.0.6"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
 wasmtime = "4.0.1"
