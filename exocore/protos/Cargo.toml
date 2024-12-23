@@ -19,7 +19,7 @@ prost-types = "0.13"
 protobuf = "3.6.0"
 serde = "1.0.216"
 serde_derive = "1.0.209"
-serde_json = "1.0.127"
+serde_json = "1.0.134"
 thiserror = "2.0.8"
 
 [build-dependencies]
