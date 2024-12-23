@@ -18,7 +18,7 @@ exocore-transport = {version = "0.1.27", path = "../../transport", default-featu
 futures = "0.3.31"
 js-sys = "0.3.70"
 log = "0.4.22"
-thiserror = "2.0.8"
+thiserror = "2.0.9"
 wasm-bindgen = { version = "0.2.96", features = ["serde-serialize"] }# serde for serialization from JsValue
 wasm-bindgen-futures = "0.4.47"
 wasm-logger = "0.2.0"
