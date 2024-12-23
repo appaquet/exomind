@@ -18,7 +18,7 @@ p2p-web = ["p2p-base", "libp2p/websocket-websys", "libp2p/wasm-bindgen"]
 tests-utils = ["exocore-core/tests-utils"]
 
 [dependencies]
-anyhow = "1.0.94"
+anyhow = "1.0.95"
 byteorder = "1.5.0"
 bytes = "1.9.0"
 exocore-core = {version = "0.1.27", path = "../core"}

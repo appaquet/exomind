@@ -44,7 +44,7 @@ transport-p2p = ["exocore-transport/p2p-full"]
 transport-p2p-web = ["exocore-transport/p2p-web"]
 
 [dependencies]
-anyhow = { version = "1.0.94", optional = true }
+anyhow = { version = "1.0.95", optional = true }
 exocore-apps-sdk = { version = "0.1.27", path = "./apps/sdk", default-features = false, optional = true }
 exocore-chain = { version = "0.1.27", path = "./chain", default-features = false, optional = true }
 exocore-core = { version = "0.1.27", path = "./core", default-features = false, optional = true }
