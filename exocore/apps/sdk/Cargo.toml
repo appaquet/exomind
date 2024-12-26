@@ -17,7 +17,7 @@ exocore-store = {version = "0.1.27", path = "../../store", default-features = fa
 futures = "0.3.31"
 lazy_static = "1.5.0"
 log = "0.4.22"
-quote = "1.0.37"
+quote = "1.0.38"
 thiserror = "2.0.9"
 chrono = { version = "0.4.39", default-features = false, features = [] }
 
