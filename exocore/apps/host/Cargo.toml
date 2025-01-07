@@ -19,7 +19,7 @@ exocore-protos = {version = "0.1.27", path = "../../protos"}
 exocore-store = {version = "0.1.27", path = "../../store"}
 futures = "0.3.31"
 log = "0.4.22"
-reqwest = { version = "0.12.11", default-features = false, features = ["rustls-tls"] }
+reqwest = { version = "0.12.12", default-features = false, features = ["rustls-tls"] }
 thiserror = "2.0.9"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
