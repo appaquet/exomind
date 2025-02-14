@@ -134,7 +134,7 @@
     "babel-loader": "^8.2.5",
     "cookie-parser": "^1.4.7",
     "css-loader": "^5.2.7",
-    "electron": "^33.2.1",
+    "electron": "^34.2.0",
     "electron-builder": "^24.6.4",
     "electron-webpack": "^2.8.2",
     "eslint": "^8.57.1",
