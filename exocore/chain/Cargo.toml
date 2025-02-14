@@ -25,23 +25,23 @@ exocore-protos = {version = "0.1.27", path = "../protos"}
 exocore-transport = {version = "0.1.27", path = "../transport", default-features = false}
 futures = "0.3.31"
 itertools = "0.13.0"
-log = "0.4.22"
+log = "0.4.25"
 serde = { version = "1.0.217", features = ["derive"] }
-thiserror = "2.0.9"
-bytes = "1.9.0"
+thiserror = "2.0.11"
+bytes = "1.10.0"
 
 # For directory chain
 extindex = { version = "0.8.0", optional = true }
 memmap2 = { version = "0.9.5", optional = true }
 
 # For tests
-tempfile = { version = "3.13.0", optional = true }
+tempfile = { version = "3.16.0", optional = true }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.27", path = "../core", features = ["tests-utils"]}
 exocore-transport = {version = "0.1.27", path = "../transport", features = ["tests-utils"]}
-tempfile = "3.13.0"
-tokio = { version = "1.42.0", features = ["macros"], default-features = false }
+tempfile = "3.16.0"
+tokio = { version = "1.43.0", features = ["macros"], default-features = false }
 
 [[test]]
 name = "engine"

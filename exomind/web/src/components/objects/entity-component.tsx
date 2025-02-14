@@ -1,4 +1,4 @@
-import { Exocore, exocore, MutationBuilder, QueryBuilder, toProtoTimestamp, WatchedQueryWrapper } from 'exocore';
+import { Exocore, exocore, MutationBuilder, QueryBuilder, WatchedQueryWrapper } from 'exocore';
 import React from 'react';
 import { exomind } from '../../protos';
 import { EntityTrait, EntityTraits } from "../../utils/entities";
@@ -13,6 +13,7 @@ import { runInAction } from 'mobx';
 import { IStores, StoresContext } from '../../stores/stores';
 import { observer } from 'mobx-react';
 import { Actions } from '../../utils/actions';
+import { toProtoTimestamp } from '../../utils/dates';
 
 const Task = React.lazy(() => import(/*webpackChunkName: "component-task"*/'./task/task'));
 const Note = React.lazy(() => import(/*webpackChunkName: "component-note"*/'./note/note'));

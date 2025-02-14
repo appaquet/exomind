@@ -52,7 +52,7 @@ exocore-discovery = { version = "0.1.27", path = "./discovery", default-features
 exocore-protos = { version = "0.1.27", path = "./protos", default-features = false, optional = true }
 exocore-store = { version = "0.1.27", path = "./store", default-features = false, optional = true }
 exocore-transport = { version = "0.1.27", path = "./transport", default-features = false, optional = true }
-log = "0.4.22"
+log = "0.4.25"
 
 [dev-dependencies]
 exocore-core = { version = "0.1.27", path = "./core", features = [

@@ -16,13 +16,13 @@ exocore-protos = {version = "0.1.27", path = "../../protos", default-features = 
 exocore-store = {version = "0.1.27", path = "../../store", default-features = false, features = ["remote"]}
 exocore-transport = {version = "0.1.27", path = "../../transport", default-features = false, features = ["p2p-web"]}
 futures = "0.3.31"
-js-sys = "0.3.70"
-log = "0.4.22"
-thiserror = "2.0.9"
-wasm-bindgen = { version = "0.2.96", features = ["serde-serialize"] }# serde for serialization from JsValue
-wasm-bindgen-futures = "0.4.47"
+js-sys = "0.3.77"
+log = "0.4.25"
+thiserror = "2.0.11"
+wasm-bindgen = { version = "0.2.100", features = ["serde-serialize"] }# serde for serialization from JsValue
+wasm-bindgen-futures = "0.4.50"
 wasm-logger = "0.2.0"
-web-sys = { version = "0.3.74", features = ["Storage", "Window"] }
+web-sys = { version = "0.3.77", features = ["Storage", "Window"] }
 
 # Needed to force rand 0.7 to load with wasm support
 rand07 = {package = "rand", version = "0.7", features = ["wasm-bindgen"]}

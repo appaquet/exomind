@@ -14,9 +14,9 @@ anyhow = "1.0.95"
 exocore = { version = "0.1.27", path = "../../exocore", default-features = false, features = ["client", "logger"] }
 exomind-protos = {version = "0.1.27", path = "../protos"}
 exomind-gmail = {version = "0.1.27", path = "../integrations/gmail"}
-log = "0.4.22"
+log = "0.4.25"
 structopt = "0.3.26"
-tokio = { version = "1.42.0", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread", "time"] }
 
 [dev-dependencies]
 exocore = { version = "0.1.27", path = "../../exocore", default-features = false, features = ["client", "logger", "tests-utils"] }

@@ -29,15 +29,15 @@ tests-utils = []
 
 [dependencies]
 anyhow = "1.0.95"
-async-trait = "0.1.84"
-bytes = "1.9.0"
+async-trait = "0.1.86"
+bytes = "1.10.0"
 chrono = {version = "0.4.39", features = ["serde"]}
 exocore-protos = {version = "0.1.27", path = "../protos"}
 futures = "0.3.31"
 itertools = "0.13.0"
-log = "0.4.22"
+log = "0.4.25"
 smallvec = "1.13.2"
-thiserror = "2.0.9"
+thiserror = "2.0.11"
 
 # local or remote
 exocore-chain = {version = "0.1.27", path = "../chain", default-features = false, optional = true}
@@ -50,12 +50,12 @@ crc = {version = "3.2.1", optional = true}
 extsort = {version = "0.4.2", optional = true}
 lru = {version = "0.12.5", optional = true}
 serde = {version = "1.0.217", optional = true}
-serde_derive = {version = "1.0.209", optional = true}
-serde_json = {version = "1.0.135", optional = true}
+serde_derive = {version = "1.0.217", optional = true}
+serde_json = {version = "1.0.138", optional = true}
 tantivy = {version = "0.19.2", optional = true}
 
 [dev-dependencies]
 exocore-chain = {version = "0.1.27", path = "../chain", features = ["tests-utils"]}
 exocore-core = {version = "0.1.27", path = "../core", features = ["tests-utils"]}
-tempfile = "3.13.0"
-tokio = {version = "1.42.0", features = ["macros"], default-features = false}
+tempfile = "3.16.0"
+tokio = {version = "1.43.0", features = ["macros"], default-features = false}

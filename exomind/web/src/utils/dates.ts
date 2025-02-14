@@ -1,3 +1,4 @@
+import { google } from "../protos";
 
 export type SnoozeKey =
   'evening' | 'later_today' | 'next_morning' | 'next_evening' |
@@ -198,4 +199,19 @@ export default class DateUtil {
       return `${nb}`;
     }
   }
+}
+
+
+export function toProtoTimestamp(date: Date): google.protobuf.ITimestamp {
+  const epoch = date.getTime();
+  const seconds = Math.floor(epoch / 1000);
+
+  return new google.protobuf.Timestamp({
+      seconds: seconds,
+      nanos: (epoch - (seconds * 1000)) * 1000000,
+  });
+}
+
+export function fromProtoTimestamp(ts: google.protobuf.ITimestamp): Date {
+  return new Date((ts.seconds as number) * 1000 + ts.nanos / 1000000);
 }

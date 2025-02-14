@@ -1,7 +1,8 @@
-import { exocore, Exocore, MutationBuilder, toProtoTimestamp } from "exocore";
+import { exocore, Exocore, MutationBuilder } from "exocore";
 import { EntityTrait, EntityTraits } from "./entities";
 import { exomind } from "../protos";
 import { PINNED_WEIGHT, WEIGHT_SPACING } from "../stores/collections";
+import { toProtoTimestamp } from "./dates";
 
 export class Commands {
     static async removeFromParent(entities: EntityTraits | EntityTraits[], parent: EntityTraits | string) {

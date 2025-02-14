@@ -16,10 +16,10 @@ exocore-protos = {version = "0.1.27", path = "../../protos"}
 exocore-store = {version = "0.1.27", path = "../../store", default-features = false}
 futures = "0.3.31"
 lazy_static = "1.5.0"
-log = "0.4.22"
+log = "0.4.25"
 quote = "1.0.38"
-thiserror = "2.0.9"
+thiserror = "2.0.11"
 chrono = { version = "0.4.39", default-features = false, features = [] }
 
 [dev-dependencies]
-tokio = { version = "1.42.0", features = ["macros"], default-features = false }
+tokio = { version = "1.43.0", features = ["macros"], default-features = false }
