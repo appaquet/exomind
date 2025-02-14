@@ -355,7 +355,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v4.2.0
         with:
           node-version: 20.x
 
@@ -477,7 +477,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v4.2.0
         with:
           node-version: 20.x
 
@@ -606,7 +606,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v4.2.0
         with:
           node-version: 20.x
 
@@ -660,7 +660,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v4.2.0
         with:
           node-version: 20.x
 
@@ -698,7 +698,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v4.1.0
+        uses: actions/setup-node@v4.2.0
         with:
           node-version: 20.x
 
