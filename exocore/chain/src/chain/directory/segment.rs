@@ -584,7 +584,7 @@ impl<'s> SegmentBlockIterator<'s> {
     }
 }
 
-impl<'s> Iterator for SegmentBlockIterator<'s> {
+impl Iterator for SegmentBlockIterator<'_> {
     type Item = DataBlock<ChainData>;
 
     fn next(&mut self) -> Option<Self::Item> {

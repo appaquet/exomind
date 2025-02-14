@@ -220,7 +220,7 @@ struct OperationsIterator<'store> {
     ids_iterator: Box<dyn Iterator<Item = (OperationId, GroupId)> + 'store>,
 }
 
-impl<'store> Iterator for OperationsIterator<'store> {
+impl Iterator for OperationsIterator<'_> {
     type Item = StoredOperation;
 
     fn next(&mut self) -> Option<StoredOperation> {

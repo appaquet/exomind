@@ -189,7 +189,7 @@ impl QueryBuilder {
     }
 
     pub fn paging_or_default(&self) -> Paging {
-        self.query.paging.clone().unwrap_or_else(default_paging)
+        self.query.paging.unwrap_or_else(default_paging)
     }
 
     pub fn with_watch_token(mut self, token: WatchToken) -> Self {

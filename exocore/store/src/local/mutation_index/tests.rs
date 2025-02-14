@@ -428,7 +428,7 @@ fn search_query_matches_paging() -> anyhow::Result<()> {
 
     let query = Q::matches("foo").count(10).build();
     let res1 = index.search(query)?;
-    let res1_next_page = res1.next_page.clone().unwrap();
+    let res1_next_page = res1.next_page.unwrap();
     assert_eq!(res1.total, 30);
     assert_eq!(res1.mutations.len(), 10);
     assert_eq!(res1.remaining, 20);
@@ -438,7 +438,7 @@ fn search_query_matches_paging() -> anyhow::Result<()> {
 
     let query = Q::matches("foo").with_paging(res1_next_page).build();
     let res2 = index.search(query)?;
-    let res2_next_page = res2.next_page.clone().unwrap();
+    let res2_next_page = res2.next_page.unwrap();
     assert_eq!(res2.total, 30);
     assert_eq!(res2.mutations.len(), 10);
     assert_eq!(res2.remaining, 10);

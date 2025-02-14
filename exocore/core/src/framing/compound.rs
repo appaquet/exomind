@@ -44,7 +44,7 @@ pub struct CompoundSideReader<'p, I: FrameReader> {
     left: bool,
 }
 
-impl<'p, I: FrameReader> FrameReader for CompoundSideReader<'p, I> {
+impl<I: FrameReader> FrameReader for CompoundSideReader<'_, I> {
     type OwnedType = Bytes;
 
     fn exposed_data(&self) -> &[u8] {

@@ -41,7 +41,7 @@ pub struct RefData<'s> {
     pub(crate) end: usize, // exclusive
 }
 
-impl<'s> RefData<'s> {
+impl RefData<'_> {
     pub fn new(data: &[u8]) -> RefData {
         RefData {
             data,
@@ -71,7 +71,7 @@ impl<'s> Data for RefData<'s> {
     }
 }
 
-impl<'s> FrameReader for RefData<'s> {
+impl FrameReader for RefData<'_> {
     type OwnedType = Bytes;
 
     fn exposed_data(&self) -> &[u8] {

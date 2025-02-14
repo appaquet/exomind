@@ -71,7 +71,7 @@ impl<'s> QueryParser<'s> {
             .as_ref()
             .ok_or(Error::ProtoFieldExpected("predicate"))?;
 
-        self.paging = self.proto.paging.clone().unwrap_or(Paging {
+        self.paging = self.proto.paging.unwrap_or(Paging {
             after_ordering_value: None,
             before_ordering_value: None,
             count: self.config.iterator_page_size,

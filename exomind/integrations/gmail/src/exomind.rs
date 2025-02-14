@@ -129,11 +129,7 @@ impl ExomindClient {
             .entities
             .into_iter()
             .flat_map(|res| {
-                if let Some(actions) = Self::history_result_to_action(res, account, after_date) {
-                    actions
-                } else {
-                    vec![]
-                }
+                Self::history_result_to_action(res, account, after_date).unwrap_or_default()
             })
             .collect();
 
@@ -228,11 +224,11 @@ impl ExomindClient {
         let creation_date = thread
             .emails
             .first()
-            .and_then(|email| email.proto.received_date.clone());
+            .and_then(|email| email.proto.received_date);
         let modification_date = thread
             .emails
             .last()
-            .and_then(|email| email.proto.received_date.clone());
+            .and_then(|email| email.proto.received_date);
         let thread_last_date = modification_date
             .as_ref()
             .or(creation_date.as_ref())
@@ -273,14 +269,14 @@ impl ExomindClient {
             }
 
             let email_trait_id = email_trait_id(&email.proto.source_id);
-            let creation_date = email.proto.received_date.clone();
+            let creation_date = email.proto.received_date;
 
             let mut mutations = MutationBuilder::new().put_trait(
                 &thread_entity_id,
                 Trait {
                     id: email_trait_id.clone(),
                     message: Some(email.proto.pack_to_any()?),
-                    creation_date: creation_date.clone(),
+                    creation_date,
                     ..Default::default()
                 },
             );

@@ -67,7 +67,6 @@ where
         let mut query_page = self
             .query
             .paging
-            .clone()
             .unwrap_or_else(crate::query::default_paging);
         crate::query::fill_default_paging(&mut query_page);
 
@@ -258,7 +257,7 @@ where
         query_paging: &exocore_protos::store::Paging,
     ) -> Option<exocore_protos::store::Paging> {
         if let Some(last_result) = entity_results.last() {
-            let mut new_paging = query_paging.clone();
+            let mut new_paging = *query_paging;
 
             let ascending = self
                 .query
@@ -267,9 +266,9 @@ where
                 .map(|s| s.ascending)
                 .unwrap_or(false);
             if !ascending {
-                new_paging.before_ordering_value = Some(last_result.ordering_value.value.clone());
+                new_paging.before_ordering_value = Some(last_result.ordering_value.value);
             } else {
-                new_paging.after_ordering_value = Some(last_result.ordering_value.value.clone());
+                new_paging.after_ordering_value = Some(last_result.ordering_value.value);
             }
 
             Some(new_paging)

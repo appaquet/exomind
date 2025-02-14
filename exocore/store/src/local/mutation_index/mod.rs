@@ -392,7 +392,7 @@ impl MutationIndex {
         doc.add_text(self.schema.entity_id, &operation.entity_id);
         doc.add_text(
             self.schema.entity_trait_id,
-            &format!("{}_{}", operation.entity_id, &operation.trt.id),
+            format!("{}_{}", operation.entity_id, &operation.trt.id),
         );
 
         doc.add_u64(self.schema.operation_id, operation.operation_id);
@@ -567,7 +567,7 @@ impl MutationIndex {
         doc.add_text(self.schema.entity_id, &operation.entity_id);
         doc.add_text(
             self.schema.entity_trait_id,
-            &format!("{}_{}", operation.entity_id, operation.trait_id),
+            format!("{}_{}", operation.entity_id, operation.trait_id),
         );
         doc.add_u64(self.schema.operation_id, operation.operation_id);
 

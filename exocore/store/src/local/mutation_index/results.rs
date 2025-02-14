@@ -22,7 +22,7 @@ pub struct MutationResultIterator<'i, Q: Borrow<EntityQuery>> {
     pub max_pages: usize,
 }
 
-impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultIterator<'i, Q> {
+impl<Q: Borrow<EntityQuery>> Iterator for MutationResultIterator<'_, Q> {
     type Item = MutationMetadata;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -31,7 +31,7 @@ impl<'i, Q: Borrow<EntityQuery>> Iterator for MutationResultIterator<'i, Q> {
             Some(next_result)
         } else {
             let mut query = self.query.borrow().clone();
-            query.paging = Some(self.next_page.clone()?);
+            query.paging = Some(self.next_page?);
 
             if self.max_pages == 0 {
                 debug!(

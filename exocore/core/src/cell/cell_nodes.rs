@@ -107,7 +107,7 @@ pub struct CellNodesIter<'cn, N: CellNodes> {
     nodes: &'cn N,
 }
 
-impl<'cn, N: CellNodes> CellNodesIter<'cn, N> {
+impl<N: CellNodes> CellNodesIter<'_, N> {
     pub fn all(&self) -> impl Iterator<Item = &CellNode> {
         self.nodes.nodes_map().values()
     }
@@ -141,13 +141,13 @@ pub struct CellNodesRead<'cell> {
     pub(crate) nodes: RwLockReadGuard<'cell, HashMap<NodeId, CellNode>>,
 }
 
-impl<'cell> CellNodesRead<'cell> {
+impl CellNodesRead<'_> {
     pub fn iter(&self) -> CellNodesIter<CellNodesRead> {
         CellNodesIter { nodes: self }
     }
 }
 
-impl<'cell> CellNodes for CellNodesRead<'cell> {
+impl CellNodes for CellNodesRead<'_> {
     fn cell(&self) -> &Cell {
         self.cell
     }
@@ -163,7 +163,7 @@ pub struct CellNodesWrite<'cell> {
     pub(crate) nodes: RwLockWriteGuard<'cell, HashMap<NodeId, CellNode>>,
 }
 
-impl<'cell> CellNodesWrite<'cell> {
+impl CellNodesWrite<'_> {
     pub fn iter(&self) -> CellNodesIter<CellNodesWrite> {
         CellNodesIter { nodes: self }
     }
@@ -194,7 +194,7 @@ impl<'cell> CellNodesWrite<'cell> {
     }
 }
 
-impl<'cell> CellNodes for CellNodesWrite<'cell> {
+impl CellNodes for CellNodesWrite<'_> {
     fn cell(&self) -> &Cell {
         self.cell
     }

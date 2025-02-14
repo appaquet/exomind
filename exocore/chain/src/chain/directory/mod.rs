@@ -443,7 +443,7 @@ struct DirectoryBlockIterator<'s> {
     done: bool,
 }
 
-impl<'s> Iterator for DirectoryBlockIterator<'s> {
+impl Iterator for DirectoryBlockIterator<'_> {
     type Item = Result<DataBlock<ChainData>, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -498,7 +498,7 @@ struct DirectoryBlockReverseIterator<'s> {
     done: bool,
 }
 
-impl<'s> Iterator for DirectoryBlockReverseIterator<'s> {
+impl Iterator for DirectoryBlockReverseIterator<'_> {
     type Item = Result<DataBlock<ChainData>, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {

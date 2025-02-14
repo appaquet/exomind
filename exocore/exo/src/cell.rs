@@ -891,7 +891,7 @@ impl<'o> From<&'o ChainExportOptions> for ExportOptions<'o> {
     }
 }
 
-impl<'o> ExportOptions<'o> {
+impl ExportOptions<'_> {
     fn can_export(&self, entity: EntityIdRef) -> bool {
         if self.entities.is_empty() {
             true

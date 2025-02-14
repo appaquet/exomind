@@ -422,10 +422,10 @@ impl SynchronizedThread {
 
         let thread_create_date = emails
             .first()
-            .and_then(|email| email.proto.received_date.clone());
+            .and_then(|email| email.proto.received_date);
         let thread_modification_date = emails
             .last()
-            .and_then(|email| email.proto.received_date.clone());
+            .and_then(|email| email.proto.received_date);
         let thread_last_date = thread_modification_date
             .as_ref()
             .or(thread_create_date.as_ref())

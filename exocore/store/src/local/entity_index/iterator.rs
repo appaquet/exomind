@@ -95,7 +95,7 @@ fn extract_block_mutations(
     Ok(mutations)
 }
 
-impl<'s> Iterator for ChainEntityMutationIterator<'s> {
+impl Iterator for ChainEntityMutationIterator<'_> {
     type Item = CommittedEntityMutation;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -187,7 +187,7 @@ impl<'s> ChainEntityIterator<'s> {
     }
 }
 
-impl<'s> Iterator for ChainEntityIterator<'s> {
+impl Iterator for ChainEntityIterator<'_> {
     type Item = Result<Entity, Error>;
 
     fn next(&mut self) -> Option<Self::Item> {

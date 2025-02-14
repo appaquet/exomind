@@ -54,7 +54,7 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
             std::fs::create_dir_all(&chain_dir)?;
 
             // create chain store
-            let chain_config = node_config.chain.clone().unwrap_or_default();
+            let chain_config = node_config.chain.unwrap_or_default();
             let chain_store = DirectoryChainStore::create_or_open(chain_config.into(), &chain_dir)?;
             let pending_store = MemoryPendingStore::new();
 
@@ -97,7 +97,6 @@ pub async fn cmd_daemon(ctx: &Context) -> anyhow::Result<()> {
 
                 let entities_index_config: EntityIndexConfig = node_config
                     .store
-                    .clone()
                     .and_then(|s| s.index)
                     .map(|e| e.into())
                     .unwrap_or_default();
@@ -256,7 +255,7 @@ async fn create_local_store<T: TransportServiceHandle>(
     clock: Clock,
     entities_index: EntityIndex<DirectoryChainStore, MemoryPendingStore>,
 ) -> anyhow::Result<(impl exocore_store::store::Store, impl Future<Output = ()>)> {
-    let store_config = config.store.clone().map(|c| c.into()).unwrap_or_default();
+    let store_config = config.store.map(|c| c.into()).unwrap_or_default();
     let local_store = Store::new(
         store_config,
         full_cell.cell().clone(),

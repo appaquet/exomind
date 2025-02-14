@@ -216,9 +216,8 @@ async fn handle_request(
     clock: Clock,
     req: Request<Body>,
 ) -> Result<Response<Body>, RequestError> {
-    let request_type = RequestType::from_url_path(req.uri().path()).map_err(|err| {
+    let request_type = RequestType::from_url_path(req.uri().path()).inspect_err(|err| {
         error!("Invalid request type with path {}", req.uri().path());
-        err
     })?;
 
     // Authentify the request using the authentication token and extract cell & node
