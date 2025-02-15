@@ -1,7 +1,6 @@
 # Exomind
 
-![Build](https://github.com/appaquet/exomind/workflows/Push%20tester/badge.svg)
-![iOS app](https://build.appcenter.ms/v0.1/apps/76ac2c48-f34c-4ac4-bcc4-41bae61f8177/branches/app-build/badge)
+[![Build](https://github.com/appaquet/exomind-mono/actions/workflows/push-tester.yml/badge.svg)](https://github.com/appaquet/exomind-mono/actions/workflows/push-tester.yml)
 
 **Warning: Exomind is a personal project. I daily drive it, but it may not be stable for your use case.**
 
