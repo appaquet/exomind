@@ -1,10 +1,14 @@
 # Exocore
 
-**Warning: Exocore/exomind a personal project. I daily drive it, but it may not be stable for your use case.**
+**Warning: Exomind/exocore is a personal project and is currently in maintenance mode.**
 
-Exocore is a distributed applications framework with private and encrypted data storage. It allows users to own their personal cloud, which is extensible via WebAssembly applications and accessible through Web, Mobile, and Backend SDKs. It is designed to be resilient to failures and will eventually support offline usage (e.g., on mobile).
+Exocore is a distributed applications framework with private and encrypted data storage. It allows
+users to own their personal cloud, which is extensible via WebAssembly applications and accessible
+through Web, Mobile, and Backend SDKs. It is designed to be resilient to failures and will
+eventually support offline usage (e.g., on mobile).
 
-Exocore is primarily built for [Exomind](../exomind/README.md), a personal knowledge management tool developed in parallel. Exocore serves as the application framework for Exomind.
+Exocore is primarily built for [Exomind](../exomind/README.md), a personal knowledge management tool
+developed in parallel. Exocore serves as the application framework for Exomind.
 
 The primary concept in Exocore is a Cell, a unique container for a user's applications and data.
 
@@ -13,26 +17,6 @@ A cell consists of:
 * **Chain nodes**: Manage replication and storage using a blockchain data structure.
 * **Store nodes**: Handle indexation, querying, and mutation of data (collocated with chain nodes).
 * **Application host nodes**: Run applications written in WebAssembly (collocated with store nodes).
-
-## Roadmap
-
-### v0.1 (in progress)
-
-* **Chain storage and replication**: Proof of concept
-* **Transport**: Proof of concept
-* **Entity store**: Proof of concept
-* **Applications (WASM host)**:  Proof of concept
-
-### v0.2
-
-* **Cell management** (Configuration replication)
-* **Enhanced security** (Chain encryption, configuration signatures, etc.)
-
-### v0.3 and beyond
-
-* **Android SDK**
-* **Blob storage**  (IPFS)
-* **Offline support**
 
 ## Dependencies
 

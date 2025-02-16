@@ -1,31 +1,12 @@
 # Exomind
 
-**Warning: Exocore/exomind a personal project. I daily drive it, but it may not be stable for your use case.**
+**Warning: Exomind is a personal project and is currently in maintenance mode.**
 
-Exomind is a personal knowledge management tool that serves as a unified inbox for your emails, notes, tasks, and bookmarks, allowing them to be organized into collections.
+Exomind is a personal knowledge management tool that serves as a unified inbox for your emails,
+notes, tasks, and bookmarks, allowing them to be organized into collections.
 
-Built on top of [Exocore](../exocore), a distributed application framework, Exomind is designed to be hosted in a decentralized manner on user-selected servers (e.g., Raspberry Pi, VPS, etc.).
-
-## Roadmap
-
-Exomind closely follows [Exocore's roadmap](../exocore#roadmap) since Exocore is being developed for Exomind.
-
-### v0.1 (in progress)
-
-* **Notes, Bookmarks, Emails, Tasks**
-* **Snoozing**
-* **Basic web client**
-* **Basic iOS client**
-* **Gmail synchronization server** (read-only, except for labels assignations and read flags)
-* **WASM business logic** (hosted by Exocore)
-
-### v0.2
-
-* **Gmail attachments**
-
-### v0.3 and beyond
-
-* **File storage**
+Built on top of [Exocore](../exocore), a distributed application framework, Exomind is designed to
+be hosted in a decentralized manner on user-selected servers (e.g., Raspberry Pi, VPS, etc.).
 
 ## Apps
 
