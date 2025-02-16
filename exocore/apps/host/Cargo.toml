@@ -24,7 +24,7 @@ thiserror = "2.0.11"
 
 [target."cfg(any( all(target_arch = \"x86_64\", any(target_os = \"linux\", target_os = \"macos\", target_os = \"windows\")), all(target_arch = \"aarch64\", any(target_os = \"linux\", target_os = \"macos\")) ))".dependencies]
 wasmtime = "4.0.1"
-wasmtime-wasi = { version = "4.0.1", features = ["tokio"] }
+wasmtime-wasi = { version = "18.0.4", features = ["tokio"] }
 
 [dev-dependencies]
 exocore-core = {version = "0.1.27", path = "../../core", features = ["tests-utils"]}
