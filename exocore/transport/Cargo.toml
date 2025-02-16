@@ -27,7 +27,7 @@ futures = "0.3.31"
 hyper = {version = "0.14.32", features = ["full"], optional = true}
 libp2p = {version = "0.53.2", optional = true, default-features = false, features = ["noise", "websocket", "yamux", "ping", "identify", "macros", "tokio", "dns"]}
 libp2p-identity = { version = "0.2.10", features = ["secp256k1", "ed25519"], default-features = false }
-libp2p-mplex = {version = "0.41.0", optional = true}
+libp2p-mplex = {version = "0.43.0", optional = true}
 log = "0.4.25"
 pin-project = "1.1.9"
 thiserror = "2.0.11"
