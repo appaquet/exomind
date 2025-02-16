@@ -110,7 +110,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-flatpickr": "^3.10.12",
-    "sanitize-html": "=2.7.1",
+    "sanitize-html": "=2.14.0",
     "source-map-support": "^0.5.21",
     "starts-with-emoji": "^2.0.0"
   },
