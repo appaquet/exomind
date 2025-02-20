@@ -44,7 +44,7 @@ multihash-codetable = {version="0.1.4", features=["sha3"]}
 multihash-derive = {version="0.9"}
 petname = "2.0"
 rand = "0.8"
-serde = "1.0.217"
+serde = "1.0.218"
 serde_derive = "1.0.217"
 serde_json = "1.0.138"
 serde_yaml = "0.9.34"
