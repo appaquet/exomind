@@ -10,7 +10,7 @@ repository = "https://github.com/appaquet/exocore"
 version = "0.1.27"
 
 [dependencies]
-anyhow = { version="1.0.95", features = ["backtrace"] }
+anyhow = { version="1.0.96", features = ["backtrace"] }
 bytes = "1.10.0"
 clap = { version = "4.5.30", features = ["derive", "env"] }
 console = "0.15.10"
