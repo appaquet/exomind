@@ -13,7 +13,7 @@ version = "0.1.27"
 proc-macro = true
 
 [dependencies]
-anyhow = "1.0.96"
+anyhow = "1.0.97"
 futures = "0.3.31"
 log = "0.4.26"
 quote = "1.0.38"
