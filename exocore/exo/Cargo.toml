@@ -36,4 +36,4 @@ tempfile = "3.19.1"
 thiserror = "2.0.12"
 tokio = { version = "1.44.1", features = ["macros"], default-features = false }
 url = "2.5.4"
-zip = { version = "2.4.2", features = ["deflate"], default-features = false }
+zip = { version = "2.5.0", features = ["deflate"], default-features = false }
