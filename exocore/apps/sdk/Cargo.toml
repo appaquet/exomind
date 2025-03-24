@@ -16,7 +16,7 @@ exocore-protos = {version = "0.1.27", path = "../../protos"}
 exocore-store = {version = "0.1.27", path = "../../store", default-features = false}
 futures = "0.3.31"
 lazy_static = "1.5.0"
-log = "0.4.26"
+log = "0.4.27"
 quote = "1.0.40"
 thiserror = "2.0.12"
 chrono = { version = "0.4.40", default-features = false, features = [] }

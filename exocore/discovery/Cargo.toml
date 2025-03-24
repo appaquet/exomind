@@ -18,7 +18,7 @@ anyhow = "1.0.97"
 base64 = "0.22.1"
 chrono = { version = "0.4.40", features = ["serde"] }
 futures = "0.3.31"
-log = "0.4.26"
+log = "0.4.27"
 rand = "0.8"
 reqwest = { version = "0.12.15", default-features = false, features = ["json", "rustls-tls"] }
 serde = "1.0.219"
