@@ -28,7 +28,7 @@ remote = ["exocore-core", "exocore-transport"]
 tests-utils = []
 
 [dependencies]
-anyhow = "1.0.97"
+anyhow = "1.0.98"
 async-trait = "0.1.88"
 bytes = "1.10.1"
 chrono = {version = "0.4.40", features = ["serde"]}
