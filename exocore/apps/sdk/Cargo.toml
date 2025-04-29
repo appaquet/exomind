@@ -19,7 +19,7 @@ lazy_static = "1.5.0"
 log = "0.4.27"
 quote = "1.0.40"
 thiserror = "2.0.12"
-chrono = { version = "0.4.40", default-features = false, features = [] }
+chrono = { version = "0.4.41", default-features = false, features = [] }
 
 [dev-dependencies]
 tokio = { version = "1.44.2", features = ["macros"], default-features = false }
