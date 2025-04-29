@@ -13,7 +13,7 @@ version = "0.1.27"
 anyhow = "1.0.98"
 base64 = "0.22"
 capnp = { version = "0.21", features = ["sync_reader"] }
-chrono = "0.4.40"
+chrono = "0.4.41"
 prost = "0.13"
 prost-types = "0.13"
 protobuf = "3.7.2"
