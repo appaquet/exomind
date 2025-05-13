@@ -41,7 +41,7 @@ tempfile = { version = "3.19.1", optional = true }
 exocore-core = {version = "0.1.27", path = "../core", features = ["tests-utils"]}
 exocore-transport = {version = "0.1.27", path = "../transport", features = ["tests-utils"]}
 tempfile = "3.19.1"
-tokio = { version = "1.44.2", features = ["macros"], default-features = false }
+tokio = { version = "1.45.0", features = ["macros"], default-features = false }
 
 [[test]]
 name = "engine"
