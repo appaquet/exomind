@@ -428,10 +428,10 @@ protobufjs-cli@^1.1.3:
     tmp "^0.2.1"
     uglify-js "^3.7.7"
 
-protobufjs@^7.5.2:
-  version "7.5.2"
-  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.5.2.tgz#030568499b1ef400a780b2d78488ca549ebcb169"
-  integrity sha512-f2ls6rpO6G153Cy+o2XQ+Y0sARLOZ17+OGVLHrc3VUKcLHYKEKWbkSujdBWQXM7gKn5NTfp0XnRPZn1MIu8n9w==
+protobufjs@^7.5.3:
+  version "7.5.3"
+  resolved "https://registry.yarnpkg.com/protobufjs/-/protobufjs-7.5.3.tgz#13f95a9e3c84669995ec3652db2ac2fb00b89363"
+  integrity sha512-sildjKwVqOI2kmFDiXQ6aEB0fjYTafpEvIBs8tOR8qI4spuL9OPROLVu2qZqi/xgCfsHIwVqlaF8JBjWFHnKbw==
   dependencies:
     "@protobufjs/aspromise" "^1.1.2"
     "@protobufjs/base64" "^1.1.2"
