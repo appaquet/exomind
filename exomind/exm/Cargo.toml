@@ -16,7 +16,7 @@ exomind-protos = {version = "0.1.27", path = "../protos"}
 exomind-gmail = {version = "0.1.27", path = "../integrations/gmail"}
 log = "0.4.27"
 structopt = "0.3.26"
-tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread", "time"] }
 
 [dev-dependencies]
 exocore = { version = "0.1.27", path = "../../exocore", default-features = false, features = ["client", "logger", "tests-utils"] }
