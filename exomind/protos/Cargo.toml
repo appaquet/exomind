@@ -17,4 +17,4 @@ prost = "0.13"
 prost-types = "0.13"
 
 [build-dependencies]
-prost-build = "0.13"
+prost-build = "0.14"
